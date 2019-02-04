@@ -34,9 +34,9 @@ int main(void)
   for(i=0;i<NB_THREAD;i++) 
     pthread_create(&incr_threads[i], NULL, THREAD_IncrementeCompteur, NULL);
   for(i=0;i<NB_THREAD;i++) 
-    pthread_join(incr_threads[i],&status);
+    pthread_join(incr_threads[i],&status);//le pere attend la fin de chacun de ses fils dans l'ordre du tableau
 
   if(SHARED_compteur== NB_THREAD) 
     printf("TERMINE\n");
-
+  return 0;
 }

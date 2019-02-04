@@ -43,5 +43,6 @@ int main(void)
   pthread_mutex_destroy(&MUTEX_compteur);   
   if(SHARED_compteur== NB_THREAD) 
     printf("TERMINE\n");
+  return 0;
 
 }

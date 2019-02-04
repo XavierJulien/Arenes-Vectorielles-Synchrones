@@ -43,5 +43,6 @@ int main(void)
   pthread_spin_destroy(&SPIN_compteur);   
   if(SHARED_compteur== NB_THREAD) 
     printf("TERMINE\n");
+  return 0;
 
 }
