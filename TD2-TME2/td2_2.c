@@ -3,18 +3,9 @@
 #include "fthread.h"
 #include "stdio.h"
 #include "unistd.h"
+#include "traceinstantsf.h"
 
 ft_event_t  evt;
-
-void traceinstants (void *a)
-{int i;
- int j = (int)a; 
- for (i=0;i<j;i++) {
-    fprintf (stdout,">>>>>>>>>>> instant %d :\n",i);
-    ft_thread_cooperate ();
-  }
-  fprintf(stdout, "Last exit\n");
-}
 
 void awaiter (void *args)
 {
@@ -48,13 +39,12 @@ int main (void)
 	ft_thread_t ft_trace, ft_awaiter, ft_generator;
 	ft_scheduler_t sched = ft_scheduler_create ();
 	evt = ft_event_create(sched);
+	ft_trace = ft_thread_create(sched,traceinstants,NULL,(void*)40);
 	ft_generator = ft_thread_create(sched,generator,NULL,NULL);
 	ft_awaiter = ft_thread_create(sched, awaiter,NULL,ft_generator);
-	ft_trace = ft_thread_create(sched,traceinstants,NULL,NULL)
 	  
     ft_scheduler_start(sched);
-  
-
+    
     ft_exit ();
     return 0;
 }
