@@ -1,0 +1,39 @@
+module lego2 :
+
+input ENTER, ESCAPE, LEFT, RIGHT;
+input A_isMoving, B_isMoving, C_isMoving ;
+input Distance : integer, Depassement_Lumiere, Sound;
+input Touch;
+
+output A_Vitesse : integer, C_Vitesse : integer;
+output A_Avance, C_Avance,tmpsig,LCD: string;
+output A_Recul, C_Recul;
+output A_Stop, C_Stop;
+
+await ENTER;
+emit LCD("ENTER PRESSE");
+
+await Touch;
+emit A_Avance;
+emit C_Avance;
+abort
+    var t : integer in
+      	emit A_Vitesse(200);
+	emit C_Vitesse(200);
+	loop
+		await Touch;
+		if t = 1 then
+			t := 0;
+			emit A_Recul;
+			emit C_Recul
+		else
+			t := 1;
+			emit A_Avance;
+			emit C_Avance
+		end if
+	end loop
+    end var
+when ESCAPE do emit A_Stop; emit C_Stop
+end abort;
+
+end module

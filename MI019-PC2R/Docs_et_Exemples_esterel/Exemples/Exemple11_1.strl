@@ -1,0 +1,15 @@
+module Exemple11_1 :
+
+  input  FACT := 0 : integer;
+  output RESULTAT : integer;
+
+  function factoriel (integer) : integer;
+
+  loop
+    present FACT
+      then emit RESULTAT(factoriel(?FACT))
+    end present;
+    await FACT
+  end loop
+
+end module

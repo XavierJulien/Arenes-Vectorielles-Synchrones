@@ -1,0 +1,21 @@
+module Loop1 :
+  input I, STOP;
+  output O1, O2;
+
+    loop
+      emit O1;
+      await I;
+    each tick
+
+end module
+
+%{
+
+Loop1> ;;;;;
+--- Output: O1
+--- Output: O1
+--- Output: O1
+--- Output: O1
+--- Output: O1
+
+}%

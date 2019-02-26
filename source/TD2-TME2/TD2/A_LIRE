@@ -1,0 +1,8 @@
+A compiler avec :
+
+export CHEMIN=/Vrac/PC2R/ft_v1.1/
+
+gcc -o nom_exe nom.c \
+       traceinstantsf.c -I $CHEMIN/include/ft_v1.1 -L $CHEMIN/lib/ft_v1.1 \
+       -lfthread -lpthread
+

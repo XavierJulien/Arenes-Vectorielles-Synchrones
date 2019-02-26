@@ -1,0 +1,25 @@
+module lego1 :
+sensor Light : float;
+input A_isMoving, B_isMoving, C_isMoving;
+input Distance : integer, Depassement_Lumiere, Sound;
+input Touch;
+output A_Vitesse : integer, C_Vitesse : integer;
+output A_Avance, C_Avance;
+output A_Recul, C_Recul;
+output A_Stop, C_Stop;
+await Touch;
+emit A_Vitesse(10);
+emit C_Vitesse(10);
+loop
+emit A_Avance;
+emit C_Avance;
+await 30 tick;
+emit A_Stop;
+emit C_Stop;
+emit A_Recul;
+emit C_Recul;
+await 30 tick;
+emit A_Stop;
+emit C_Stop
+end loop
+end module

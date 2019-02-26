@@ -1,0 +1,15 @@
+module Exemple7_7 :
+  input I;
+  output O1, O2, O3, O4;
+
+  emit O1;
+
+  every immediate I do
+    emit O2;
+    await 3 tick;
+    emit O3;
+  end every;
+
+  emit O4;
+
+end module

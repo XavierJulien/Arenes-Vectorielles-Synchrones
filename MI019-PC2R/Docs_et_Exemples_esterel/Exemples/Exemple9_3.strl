@@ -1,0 +1,13 @@
+module Exemple9_3 :
+  input  E;
+  output S1, S2;
+
+  suspend
+    loop
+      emit S1;
+      await E;
+      emit S2;		% ça ne passera jamais par ici
+    end loop
+  when E
+
+end module

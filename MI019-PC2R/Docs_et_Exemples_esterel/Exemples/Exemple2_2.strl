@@ -1,0 +1,20 @@
+module Exemple2_2 :
+
+  input  E;
+  output S1, S2, S3 : integer;
+
+  signal LV1 : integer, L2 in	% signaux locaux
+    present E then
+        emit S1;
+        emit LV1(10)	% ça ne s'affiche pas en output
+    end present;
+    present S1 then	% celui qui est émis ci-dessus
+        emit S2
+    end present;
+    present LV1 then
+        emit L2;
+        emit S3(?LV1)
+    end present;
+  end signal
+
+end module

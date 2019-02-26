@@ -1,0 +1,121 @@
+module NSEO :
+
+input  ACNSEO, RESET;
+output ACAUTRE, R, O, V;
+
+input D : integer;
+
+loop
+   abort
+      sustain R
+   when ACNSEO;
+
+   emit R; pause;	% par securite, rouge encore un instant
+
+   await immediate D;
+   repeat ?D times	% on sait que 
+      emit V; pause
+   end repeat;
+   emit O; pause;
+   emit ACAUTRE
+end loop
+
+end module
+
+%%%%%%%%%%
+
+module feux :
+
+input  ACNS, ACEO, RESET, O;
+output RNS, REO, ONS, OEO, VNS, VEO;
+
+input  AN, AS, AE, AO;
+output DNS : integer, DEO : integer;
+
+relation ACNS # ACEO;
+
+[
+  await 5 tick;  % Les feux tricolores ne demarre qu'apres 5 tick.
+  emit ACNS	 % Et on commence par le Nord-Sud
+  ||
+  run NSEO[signal ACNS/ACNSEO, ACEO/ACAUTRE, RNS/R, ONS/O, VNS/V, DNS/D ]
+  ||
+  run NSEO[signal ACEO/ACNSEO, ACNS/ACAUTRE, REO/R, OEO/O, VEO/V, DEO/D ]
+  ||
+  loop		% pour compter les voitures NS
+     await RNS;
+     var duree := 2 : integer in
+       abort
+         loop
+            present AN then duree := duree + 1 end present;
+            present AS then duree := duree + 1 end present;
+         each tick
+       when [not RNS];
+       emit DNS(duree)
+     end var;
+  end loop
+  ||
+  loop		% pur compter les voiture EO
+     await REO;
+     var duree := 2 : integer in
+       abort
+         loop
+            present AE then duree := duree + 1 end present;
+            present AO then duree := duree + 1 end present
+         each tick
+       when [not REO];
+       emit DEO(duree)
+     end var;
+  end loop
+]
+
+end module
+
+
+%%%%%%%%%%
+
+%{
+
+$ esterel feux_tricolores4.strl -simul
+$ gcc -m32 -o feux_tricolores4 feux_tricolores4.c -I $ESTEREL/include -L $ESTEREL/lib -lcsimul
+$ feux_tricolores4
+feux> ;;;;;;;;;;
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: REO VNS DNS(2) 
+--- Output: REO VNS 
+--- Output: REO ONS 
+--- Output: RNS REO 
+feux> ;;;
+--- Output: RNS VEO DEO(2) 
+--- Output: RNS VEO 
+--- Output: RNS OEO 
+feux> AN AS; AN AS;;;  
+--- Output: RNS REO 
+--- Output: REO VNS DNS(4) 
+--- Output: REO VNS 
+--- Output: REO VNS 
+feux> AE; AE AO; AE AO;;;
+--- Output: REO VNS 
+--- Output: REO ONS 
+--- Output: RNS REO 
+--- Output: RNS VEO DEO(7) 
+--- Output: RNS VEO 
+feux> ;;;;;;
+--- Output: RNS VEO 
+--- Output: RNS VEO 
+--- Output: RNS VEO 
+--- Output: RNS VEO 
+--- Output: RNS VEO 
+--- Output: RNS OEO 
+feux> ;;;
+--- Output: RNS REO 
+--- Output: REO VNS DNS(2) 
+--- Output: REO VNS 
+feux> 
+
+}%

@@ -1,0 +1,16 @@
+module Exemple5_1 :
+
+  input  E;
+  output S : integer;
+
+  await  E;
+
+  var x := 10 : integer in
+    [ x := x + 1; emit S(x); pause
+      ||
+      await E; x := x + 2; emit S(x)
+    ];
+    emit S(x)
+  end var;
+
+end module

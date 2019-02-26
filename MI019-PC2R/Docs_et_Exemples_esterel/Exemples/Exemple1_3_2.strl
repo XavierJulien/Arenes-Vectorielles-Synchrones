@@ -1,0 +1,14 @@
+% associe au fichier Exemple1_3_1.strl
+% a compiler avec
+% $ESTEREL/bin/esterel -simul \
+%     Exemple1_3_1.strl \
+%     Exemple1_3_2.strl -B Exemple1_3_12
+
+module Exemple1_3_2 :
+  input  E;
+  output S2_1 : integer, S2_2 : integer;
+
+  emit S2_1(3);
+  await E;
+  emit S2_2(4);
+end module

@@ -1,0 +1,47 @@
+% $ESTEREL/bin/esterel -simul prod_conso_gerant.strl gerant.strl \
+%      producteur.strl consommateur.strl -B prod_conso_gerant
+%
+%
+% gcc -m32 -o prod_conso_gerant prod_conso_gerant.c -I $ESTEREL/include \
+%     -L $ESTEREL/lib -lcsimul
+%
+
+
+
+module prod_conso_gerant :
+
+constant max = 5 : integer;
+
+input FIN;
+
+%%%%%%%%%%% consommateur
+input C1, C2;
+relation C1 # C2;
+
+%%%%%%%%%% producteur
+output P;		% emis par le producteur a intervalle regulier 
+
+output C_S : integer;	% gerant pour signaler que l'operation demandee est
+output P_S;		%  prise en compte.
+output MAX, VIDE;
+output FP : integer,	% emttre a la fin les quantites du producteur
+       FS : integer,	%   du stock du gerant
+       FC2 : integer,	%   du consommateur 1
+       FC1 : integer;	%   du consommateur 2
+output ST : integer;
+
+signal C_L : integer in	% emis par les consommateurs 1 ou 2, producteur
+      % gerant
+      run gerant [constant 5/max; signal C_L/C]
+   ||
+      % producteur 
+      run producteur
+   ||
+      % consommateur 1
+      run consommateur [constant 1/numero; signal C_L/C, C1/Ci, FC1/FC]
+   ||
+      % consommateur 2
+      run consommateur [constant 2/numero; signal C_L/C, C2/Ci, FC2/FC]
+end signal
+
+end module

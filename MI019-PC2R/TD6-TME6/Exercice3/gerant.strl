@@ -1,0 +1,85 @@
+% $ESTEREL/bin/esterel -simul prod_conso_gerant.strl gerant.strl \
+%      producteur.strl consommateur.strl -B prod_conso_gerant
+%
+%
+% gcc -o prod_conso_gerant prod_conso_gerant.c -L $ESTEREL/lib/ -lcsimul
+%
+
+
+
+module gerant :
+
+input    FIN;
+constant max : integer;
+input    C : integer;		%val 1 ou 2, commande d'un client
+output   P;			%emis par le producteur
+output   MAX, VIDE;
+output   C_S : integer;	% gerant pour signaler que l'operation demandee est
+output   P_S;		%  prise en compte.
+output   ST : integer, FS : integer;
+
+var stock := 0 : integer in
+   abort
+      %gerant du stock
+      var attend := false : boolean in 
+         signal MAX_L, VIDE_L, S : combine integer with + in 
+            % L pour local au traitement d'un pas de boucle 
+	    % introduit pour eviter que VIDE en 'debut'
+	    % d'instant cohabite avec ST(1) en 'fin'
+	    % du traitement de l'instant dans le gerant 
+            loop  
+               if stock = max
+                   then emit MAX_L
+               else if stock = 0 then emit VIDE_L end if  
+               end if;
+
+               [
+                  %on autorise un seul retrait a la fois
+                  present C then
+                     present VIDE_L
+                     else emit S(-1); 
+                          emit C_S(?C)
+                     end present 
+                  end present
+               ||
+                  %partie gerant le producteur 
+                  present P then
+                     present MAX_L then 
+                        attend := true;  
+                     else emit S(1);
+                          emit P_S; 
+                          present VIDE_L then  
+                             emit C_S(0)   %pour accepter une
+                                 	   % nouvelle demande client   
+                          end present
+                     end present
+                  else
+                     % relancer la production si necessaire des
+                     % qu'on descend sous le max 
+                     present MAX_L
+                     else if attend then
+                             emit S(1); 
+                             attend := false; 
+                             emit P_S 
+                          end if
+                     end present 
+                  end present
+               ];
+
+               %obligatoire !!!
+               present S then  stock := stock + ?S end present; 
+               emit ST(stock);
+               % facultatif : informer l'observateur des cas de
+               % blocage temporaire 
+               if stock = max  then emit MAX
+               else if stock = 0 then emit VIDE end if
+               end if;
+               pause 
+            end loop
+         end signal 
+      end var
+   when FIN;
+   emit FS(stock)
+end var
+
+end module

@@ -1,0 +1,12 @@
+module Exemple5_2 :
+
+  input  E1, E2, E3;
+  output S1, S2, S3;
+
+  await  E1;
+
+  [ emit S1; await  E1 || await E2; emit S2];
+
+  emit S3
+
+end module

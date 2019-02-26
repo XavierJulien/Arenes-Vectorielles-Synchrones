@@ -1,0 +1,12 @@
+module Exemple6_2 :
+  input I, FIN;
+  output S0, S1, S2, S3;
+
+  abort
+    await I do emit S0 end await;
+    present FIN then emit S1 end present;
+  when FIN do emit S2
+  end abort;
+  emit S3
+    
+end module

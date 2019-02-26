@@ -1,0 +1,20 @@
+module Exemple13 :
+
+  input  E : integer, STOP;
+  output S : integer, FIN;
+
+  abort
+    loop
+      await E;
+      if ?E mod 2 = 0
+         then emit S(2)
+      elsif ?E mod 3 = 0
+         then emit S(3)
+      elsif ?E mod 5 = 0
+         then emit S(5)
+      else emit S(0)
+      end if
+    end loop
+  when STOP do emit FIN end abort
+
+end module

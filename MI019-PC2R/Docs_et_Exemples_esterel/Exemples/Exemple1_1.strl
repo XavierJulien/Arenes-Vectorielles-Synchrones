@@ -1,0 +1,24 @@
+module Exemple1_1 :
+
+  input  E;
+  output S, S1 : integer, S2 : integer;
+
+  [ present E then
+        emit S1(1)
+      else emit S2(2)
+    end present
+    ||
+    run Exemple1_2
+  ];
+
+  emit S
+end module
+
+module Exemple1_2 :
+  input  E;		% memes noms
+  output S1 : integer, S2 : integer;
+
+  emit S1(3);
+  await E;
+  emit S2(4);
+end module

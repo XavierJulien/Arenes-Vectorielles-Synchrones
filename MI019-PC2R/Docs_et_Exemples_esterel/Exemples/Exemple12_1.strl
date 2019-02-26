@@ -1,0 +1,26 @@
+module Exemple12_1 :
+
+  output S1 : integer;
+  signal S2 : integer in
+
+    await S2; emit S1(?S2)
+    ||
+    pause; emit S2(4)
+    ||
+    pause; emit S2(3)
+    ||
+    pause; emit S2(2)
+    ||
+    pause; emit S2(1)
+
+  end signal
+
+end module
+
+%{
+Exemple12_1> ;;;;
+--- Output:
+--- Output: S1(1)
+--- Output:
+--- Output:
+}%

@@ -1,0 +1,15 @@
+module Exemple6_3 :
+  input I, J, FIN;
+  output S0, S1, S2, S3, S4, S5, S6;
+
+  weak abort
+    await I do emit S0 end await;
+    present FIN then emit S1 end present;
+    emit S2;
+    await J do emit S3 end await;
+    emit S4
+  when FIN do emit S5
+  end weak abort;
+  emit S6
+    
+end module

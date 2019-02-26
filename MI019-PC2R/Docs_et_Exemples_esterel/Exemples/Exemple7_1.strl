@@ -1,0 +1,13 @@
+module Exemple7_1 :
+  input E1, E2;
+  output S0, S1, S2;
+
+  loop
+    emit S0;
+    await E1;
+    emit S1;
+    await E2;
+    emit S2
+  end loop
+
+end module

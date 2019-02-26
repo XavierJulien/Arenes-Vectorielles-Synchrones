@@ -1,0 +1,32 @@
+% $ESTEREL/bin/esterel -simul prod_conso_gerant.strl gerant.strl \
+%      producteur.strl consommateur.strl -B prod_conso_gerant
+%
+%
+% gcc -o prod_conso_gerant prod_conso_gerant.c -L $ESTEREL/lib/ -lcsimul
+%
+
+
+
+module consommateur :
+
+input  FIN;
+input  Ci, C_S	 : integer;
+output C	 : integer;
+output FC	 : integer;
+constant numero  : integer;
+
+var nbconso := 0 : integer in
+   abort
+      loop
+         await Ci;
+         emit C(numero);
+         await immediate C_S;
+         if ?C_S = numero
+             then nbconso := nbconso + 1
+         end if
+      end loop
+   when FIN;
+   emit FC(nbconso)
+end var
+
+end module

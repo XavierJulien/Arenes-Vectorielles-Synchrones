@@ -1,0 +1,18 @@
+module Exemple2_1 :
+
+  input  E, EV1 : integer, EV2 := 3 : integer;
+  output S, SV1 : integer, SV2 := 7 : integer;
+
+  present E then
+      emit S
+  end present;
+  present EV1 then
+      emit SV1(?EV1)	% émet SV1 avec la valeur associée à EV1
+  end present;
+  present EV2 then
+      emit SV2(?EV2 + 1);
+      emit SV2(?EV2 + 2)	% seul ce dernier SV2 est émis
+  end present
+
+end module
+

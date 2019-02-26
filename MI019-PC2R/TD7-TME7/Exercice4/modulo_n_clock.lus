@@ -1,0 +1,91 @@
+node modulo_n_clock (n : int) returns (max_modulo : int; nombre : int);
+var inc : int; bool_clock : bool;
+let
+  bool_clock = ((inc mod n) = 0);
+  (max_modulo, nombre) =
+      (current(foo(n when bool_clock, inc when bool_clock)), inc);
+  inc = 0 -> 1 + pre inc;	/* l'increment */
+tel;
+
+
+node foo (n : int; inc : int) returns (resultat : int);
+let
+  resultat = inc + n - n;  /* + n - n est inutile. Juste pour marquer que
+                              inc et n doivent avoir la meme horloge car
+			      on peut faire les operations arithmetiques */
+tel;
+
+
+/*
+
+Sans current, on aura un probleme d'horloge, en effet
+l'horloge du resultat est celui correspondant a la valeur
+true de ((inc mod n) = 0)). Donc, decale.
+current permet donc de rendre la valeur courrante avec l'horloge fourni
+par inc (le meme que n).
+Attention :
+
+foo(n when ((inc mod n) = 0), inc when ((inc mod n) = 0))) ne permet pas
+de faire  resultat = inc + n - n  car
+l'horloge de "n when ((inc mod n) = 0)" est consideree comme differente de
+celle de "inc when ((inc mod n) = 0))". Pour indiquer que c'est la meme
+horloge, il faut une variable  var bool_clock : bool  et on pourra alors
+ecrire    foo(n when bool_clock, inc when bool_clock).
+
+$ modulo_n_clock 
+## STEP 1 ##########
+n (integer) ? 5
+max_modulo = 0 
+nombre = 0 
+## STEP 2 ##########
+n (integer) ? 5
+max_modulo = 0 
+nombre = 1 
+## STEP 3 ##########
+n (integer) ? 5
+max_modulo = 0 
+nombre = 2 
+## STEP 4 ##########
+n (integer) ? 5
+max_modulo = 0 
+nombre = 3 
+## STEP 5 ##########
+n (integer) ? 5
+max_modulo = 0 
+nombre = 4 
+## STEP 6 ##########
+n (integer) ? 5
+max_modulo = 5 
+nombre = 5 
+## STEP 7 ##########
+n (integer) ? 5
+max_modulo = 5 
+nombre = 6 
+## STEP 8 ##########
+n (integer) ? 5
+max_modulo = 5 
+nombre = 7 
+## STEP 9 ##########
+n (integer) ? 5
+max_modulo = 5 
+nombre = 8 
+## STEP 10 ##########
+n (integer) ? 5
+max_modulo = 5 
+nombre = 9 
+## STEP 11 ##########
+n (integer) ? 5
+max_modulo = 10 
+nombre = 10 
+## STEP 12 ##########
+n (integer) ? 5
+max_modulo = 10 
+nombre = 11 
+## STEP 13 ##########
+n (integer) ? 5
+max_modulo = 10 
+nombre = 12 
+## STEP 14 ##########
+n (integer) ?
+
+*/

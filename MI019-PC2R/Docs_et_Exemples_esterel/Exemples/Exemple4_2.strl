@@ -1,0 +1,9 @@
+module Exemple4_2 :
+
+  input  E;
+  output S;
+
+  await (1 + 2) E;	% await E; await E; await E;
+  emit S
+
+end module

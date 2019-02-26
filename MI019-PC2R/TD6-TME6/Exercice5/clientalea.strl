@@ -1,0 +1,62 @@
+%%%%%%%%%% clientalea.strl %%%%%%%%%%
+
+module clientalea :
+
+output S := 0 : integer;
+input FIN;
+output F1 : integer, F2 : integer,F3 : integer;
+
+procedure init (integer) (integer);
+procedure alea (integer) (integer);
+
+var res:=1 :integer, donnee:=0 : integer, n1:=0 : integer,
+    n2:=0 : integer, n3:=0: integer in
+
+   call init(res)(donnee);
+
+   abort
+      [
+         loop
+            call alea(res)(3);
+            emit S(res +1);
+            %await (res + 1) tick;
+             pause;
+         end loop;
+      ||
+         loop
+            await immediate S;
+            if ?S = 1 then n1 := n1+1;
+            end if;
+            pause;
+         end loop;
+      ||
+         loop
+            await immediate S;
+            if ?S = 2 then
+               n2 := n2+1;
+            end if;
+            pause;
+         end loop;
+      ||
+         loop
+            await immediate S;
+            if ?S = 3 then
+               n3 := n3+1;
+            end if;
+            pause;
+         end loop;
+      ]
+   when FIN do
+      emit F1(n1);
+      emit F2(n2);
+      emit F3(n3);
+   end abort;
+end var
+
+end module
+
+
+% clientalea.h doit contenir les declarations c des fonctions init et alea
+% esterel -simul clientalea.strl
+% gcc -o clientalea clientalea.c alea.o \
+%      -I \$ESTEREL/include -L $ESTEREL/lib -lcsimul

@@ -1,0 +1,25 @@
+module Exemple10 :
+  input  E;
+  output S1, S2, S3, S4, S5, S6;
+
+  trap EX in
+    loop
+      emit S1;
+      await E do
+        emit S2;
+        exit EX;
+        emit S3		% ne sera jamais exécutée
+      end await
+    end loop
+
+    ||
+
+    loop
+      await 2 tick;
+      emit S4; await E do emit S5 end await
+    end loop
+  end trap;
+
+  emit S6
+
+end module

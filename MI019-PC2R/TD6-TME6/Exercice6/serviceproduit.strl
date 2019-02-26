@@ -1,0 +1,16 @@
+% Variante : plutot que n boutons, cette solution utilise un signal value
+
+module service_produit :
+input PRIX_ATTEINT, NUM_PRODUIT : integer;
+output SERVIR : integer;
+output PRODUIT_SERVI;
+constant duree : integer;
+
+every PRIX_ATTEINT do
+   await NUM_PRODUIT;
+   emit SERVIR(?NUM_PRODUIT);
+   await duree tick;
+   emit PRODUIT_SERVI;
+end every
+
+end module

@@ -1,0 +1,7 @@
+module Exemple8_1 :
+  output S1, S2;
+
+  sustain S1;		% bloquante
+  emit S2;		% ne passe donc plus ici
+
+end module

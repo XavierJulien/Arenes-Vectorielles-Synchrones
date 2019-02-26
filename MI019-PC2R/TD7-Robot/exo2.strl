@@ -1,0 +1,12 @@
+module TouchBip :
+input Touch, A_isMoving, B_isMoving, C_isMoving;
+input Distance : integer, Depassement_Lumiere, Sound;
+output Bip, A_Avance;
+await Touch;
+await Touch;
+await Touch;
+await Touch;
+emit Bip;
+emit A_Avance;
+await 100 tick;
+end module

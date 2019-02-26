@@ -1,0 +1,11 @@
+module Exemple1 :
+
+  input  E;		% déclarations d'interface : signal d'entrée E
+  output S1, S2;	%			     signaux de sortie S1 et S2
+
+  present E then	% si E est dans le premier tick
+      emit S1		%    ça émet S1
+    else emit S2	%    sinon ça émet S2
+  end present
+
+end module

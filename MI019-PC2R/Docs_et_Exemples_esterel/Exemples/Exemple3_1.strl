@@ -1,0 +1,19 @@
+module Exemple3_1 :
+
+  input  E1, E2;
+  output S1, S2, S3;
+
+  present tick then	% on est dans un tick
+    emit S1;		% émet S1 dans ce tick
+  end present;		%   sauf s'il y en a un autre S1
+  present tick then	% on est toujours dans ce même
+    emit S1;		%   tick et il y en a un autre S1
+  end present;		%   c'est ce dernier qui est émis
+  present E1 or E2 then
+    emit S2;		% émet S2 dans ce même tick
+  end present;
+  present E1 and E2 then
+    emit S3;		% émet S3 dans ce même tick
+  end present;
+
+end module

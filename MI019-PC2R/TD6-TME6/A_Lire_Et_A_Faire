@@ -1,0 +1,11 @@
+export ESTEREL=/Vrac/PC2R/esterelv5_92
+export PATH=$ESTEREL/bin/:$PATH
+
+Pour generer unfichier C a partir d'un fichier esterel par :
+esterel -simul fichier.strl
+
+Pour compiler ce fichier par :
+gcc -m32 -o fichier fichier.c -I $ESTEREL/include -L $ESTEREL/lib -lcsimul
+
+Pour terminer l'execution du programme par :
+<Ctrl-D> (une ou plusieurs fois)

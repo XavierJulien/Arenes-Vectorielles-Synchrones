@@ -1,0 +1,47 @@
+1. Pour ne pas avoir des collisions avec les fichiers de vos voisins et aussi
+pour avoir le plein droit d'écriture sur un certain nombre de répertoires,
+il est souhaitable d'installer chez vous le tomcat 4.1.30 pour le compilo
+java j2sdk1.4.2_05 installe.
+
+2. Initialiser les variables suivantes pour pouvoir exécuter proprement tomcat
+et compiler vos servlets  avec javac avec de bonnes bibliothèques jar :
+
+CATALINA_HOME=<Chemin absolu jusqu'a>/jakarta-tomcat-4.1.30
+JAVA_HOME=/Vrac/PC2R/jdk1.8.0_121
+CLASSPATH=$CATALINA_HOME/common/lib/servlet.jar
+export JAVA_HOME CATALINA_HOME CLASSPATH
+
+3. Mis en route du serveur tomcat avec :
+
+$CATALINA_HOME/bin/startup.sh
+
+4. Tester le serveur en lancant un navigateur avec l'URL
+
+http://<votre machine ou est execute tomcat>:8080
+
+Normalement, vous devrez voir la page d'acceuil de tomcat avec un chat jaune.
+
+5. Installer vos servlets compilées dans
+
+$CATALINA_HOME/webapps/examples/WEB-INF/classes
+
+6. Tester avec un navigateur en donnant l'URL
+
+http://<votre machine ou est execute tomcat>:8080/examples/servlet/<servlet compilee sans suffixe .class>
+
+7. Installer vos fichiers JSP dans 
+
+$CATALINA_HOME/webapps/examples/jsp
+
+8. tester avec un navigateur en donnant l'URL
+
+http://<votre machine ou est execute tomcat>:8080/examples/jsp/<fichiers JSP avec suffixe .jsp>
+
+9. Important : lorsque vous changez vos programmes (servlets ou fichiers JSP),
+A chaque fois que vous modifiez vos programmes, penser à donner un nouveau nom
+(classe et fichier pour une servlet et fichier pour un JSP), car le serveur
+ne charge qu'une seule instance d'une classe donnée dans son moteur. Il vous
+sert toujours l'ancien jusqu'à sa disparition.
+
+10. Pensez à arrêter tomcat par $CATALINA_HOME/bin/shutdown.sh
+Attendre une vingtaine de secondes si vous voulez recommencer le startup.sh

@@ -1,0 +1,25 @@
+class Imprimante implements Runnable {
+
+
+    String[] spooler = new String[100];
+    int      index = 0;
+    boolean  pagesEnAttente = false;
+    Thread   daemon;
+
+
+    Imprimante () {
+
+	/* ?????????? */
+
+    }
+
+
+    /* ?????????? */
+
+
+    public void run () {
+
+	/* ?????????? */
+
+    }
+}

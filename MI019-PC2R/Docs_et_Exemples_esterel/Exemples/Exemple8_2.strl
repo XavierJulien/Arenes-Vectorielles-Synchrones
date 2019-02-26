@@ -1,0 +1,11 @@
+module Exemple8_2 :
+  input E;
+  output S1, S2, S3;
+
+  loop
+    emit S1;
+    sustain S2;
+    emit S3;		% ne passe toujours pas par ici
+  each E;
+
+end module

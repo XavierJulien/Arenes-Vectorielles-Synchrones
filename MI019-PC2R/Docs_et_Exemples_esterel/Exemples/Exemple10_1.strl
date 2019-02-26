@@ -1,0 +1,28 @@
+module Exemple10_1 :
+  input  E;
+  output S1_1, S1_2, S2_1, S2_2, S3, S4, S5;
+
+  trap EXCEPTION in
+
+    [ loop
+        emit S1_1;
+        await E;
+        emit S1_2;
+      end loop;
+      emit S3
+
+      ||
+
+      emit S2_1;
+      await E;
+      exit EXCEPTION;  % quitte le trap correspondant en interrompant ici
+      emit S2_2        %   mais en laissant finir ce qu'il reste du trap
+    ];                 %   a finir dans le tick courant (voir weak abord).
+
+    emit S4
+
+  end trap;
+
+  emit S5;
+
+end module

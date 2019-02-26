@@ -1,0 +1,109 @@
+% $ESTEREL/bin/esterel -simul fruits.strl -B fruits
+%
+%
+% gcc -m32 -o fruits fruits.c -I $ESTEREL/include \
+%     -L $ESTEREL/lib -lcsimul
+%
+
+module FRUITS :
+
+input  B1, B2, O1, O2, P1, P2; 
+input  Q1, Q2;	%indiquer quand un client quitte le rayon
+output C1 :integer,C2 : integer;
+
+% nb de kilos achetes quand un client quitte le rayon 
+output B : combine integer with +;	%bananes 
+output O : combine integer with +;	%oranges 
+output P : combine integer with +;	%pommes 
+output MB, MO, MP, AB, AO, AP ;		% ManqueBanane...AjouteBanane
+
+% un client ne prend qu'un fruit à la fois
+relation B1 # O1 # P1; 
+relation B2 # O2 # P2; 
+
+[
+   % client 1
+   loop  
+      var c1 :=0 : integer in
+         abort 
+            c1 := 0;
+            loop 
+               await [ B1 or O1 or P1]; 
+               c1 := c1 + 1; 
+               %un au plus d'apres l'exclusion 
+               present B1 then emit B(1) end present; 
+               present O1 then emit O(1) end present; 
+               present P1 then emit P(1) end present;  
+            end loop
+         when Q1 do emit C1(c1) 
+         end abort
+      end var
+   end loop
+||
+   % client 2
+   loop
+      var c2 := 0 : integer in
+         abort 
+            c2 := 0;
+            loop
+               await
+               case B2 do emit B(1);
+               case O2 do emit O(1);
+               case P2 do emit P(1)
+               end await;
+               c2 := c2 + 1
+            end loop
+         when Q2 do
+            emit C2(c2)
+         end abort
+      end var
+   end loop
+|| 
+   % gerant bananes 
+   var kb := 10 : integer in 
+      loop 
+         await [B or AB]; 
+         present B then kb := kb - ?B end present; 
+         present AB then kb := kb + 10 end present; 
+         if kb <= 2 then emit MB end if 
+      end loop
+   end var
+|| 
+   %gerant oranges
+   var ko := 10 : integer in
+      loop
+         await [O or AO];
+         present O then ko := ko - ?O end present;
+         present AO then ko := ko + 10 end present;
+         if ko <= 2 then emit MO end if
+      end loop
+   end var
+||
+   %gerant pommes
+   var kp := 10 : integer in 
+      loop await [P or AP]; 
+           present P then kp := kp - ?P end present; 
+           present AP then kp := kp + 10 end present; 
+           if kp <= 2 then emit MP end if
+      end loop
+   end var
+||
+   %employe
+   loop
+      var ao := false, ab := false, ap := false : boolean in
+         await [MP or MB or MO];
+         %qu'est-ce qui manque? 
+         present MB then ab:= true end present; 
+         present MO then ao :=true end present; 
+         present MP then ap := true end present;
+         pause;
+         % prevenir le gerant concerne
+         if ab then emit AB end if;
+         if ao then emit AO end if; 
+         if ap then emit AP end if; 
+      end var
+   end loop
+]
+
+end module 
+

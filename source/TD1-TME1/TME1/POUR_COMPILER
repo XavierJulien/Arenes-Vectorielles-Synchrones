@@ -1,0 +1,3 @@
+ocamlc -thread unix.cma threads.cma nums.cma nom_programme.ml \
+        -o nom_programme
+	

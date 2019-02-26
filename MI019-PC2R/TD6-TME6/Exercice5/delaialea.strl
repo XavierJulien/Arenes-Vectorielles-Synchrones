@@ -1,0 +1,29 @@
+%%%%%%%%%% delaialea.strl %%%%%%%%%%
+
+module delaialea :
+
+output S := 0 : integer;
+input FIN;
+
+procedure init (integer) (integer);
+procedure alea (integer) (integer);
+
+var res := 1 : integer, donnee := 0 : integer in
+   call init(res)(donnee);
+
+   abort
+      loop
+         call alea(res)(3);
+         emit S(res + 1);
+         await (res + 1) tick;
+      end loop
+   when FIN
+end var
+
+end module
+
+
+% delaialea.h doit contenir les declarations c des fonctions init et alea
+% esterel -simul delaialea.strl
+% gcc -o delaialea delaialea.c alea.o \
+%      -I \$ESTEREL/include -L $ESTEREL/lib -lcsimul

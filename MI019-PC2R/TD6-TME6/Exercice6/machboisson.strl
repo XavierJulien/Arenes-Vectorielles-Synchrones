@@ -1,0 +1,57 @@
+module mach_boisson_run :
+
+% entree-sorties utilisees par le module attend_prix_annul
+input  PIECE : integer, ANNULER;
+output PIECE_REJETEE, RETOUR : integer ; 
+output TEST_PRIX : integer;
+output MONNAIE : integer;
+
+%entree-sorties utilisees par le module service_produit
+input  NUM_BOISSON : integer;
+output SERVIR : integer;
+
+%entree-sorties propres a ce module 
+input INC;
+output HS; 
+
+relation PIECE # NUM_BOISSON # ANNULER; 
+
+% PRIX_ATTEINT est sortie d'un sous-module, entree d'un autre 
+% ==> il est interne 
+
+signal PRIX_ATTEINT, PRODUIT_SERVI in
+   trap horsService in
+      loop
+         await INC;
+         %incident 
+         emit HS;
+         exit horsService; 
+      end loop
+   ||
+      [
+         run attend_prix_annul [constant 4 / Prix_Produit]
+      ||
+         run service_produit [constant 2 / duree;  
+                              signal NUM_BOISSON / NUM_PRODUIT]
+      ]
+   end trap 
+end signal
+
+end module
+
+% esterel -simul machboisson.strl machineacafe.strl serviceproduit.strl\
+%   -B mach_boisson_run
+   % gcc -m32 -c mach_boisson_run mach_boisson_run.c -I $ESTEREL/include\
+   %      -L $ESTEREL/lib-lcsimul.a
+   %;PIECE(1);
+   %   PIECE(2);PIECE(1);NUM\_BOISSON(1);;
+   % ;;;;;;;PIECE(1);; PIECE(2);
+   %   PIECE(2);NUM\_BOISSON(2); ;;;;;
+   %   PIECE(1); PIECE(1); ANNULER;NUM\_BOISSON(1); PIECE(1); PIECE(3);
+   %   PIECE(2);
+   % PIECE(2);NUM\_BOISSON(2);;;;;PIECE(1);;
+   %   PIECE(2);  
+   % PIECE(1) NUM\_BOISSON(2);->interdit par
+   %   relation  PIECE(1) PIECE(2); ->erreur
+   %   signal unique  PIECE(1)
+   %   ANNULER;->interdit par relation \\%

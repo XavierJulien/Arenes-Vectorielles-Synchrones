@@ -1,0 +1,19 @@
+avr. 28, 2017 12:36:54 AM org.apache.coyote.http11.Http11Protocol init
+INFOS: Initialisation de Coyote HTTP/1.1 sur le port 8080
+Démarrage du service Tomcat-Standalone
+Apache Tomcat/4.1.30
+avr. 28, 2017 12:36:55 AM org.apache.struts.util.PropertyMessageResources <init>
+INFOS: Initializing, config='org.apache.struts.util.LocalStrings', returnNull=true
+avr. 28, 2017 12:36:55 AM org.apache.struts.util.PropertyMessageResources <init>
+INFOS: Initializing, config='org.apache.struts.action.ActionResources', returnNull=true
+avr. 28, 2017 12:36:55 AM org.apache.struts.util.PropertyMessageResources <init>
+INFOS: Initializing, config='org.apache.webapp.admin.ApplicationResources', returnNull=true
+avr. 28, 2017 12:36:55 AM org.apache.coyote.http11.Http11Protocol start
+INFOS: Démarrage de Coyote HTTP/1.1 sur le port 8080
+avr. 28, 2017 12:36:55 AM org.apache.jk.common.ChannelSocket init
+INFOS: JK2: ajp13 listening on /0.0.0.0:8009
+avr. 28, 2017 12:36:55 AM org.apache.jk.server.JkMain start
+INFOS: Jk running ID=0 time=1/8  config=/Vrac/PC2R/TD10-TME10/jakarta-tomcat-4.1.30/conf/jk2.properties
+Arrêt du service Tomcat-Standalone
+avr. 28, 2017 12:43:54 AM org.apache.coyote.http11.Http11Protocol destroy
+INFOS: Stoping http11 protocol on 8080 Catalina:type=ThreadPool,name=http8080

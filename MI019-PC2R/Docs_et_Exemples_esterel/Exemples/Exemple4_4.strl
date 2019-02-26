@@ -1,0 +1,18 @@
+module Exemple4_4 :
+
+  input  I1, I2;
+  output O1, O2;
+
+  signal S in
+    await I1;
+    emit I2;
+
+    present I2 then emit O1 end present;
+    emit S;
+
+    await S do	% await retardé, a laissé échapper le signal S
+      emit O2	%   courant pour attendre le prochain S.
+    end await	% C'est bloqué, car S ne peut être donné en entrée
+  end signal
+
+end module

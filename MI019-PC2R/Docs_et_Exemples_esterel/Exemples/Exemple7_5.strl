@@ -1,0 +1,14 @@
+module Exemple7_5 :
+  input E1, E2;
+  output S1, S2, S3, S4;
+
+  loop
+    emit S1;
+    abort
+      emit S2;
+      await E1;
+      emit S3
+    when E2 do emit S4 end abort
+  end loop
+
+end module

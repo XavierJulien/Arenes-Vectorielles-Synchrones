@@ -1,0 +1,35 @@
+2017-04-28 00:36:55 HostConfig[localhost]: Déploiement du descripteur de configuration admin.xml
+2017-04-28 00:36:55 HostConfig[localhost]: Déploiement du descripteur de configuration manager.xml
+2017-04-28 00:36:55 WebappLoader[/manager]: Deploying class repositories to work directory /users/nfs/Vrac/PC2R/TD10-TME10/jakarta-tomcat-4.1.30/work/Standalone/localhost/manager
+2017-04-28 00:36:55 ContextConfig[/manager]: Configuration d'un authentificateur (authenticator) pour la méthode BASIC
+2017-04-28 00:36:55 StandardManager[/manager]: Alimentation de la classe du générateur de nombre aléatoire java.security.SecureRandom
+2017-04-28 00:36:55 StandardManager[/manager]: L'alimentation du générateur de nombre aléatoire est terminé
+2017-04-28 00:36:55 StandardWrapper[/manager:default]: Chargement du conteneur (container) de servlet default
+2017-04-28 00:36:55 StandardWrapper[/manager:invoker]: Chargement du conteneur (container) de servlet invoker
+2017-04-28 00:36:55 HostConfig[localhost]: Déploiement du répertoire tomcat-docs de l'application web
+2017-04-28 00:36:55 StandardHost[localhost]: Installation d'une application pour le chemin de contexte /tomcat-docs depuis l'URL file:/users/nfs/Vrac/PC2R/TD10-TME10/jakarta-tomcat-4.1.30/webapps/tomcat-docs
+2017-04-28 00:36:55 WebappLoader[/tomcat-docs]: Deploying class repositories to work directory /users/nfs/Vrac/PC2R/TD10-TME10/jakarta-tomcat-4.1.30/work/Standalone/localhost/tomcat-docs
+2017-04-28 00:36:55 StandardManager[/tomcat-docs]: Alimentation de la classe du générateur de nombre aléatoire java.security.SecureRandom
+2017-04-28 00:36:55 StandardManager[/tomcat-docs]: L'alimentation du générateur de nombre aléatoire est terminé
+2017-04-28 00:36:55 StandardWrapper[/tomcat-docs:default]: Chargement du conteneur (container) de servlet default
+2017-04-28 00:36:55 StandardWrapper[/tomcat-docs:invoker]: Chargement du conteneur (container) de servlet invoker
+2017-04-28 00:36:55 HostConfig[localhost]: Déploiement du répertoire webdav de l'application web
+2017-04-28 00:36:55 StandardHost[localhost]: Installation d'une application pour le chemin de contexte /webdav depuis l'URL file:/users/nfs/Vrac/PC2R/TD10-TME10/jakarta-tomcat-4.1.30/webapps/webdav
+2017-04-28 00:36:55 WebappLoader[/webdav]: Deploying class repositories to work directory /users/nfs/Vrac/PC2R/TD10-TME10/jakarta-tomcat-4.1.30/work/Standalone/localhost/webdav
+2017-04-28 00:36:55 StandardManager[/webdav]: Alimentation de la classe du générateur de nombre aléatoire java.security.SecureRandom
+2017-04-28 00:36:55 StandardManager[/webdav]: L'alimentation du générateur de nombre aléatoire est terminé
+2017-04-28 00:36:55 StandardWrapper[/webdav:default]: Chargement du conteneur (container) de servlet default
+2017-04-28 00:36:55 StandardWrapper[/webdav:invoker]: Chargement du conteneur (container) de servlet invoker
+2017-04-28 00:36:55 HostConfig[localhost]: Déploiement du répertoire ROOT de l'application web
+2017-04-28 00:36:55 StandardHost[localhost]: Installation d'une application pour le chemin de contexte  depuis l'URL file:/users/nfs/Vrac/PC2R/TD10-TME10/jakarta-tomcat-4.1.30/webapps/ROOT
+2017-04-28 00:36:55 WebappLoader[]: Deploying class repositories to work directory /users/nfs/Vrac/PC2R/TD10-TME10/jakarta-tomcat-4.1.30/work/Standalone/localhost/_
+2017-04-28 00:36:55 StandardManager[]: Alimentation de la classe du générateur de nombre aléatoire java.security.SecureRandom
+2017-04-28 00:36:55 StandardManager[]: L'alimentation du générateur de nombre aléatoire est terminé
+2017-04-28 00:36:55 StandardWrapper[:default]: Chargement du conteneur (container) de servlet default
+2017-04-28 00:36:55 StandardWrapper[:invoker]: Chargement du conteneur (container) de servlet invoker
+2017-04-28 00:43:54 StandardHost[localhost]: Retrait de l'application web pour le chemin de contexte /tomcat-docs
+2017-04-28 00:43:54 StandardHost[localhost]: Retrait de l'application web pour le chemin de contexte 
+2017-04-28 00:43:54 StandardHost[localhost]: Retrait de l'application web pour le chemin de contexte /examples
+2017-04-28 00:43:54 StandardHost[localhost]: Retrait de l'application web pour le chemin de contexte /webdav
+2017-04-28 00:43:54 StandardHost[localhost]: Retrait de l'application web pour le chemin de contexte /admin
+2017-04-28 00:43:54 StandardHost[localhost]: Retrait de l'application web pour le chemin de contexte /manager

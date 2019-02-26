@@ -1,0 +1,35 @@
+
+module Exemple1_2_2 :
+  input  E;		% noms différents
+  output S2_1 : integer, S2_2 : integer;
+
+  emit S2_1(3);
+  await E;
+  emit S2_2(4);
+end module
+
+module Exemple :
+  input  EE;
+  output SS;
+
+  await EE;
+  emit SS
+end module
+
+
+
+module Exemple1_2_1 :
+  input  E;
+  output S, S1 : integer, S2 : integer;
+
+  [ present E then
+        emit S1(1)
+      else emit S2(2)
+    end present
+    ||
+    run Exemple1_2_2 [ signal S1 / S2_1,
+                              S2 / S2_2 ]
+  ];
+
+  emit S
+end module

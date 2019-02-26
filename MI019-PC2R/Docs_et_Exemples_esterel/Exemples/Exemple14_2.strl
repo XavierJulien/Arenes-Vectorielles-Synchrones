@@ -1,0 +1,70 @@
+module Exemple14_2 :
+input E1, E2, E3, E4;
+output S1, S2, S3, S4;
+
+% Erreur : on ne peut pas emettre un signal de son corps
+%    dans l'instant ou on attend ce meme signal.
+% [
+%    abort
+%       pause;
+%       emit E1;
+%    when E1;
+%    emit S1
+% ]
+%
+% ||
+%
+% Erreur : meme situation, mais croisee.
+% [
+%   abort
+%      pause;
+%      emit E2;
+%   when E3;
+%    emit S2
+% ]
+%
+% ||
+%
+% [
+%    abort
+%       pause;
+%       emit E3;
+%    when E2;
+%    emit S3
+% ]
+ 
+[
+   abort
+      await tick;
+      emit E1;
+      await 100 tick;
+   when E4;
+
+   emit S1;
+]
+
+||
+ 
+[
+   weak abort
+      await E1;
+      emit E2;
+      await 100 tick;
+   when E1;
+
+   emit S2
+]
+ 
+||
+
+[
+   weak abort
+      await E2;
+      emit S3;
+      await 100 tick;
+   when E2;
+
+   emit S4
+]
+
+end module

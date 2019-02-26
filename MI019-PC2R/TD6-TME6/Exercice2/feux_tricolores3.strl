@@ -1,0 +1,83 @@
+module NSEO :
+
+input  ACNSEO, RESET;
+output ACAUTRE, R, O, V;
+
+loop
+   loop
+      abort
+         sustain R
+      when ACNSEO;
+
+      emit R; pause;	% par securite, rouge encore un instant
+
+      repeat 4 times
+         emit V; pause
+      end repeat;
+      emit O; pause;
+      emit ACAUTRE
+   end loop
+each RESET
+
+end module
+
+%%%%%%%%%%
+
+module feux :
+
+input  ACNS, ACEO, RESET;
+output RNS, REO, ONS, OEO, VNS, VEO;
+
+relation ACNS # ACEO;
+
+[
+  await 5 tick;  % Les feux tricolores ne demarre qu'apres 5 tick.
+  emit ACNS	 % Et on commence par le Nord-Sud
+  ||
+  run NSEO[signal ACNS/ACNSEO, ACEO/ACAUTRE, RNS/R, ONS/O, VNS/V ]
+  ||
+  run NSEO[signal ACEO/ACNSEO, ACNS/ACAUTRE, REO/R, OEO/O, VEO/V]
+]
+
+end module
+
+
+%%%%%%%%%%
+
+%{
+
+$ esterel feux_tricolores3.strl -simul
+$ gcc -m32 -o feux_tricolores3 feux_tricolores3.c -I $ESTEREL/include -L $ESTEREL/lib -lcsimul
+$ feux_tricolores3
+feux> ;;;;;;;; RESET;;;;;;;;;;;ACNS;;;;;;;;;
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: REO VNS 
+--- Output: REO VNS 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: REO VNS 
+--- Output: REO VNS 
+--- Output: REO VNS 
+--- Output: REO VNS 
+--- Output: REO ONS 
+--- Output: RNS REO 
+--- Output: RNS VEO 
+--- Output: RNS VEO 
+feux> 
+
+}%

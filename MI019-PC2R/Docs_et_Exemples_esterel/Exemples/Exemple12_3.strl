@@ -1,0 +1,27 @@
+module Exemple12_3 :
+
+  output S1 : integer,  S2 := 0 : combine integer with +;
+
+  var accumulateur := 0 : integer in
+    loop
+      await S2; accumulateur := accumulateur + ?S2; emit S1(accumulateur)
+      ||
+      pause; emit S2(1)
+      ||
+      pause; emit S2(2)
+      ||
+      pause; emit S2(3)
+      ||
+      pause; emit S2(4)
+    end loop
+  end var
+
+end module
+
+%{
+Exemple12_3> ;;;;
+--- Output:
+--- Output: S1(10) S2(10)
+--- Output: S1(20) S2(10)
+--- Output: S1(30) S2(10)
+}%

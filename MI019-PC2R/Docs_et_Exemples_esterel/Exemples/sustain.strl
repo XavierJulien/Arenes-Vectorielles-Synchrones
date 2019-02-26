@@ -1,0 +1,11 @@
+module Sustain :
+  input I, I1;
+  output O1, O2, O3;
+abort
+  loop
+    await I;
+    sustain O1;
+    emit O2
+  end loop
+when I1 do emit O3 end abort
+end module

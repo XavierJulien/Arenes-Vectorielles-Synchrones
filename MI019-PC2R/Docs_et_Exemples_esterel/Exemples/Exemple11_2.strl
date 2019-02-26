@@ -1,0 +1,19 @@
+module Exemple11_2 :
+
+  input  FACT := 0 : integer;
+  output RESULTAT : integer;
+
+  procedure factoriel (integer) (integer);
+
+  loop
+    present FACT
+      then 
+        var aux := 1 : integer in
+          call factoriel (aux) (?FACT);
+          emit RESULTAT(aux)
+        end var
+    end present;
+    await FACT
+  end loop
+
+end module

@@ -1,0 +1,38 @@
+module Exemple12_4 :
+
+  function max (integer, integer) : integer;
+
+  output S1 : integer,  S2 := 0 : combine integer with max;
+
+  var accumulateur := 0 : integer in
+    loop
+      await S2; accumulateur := accumulateur + ?S2; emit S1(accumulateur)
+      ||
+      pause; emit S2(1)
+      ||
+      pause; emit S2(2)
+      ||
+      pause; emit S2(3)
+      ||
+      pause; emit S2(4)
+    end loop
+  end var
+
+end module
+
+%{
+Avec le prototype de la fonction max() definie dans le fichier Exemple12_4.h
+et la definition de la fonction max() donnee dans le fichier max.c.
+
+A compiler avec
+
+$ESTEREL/bin/esterel -simul Exemple12_4.strl -B Exemple12_4
+
+gcc -o Exemple12_4 Exemple12_4.c max.c -I$ESTEREL/include -L$ESTEREL/lib -lcsimul
+
+Exemple12_4> ;;;;
+--- Output:
+--- Output: S1(4) S2(4)
+--- Output: S1(8) S2(4)
+--- Output: S1(12) S2(4)
+}%

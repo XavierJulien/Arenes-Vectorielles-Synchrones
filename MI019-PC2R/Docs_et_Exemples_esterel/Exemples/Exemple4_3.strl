@@ -1,0 +1,15 @@
+module Exemple4_3 :
+
+  input  E1, E2, E3;
+  output S1, S2, S3;
+
+  await  E1;
+
+  await [not E1] do emit S1 end await;
+
+  await
+    case [E1 and E2] do emit S2
+    case [E1 or E2] do emit S3
+  end await
+
+end module

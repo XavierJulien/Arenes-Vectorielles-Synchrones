@@ -1,0 +1,36 @@
+module Exemple14_1 :
+input E1, E2, E3;
+output S1, S2, S3;
+
+% Erreur, car il y a un ordre (de sequences) dans l'instant
+% [
+%    await immediate E1;
+%    emit E1;
+%    emit S1
+% ]
+% 
+% ||
+
+[
+   emit E1;
+   await immediate E1;
+   emit S1
+]
+
+||
+
+[
+   emit E2;
+   await immediate E3;
+   emit S2
+]
+
+||
+
+[
+   emit E3;
+   await immediate E2;
+   emit S3
+]
+ 
+end module

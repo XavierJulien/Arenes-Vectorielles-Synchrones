@@ -1,0 +1,97 @@
+module NS :
+
+input  ACNS;
+output ACEO, RNS, ONS, VNS;
+
+loop
+   abort
+      sustain RNS
+   when ACNS;
+
+   emit RNS; pause;	% par securite, rouge encore un instant
+
+   repeat 4 times
+      emit VNS; pause
+   end repeat;
+   emit ONS; pause;
+   emit ACEO
+end loop
+
+end module
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+module EO :
+
+input  ACEO;
+output ACNS, REO, OEO, VEO;
+
+loop
+   abort
+      sustain REO
+   when ACEO;
+
+   emit REO; pause;	% par securite, rouge encore un instant
+
+   repeat 4 times
+      emit VEO; pause
+   end repeat;
+   emit OEO; pause;
+   emit ACNS
+end loop
+
+end module
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+module feux :
+
+input  ACNS, ACEO;
+output RNS, REO, ONS, OEO, VNS, VEO;
+
+relation ACNS # ACEO;
+
+[
+  await 5 tick;  % Les feux tricolores ne demarre qu'apres 5 tick.
+  emit ACNS	 % Et on commence par le Nord-Sud
+  ||
+  run NS[signal ACNS/ACNS]
+  ||
+  run EO[signal ACEO/ACEO]
+]
+
+end module
+
+
+%%%%%%%%%%
+
+%{
+
+$ esterel feux_tricolores1.strl -simul
+$ gcc -m32 -o feux_tricolores1 feux_tricolores1.c -I $ESTEREL/include -L $ESTEREL/lib -lcsimul
+$ feux_tricolores1
+feux> ;;;;;;;;;;;;;;;;;;
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: RNS REO 
+--- Output: REO VNS 
+--- Output: REO VNS 
+--- Output: REO VNS 
+--- Output: REO VNS 
+--- Output: REO ONS 
+--- Output: RNS REO 
+--- Output: RNS VEO 
+--- Output: RNS VEO 
+--- Output: RNS VEO 
+--- Output: RNS VEO 
+--- Output: RNS OEO 
+--- Output: RNS REO 
+feux> ;;
+--- Output: REO VNS 
+--- Output: REO VNS 
+feux>
+
+}%

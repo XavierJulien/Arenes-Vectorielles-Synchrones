@@ -1,0 +1,105 @@
+% $ESTEREL/bin/esterel -simul fruits_module.strl -B fruits_module
+%
+%
+% gcc -m32 -o fruits_module fruits_module.c -I $ESTEREL/include \
+%     -L $ESTEREL/lib -lcsimul
+%
+
+% gerant
+module Gerant : 
+output F : combine integer with +;	% fruits
+output MF,AF;				% ManqueFruit...AjouteFruit 
+
+var kf := 10 : integer in 
+   %quantite de fruit disponibles 
+   loop
+      await [F or AF]; 
+      present F then kf := kf - ?F end present; 
+      present AF then kf := kf + 10 end present; 
+      if kf <= 2 then emit MF end if
+   end loop
+end var
+
+end module
+
+
+% client
+module Client: 
+input Bi, Oi, Pi; 
+input Q;		% indiquer quand un client quitte le rayon 
+output Ci : integer;	% val : nb de kilos achetes quand le client quitte
+			%       le rayon
+output B : combine integer with +;	% bananes
+output O : combine integer with +;	% oranges
+output P : combine integer with +;	% pommes
+
+loop 
+   var ci := 0 : integer in
+      abort 
+         loop
+            await [Bi or Oi or Pi]; 
+            ci := ci + 1;
+            %un au plus d'apres l'exclusion 
+            present Bi then emit B(1) end present; 
+            present Oi then emit O(1) end present; 
+            present Pi then emit P(1) end present;  
+         end loop
+      when Q do emit Ci(ci)
+      end abort
+   end var
+end loop
+
+end module
+
+%
+%----------------- 
+%
+
+module FRUITS2:
+input B1, B2, O1, O2, P1, P2;
+input Q1, Q2;			% indiquer quand un client quitte le rayon 
+output C1 : integer, C2 : integer;	% nb de kilos achetes quand un client
+					%   quitte le rayon
+output B : combine integer with +;	% bananes
+output O : combine integer with +;	% oranges
+output P : combine integer with +;	% pommes
+output MB, MO, MP, AB, AO, AP;		% ManqueBanane...AjouteBanane 
+
+%un client ne prend qu'un fruit à la fois 
+relation B1 # O1 # P1; 
+relation B2 # O2 # P2; 
+
+[
+   % client 1
+   run Client[signal B1/Bi, O1/Oi, P1/Pi, C1/Ci , Q1/Q]
+|| 
+   % client 2 
+   run Client[signal B2/Bi, O2/Oi, P2/Pi, C2/Ci, Q2/Q ]
+|| 
+   % gerant bananes 
+   run Gerant[signal B/F, AB/ AF,MB /MF]
+|| 
+   % gerant oranges 
+   run Gerant[signal O/F, AO/ AF,MO/MF]
+|| 
+   % gerant pommes  
+   run Gerant[signal P/F, AP/ AF,MP/MF]
+||
+   % employe 
+   loop
+      var ao := false, ab := false , ap := false : boolean in 
+         await [MP or MB or MO];
+         %qu'est-ce qui manque? 
+         present MB then ab:= true end present; 
+         present MO then ao := true end present; 
+         present MP then ap := true end present; 
+         pause;
+         %prevenir le gerant concerne
+         if ab then emit AB end if;
+         if ao then emit AO end if; 
+         if ap then emit AP end if; 
+      end var
+   end loop
+]
+
+end module

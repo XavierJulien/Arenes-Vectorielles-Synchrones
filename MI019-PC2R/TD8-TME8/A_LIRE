@@ -1,0 +1,24 @@
+Attention :
+---------
+
+La commande rmiregistry installée sur les machines ppti n'utlise pas la
+même version java que javac. Ce qui provoque l'erreur :
+
+java.lang.UnsupportedClassVersionError: IRemoteCalculette : Unsupported major.minor version 51.0)
+
+Pour éviter ce désagrément, nous avons 3 choix :
+
+1. On évite d'utiliser la commande rmiregistry installée dans les
+   machines ppti.
+   Pour avoir quand même ce service d'enregistrement rmi, on peut instancié
+   un Registry. Comme dans  Exercice2/ServAutonomeCalculette.java
+
+   Registry reg= LocateRegistry.createRegistry(port);
+
+2. Lancer la commande rmiregistry d'une version 1.8 plus récente. Elle se
+   trouve dans  /Vrac/PC2R/java/bin/rmiregistry
+
+3. (Re)compiler tous vos programmes java avec la version 1.8 et utiliser
+   sa commande rmiregistry. Tout est dans /Vrac/PC2R/java (qui est un lien
+   vers /Vrac/PC2R/jdk1.8.0_121)
+

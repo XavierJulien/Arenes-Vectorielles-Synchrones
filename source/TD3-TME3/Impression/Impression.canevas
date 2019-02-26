@@ -1,0 +1,18 @@
+public class Impression extends Thread {
+
+
+    static Imprimante imprimante;
+    String[]          pages;
+
+
+    Impression (String s, Imprimante i) {
+	super(s);
+	imprimante = i;
+    }
+
+
+    public void run () {
+
+	/* ?????????? */
+    }
+}

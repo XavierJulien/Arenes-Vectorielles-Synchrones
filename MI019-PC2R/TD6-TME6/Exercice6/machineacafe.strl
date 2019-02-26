@@ -1,0 +1,46 @@
+% verification de prix; tout est au meme prix
+
+module attend_prix_annul :
+
+constant Prix_Produit : integer;
+input    PIECE : integer, ANNULER; 
+output   PIECE_REJETEE, RETOUR : integer; 
+output   TEST_PRIX : integer; 
+output   MONNAIE : integer; 
+output   PRIX_ATTEINT;
+input    PRODUIT_SERVI;
+
+loop
+   var prix_total := 0 : integer in 
+      abort
+         % pour quitter every par condition EXTERNE (l'entree ANNULER) 
+         trap paye in 
+            % pour quitter la   boucle every par condition INTERNE 
+            every PIECE do 
+               if (?PIECE < 3) 
+                   then prix_total := prix_total + ?PIECE   
+               else
+                  emit PIECE_REJETEE 
+               end if;  
+               if (prix_total >= Prix_Produit)
+                   then exit paye
+               end if;
+               emit TEST_PRIX(prix_total)
+            end every
+         handle paye do
+            if prix_total > 4
+                then emit MONNAIE(prix_total - Prix_Produit); 
+            end if;  
+            emit PRIX_ATTEINT
+         end trap
+      when ANNULER do
+         if prix_total > 0 
+             then emit RETOUR(prix_total)
+         end if
+      end abort
+end var;  	 
+await immediate [PRODUIT_SERVI or RETOUR]; 
+pause
+end loop
+
+end module

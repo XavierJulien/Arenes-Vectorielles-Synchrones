@@ -1,0 +1,3 @@
+
+ocamlopt -thread unix.cmxa threads.cmxa nom.ml -o nom
+

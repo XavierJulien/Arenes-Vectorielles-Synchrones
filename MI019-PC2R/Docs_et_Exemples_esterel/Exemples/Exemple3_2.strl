@@ -1,0 +1,22 @@
+module Exemple3_2 :
+
+  input  E1, E2;
+  output S1, S2, Stick;
+
+  present tick then
+    emit Stick;
+  end present;
+  present E1 then
+    emit S1
+  end present;
+  present tick then
+    emit Stick;
+  end present;
+  present E2 then
+    emit S2
+  end present;
+  present tick then
+    emit Stick;
+  end present;
+
+end module

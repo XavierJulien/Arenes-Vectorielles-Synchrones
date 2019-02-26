@@ -1,0 +1,53 @@
+
+module ZUDNB :
+
+input  UN, ZERO, DEUX;
+output NB : integer,
+       RESET;
+
+var compt := 0 : integer  in
+  loop
+     emit RESET;  
+     compt := 0;
+     loop
+	await [ UN or DEUX ];
+
+	present UN then
+	  compt := compt + 1
+	end present;
+
+	present DEUX then
+	  compt := compt + 2
+	end present;
+
+        if compt >= 3 and (compt mod  3) = 0 then
+	   emit NB(compt)
+	end if;
+     end loop
+
+  each ZERO
+end var			%compt
+
+end module
+
+
+%%%%%%%%%%
+
+%{
+
+$ esterel -simul ZUDNB.strl
+$ gcc -m32 -o ZUDNB ZUDNB.c -I $ESTEREL/include -L $ESTEREL/lib -lcsimul
+$ ZUDNB
+ZUDNB> ; 
+--- Output: RESET 
+ZUDNB> UN DEUX; DEUX;
+--- Output: NB(3) 
+--- Output: 
+ZUDNB> UN;
+--- Output: NB(6) 
+ZUDNB> ZERO; UN DEUX;
+--- Output: RESET 
+--- Output: NB(3) 
+ZUDNB>
+
+}%

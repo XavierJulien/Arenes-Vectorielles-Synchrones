@@ -1,0 +1,11 @@
+module Exemple7_3 :
+  input E;
+  output S1, S2;
+
+  loop
+    emit S1;
+    await E;
+    emit S2;
+  each tick
+
+end module

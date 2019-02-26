@@ -1,0 +1,24 @@
+module Exemple10_2 :
+  input  E, E1, E2, E3;
+  output S, S1, S3, S4;
+
+  trap X3, X1, X2 in
+
+    loop
+      emit S;
+      await E;
+    end loop
+    ||
+    await E1; exit X1
+    ||
+    await E2; exit X2
+    ||
+    await E3; exit X3
+
+    handle X1 do emit S1
+    handle X3 do emit S3
+  end trap;
+
+  emit S4;
+
+end module
