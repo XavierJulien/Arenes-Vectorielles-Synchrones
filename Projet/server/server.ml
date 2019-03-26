@@ -10,7 +10,6 @@ let serveur_process sock service =
   while true do
     let (s,caller) = Unix.accept sock in
       ignore(Thread.create service s);
-      service s
   done;;
 
 let echo_service chan =
@@ -18,7 +17,7 @@ let echo_service chan =
   and outchan = Unix.out_channel_of_descr chan in
     while true do
       try
-      let line = input_line inchan in
+        let line = input_line inchan in
         print_string ("hello"^line^"\n");
       with
       | End_of_file -> failwith "end of file"
