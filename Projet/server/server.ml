@@ -9,16 +9,19 @@ let creer_serveur max_co =
 let serveur_process sock service =
   while true do
     let (s,caller) = Unix.accept sock in
-      ignore(Thread.create service s)
+      ignore(Thread.create service s);
+      service s
   done;;
 
 let echo_service chan =
-  let message = Bytes.create 10000
-  and inchan = Unix.in_channel_of_descr chan
+  let inchan = Unix.in_channel_of_descr chan
   and outchan = Unix.out_channel_of_descr chan in
     while true do
+      try
       let line = input_line inchan in
-        output_string outchan ("hello"^line^"\n");flush outchan
+        print_string ("hello"^line^"\n");
+      with
+      | End_of_file -> failwith "end of file"
     done;;
 
 let main () =
