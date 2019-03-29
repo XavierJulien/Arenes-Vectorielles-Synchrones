@@ -10,16 +10,27 @@ public class Client {
 
   protected static final int PORT=2019;
   private Receive r;
+  private BufferedReader inchan,input;
+  private PrintStream outchan;
+  private String server_input;
 
   /***************************DATA****************************/
-  private String user;
+  private static String user;
   private String session_status;
   private ArrayList<String> player_list;
   private ArrayList<PlayerScore> player_score_list;
-  private Point objectif;
+  private Point target;
   private ArrayList<PlayerCoord> player_coord_list;
 
   /****************************AUX****************************/
+
+  public Client(BufferedReader inchan,
+                PrintStream outchan){
+    this.inchan = inchan;
+    this.outchan = outchan;
+    input = new BufferedReader(new InputStreamReader(System.in));
+
+  }
   public ArrayList<PlayerScore> parse_scores(String player_score_string){
     ArrayList<PlayerScore> res = new ArrayList<PlayerScore>();
     String[] player_score_string_split = player_score_string.split("|");
@@ -43,9 +54,9 @@ public class Client {
   }
   public Point parse_coord(String coord_string){
     Point p = new Point();
-    String[] pos_objectif = coord_string.split("[X,Y]+");
-    p.setX(Float.parseFloat(pos_objectif[0]));
-    p.setY(Float.parseFloat(pos_objectif[1]));
+    String[] pos_target = coord_string.split("[X,Y]+");
+    p.setX(Float.parseFloat(pos_target[0]));
+    p.setY(Float.parseFloat(pos_target[1]));
     return p;
   }
   /******************PROCESS_SERVER_REQUESTS******************/
@@ -55,7 +66,7 @@ public class Client {
     //PARSE PLAYER_SCORE
     player_score_list = parse_scores(server_input[2]);
     //PARSE COORD
-    objectif = parse_coord(server_input[3]);
+    target = parse_coord(server_input[3]);
   }
   public void process_newplayer(String new_user){
     player_list.add(new_user);
@@ -70,7 +81,7 @@ public class Client {
     }
   }
   public void process_session(String coords,String coord){
-    objectif = parse_coord(coord);
+    target = parse_coord(coord);
     player_coord_list = parse_coords(coords);
   }
   public void process_winner(String scores){
@@ -84,13 +95,10 @@ public class Client {
     player_coord_list = parse_coords(coords);
   }
   public void process_newobj(String coord,String scores){
-    objectif = parse_coord(coord);
+    target = parse_coord(coord);
     player_score_list = parse_scores(scores);
   }
-  public void communicate(String[] server_split,
-                          BufferedReader inchan,
-                          BufferedReader outchan,
-                          BufferedReader input){
+  public void communicate(String[] server_split) throws IOException {
     process_welcome(server_split);//met a jour les données avec le server_input du welcome
     r = new Receive(this,inchan);//thread d'écoute de requetes serveur
     //Send s = new Send(outchan);
@@ -104,6 +112,7 @@ public class Client {
         if(client_split[0] == user){
           outchan.println(client_input);
           outchan.flush();
+          return;
         }else{
           System.out.println("c'est pas bien de tricher");continue;
         }
@@ -113,32 +122,14 @@ public class Client {
       }
     }
   }
-
-  /****************************MAIN***************************/
-  public static void main(String[] args) {
-    Socket s;
-    BufferedReader inchan,input;
-    PrintStream outchan;
+  public void start_connection() throws IOException{
     String client_input,server_input;
-    try {
-      s = new Socket (InetAddress.getByName("127.0.0.1"),PORT);
-      inchan = new BufferedReader(new InputStreamReader(s.getInputStream()));
-      outchan = new PrintStream(s.getOutputStream());
-      System.out.println("Connection established : "+s.getInetAddress()+" port : "+s.getPort());
-      input = new BufferedReader(new InputStreamReader(System.in));
       while (true) {
         //Entry client
         System.out.print("?"); System.out.flush();
         client_input = input.readLine();
         String[] client_split = client_input.split("/");
-        if(client_split[0] == "CONNECT"){
-          user = client_split[1];
-          outchan.println(client_input);
-          outchan.flush();
-        }else{
-          outchan.println(client_input);
-          outchan.flush();
-        }
+        if(client_split[0] == "CONNECT") user = client_split[1];
         outchan.println(client_input);
         outchan.flush();
         //Response server
@@ -146,15 +137,29 @@ public class Client {
         System.out.println("! "+server_input);
         String[] server_split = server_input.split("/");
         switch(server_split[0]){
-          case "WELCOME" : communicate(server_split,inchan,input);break;
-          case "DENIED" : System.out.println("Error : "+server_split[1]);continue;
+          case "WELCOME" : communicate(server_split);System.out.println("End of connection");return;
+          case "DENIED" : System.out.println("Error : "+server_split[1]);break;
           default : System.out.println("Error : Server side");
         }
       }
+  }
+  /****************************MAIN***************************/
+  public static void main(String[] args) {
+    Socket sock = null;
+    BufferedReader inchan,input;
+    PrintStream outchan;
+    String client_input;
+    try {
+      sock = new Socket (InetAddress.getByName("127.0.0.1"),PORT);
+      inchan = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+      outchan = new PrintStream(sock.getOutputStream());
+      System.out.println("Connection established : "+sock.getInetAddress()+" port : "+sock.getPort());
+      Client c  = new Client(inchan,outchan);
+      c.start_connection();
     }catch (IOException e) {
       System.err.println(e);
     }finally {
-      try {if (s != null) s.close();} catch (IOException e2) {}
+      try{ if (sock != null) sock.close(); }catch (IOException e2){System.err.println(e2);}
     }
   }
 

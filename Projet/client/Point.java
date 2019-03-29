@@ -13,6 +13,6 @@ public class Point{
 
   public float getX(){return x;}
   public float getY(){return y;}
-  public float setX(float x){this.x = x;}
-  public float setY(float y){this.y = y;}
+  public void setX(float x){this.x = x;}
+  public void setY(float y){this.y = y;}
 }
