@@ -2,15 +2,6 @@ exception Fin
 exception BadRequest
 exception AlreadyExists
 
-<<<<<<< Updated upstream
-let mutex_list_players = Mutex.create (); (*sync for creating player with name*)
-
-type car = {
-	position: float * float;
-	direction: float;
-	speed: float * float
-	}
-=======
 (* VERIFIER AVEC UN PROF AU NIVEAU DE LA LIAISON STATIQUE,
 POUR LES CHAMPS MUTABLES ENREGISTREMENTS, EST CE QUE LA VALEUR EST FIXEE DES
 LA D2FINITION DE LA FONCTION OU EST CE QUE CELA PREND EN COMPTE TOUTES LES MODIFICATIONS
@@ -27,7 +18,6 @@ type vehicule = {
 	mutable direction: float;
 	mutable speed: float * float
 }
->>>>>>> Stashed changes
 
 type player = {
     name: string;
@@ -42,16 +32,6 @@ type player = {
 type session = {
 		mutable players_list : player list;
     mutable playing : bool;
-<<<<<<< Updated upstream
-    mutable objectif : float * float
-	win_cap : int
-	}
-
-(*permet de créer un joueur*)
-let create_player user sock inc out = {
-    name = user;
-    socket = sock;
-=======
     mutable target: float * float
 		obj_radius: float
 		win_cap : int
@@ -59,47 +39,19 @@ let create_player user sock inc out = {
 
 (*permet de créer un joueur*)
 let create_player user sock inc out =
-	{name = user;
+	(* ajouter le comportement random de la position *)
+	{ name = user;
   	socket = sock;
->>>>>>> Stashed changes
     inchan = inc;
     outchan = out;
     score = 0;
     car = {position=(0.0,0.0);direction=0.0;speed=(0.0,0.0)}
-    (*playing = WAITING*)
 	}
 
-<<<<<<< Updated upstream
-let current_session = {
-    list_players = [];
-    playing = false;
-		win_cap = 10
-  }
-
-let parse_request req =
-  let s = Str.split (Str.regexp "/") req in
-  if (List.length s) > 0 then s else raise BadRequest
-
-let parse_coord c =
-	let lcoord = Str.split (Str.regexp "X\|Y") c in
-		(float_of_string (List.nth lcoord 0),float_of_string (List.nth lcoord 1))
-
-let rec stringify_scores list_players =
-	 match list_players with
-	 	|hd::tl -> if tl <> [] then hd.name":"^hd.score^"|")^(stringify_scores tl)
-	 						   else s^hd.name":"^hd.score^"/"
-
-let make_welcome player =
-	let phase = if current_session.playing then "playing/" else "waiting/"
-	and scores = stringify_scores current_session.list_players
-	and coords = let (x,y) = current_session.objectif in
-	"("^(string_of_float x)^","(string_of_float y)^")" in
-	output_string player.outchan "WELCOME/"^phase^scores^coords^"/\n";
-=======
 let current_session =
-  {players_list = [];
-		playing = false;
-		target = (0.0*0.0);
+  { players_list = [];
+		mutable playing = false;
+		mutable target = (0.0*0.0);
 		win_cap = 10
   }
 
@@ -136,7 +88,6 @@ let send_welcome player =
 	and coord = stringify_coord current_session.target
 	in
 	output_string player.outchan "WELCOME/"^phase^scores^coord^"/\n";
->>>>>>> Stashed changes
 	flush player.outchan
 
 let send_newplayer user_name =
@@ -194,21 +145,6 @@ let send_newobj () =
 		List.iter send_fun coord scores current_session.
 (*let send_denied chan =
 	output_string chan "DENIED/";
-<<<<<<< Updated upstream
-	flush chan*)
-let make_newplayer user_name =
-	let send_fun p =
-	if p.name<>user_name then
-	output_string p.outchan "NEWPLAYER/"^user_name^"/\n";
-	flush player.outchan
-	else ()
-
-let find_player user_name =
-	List.find (fun p -> if p.name=user_name then true else false) current_session.list_players
-
-let process_exit user_name =
-	let rec process_aux l_players =
-=======
 	flush chan *)
 
 
@@ -217,16 +153,11 @@ let process_exit user_name =
 
 let process_exit user_name =
 	let rec remove_aux l_players =
->>>>>>> Stashed changes
 		match l_players with
 		|{name;_} as hd::tl -> if name=user_name then tl else hd::(process_aux tl)
 		|[] -> raise NotFound in
 		try
-<<<<<<< Updated upstream
-			let player = find_player user_name in
-=======
 			let player = find_player user_name current_session.players_list in
->>>>>>> Stashed changes
 			Unix.close player.socket;
 			Mutex.lock mutex_players_list;
 			current_session.players_list <- remove_aux current_session.players_list;
@@ -234,48 +165,6 @@ let process_exit user_name =
 			send_playerleft player.name
 		with NotFound -> print_endline "trouver quoi faire si cela arrive"
 
-<<<<<<< Updated upstream
-let process_newpos user_name coord =
-	let player = find_player user_name in
-		player.vehicule.position <- parse_coord coord
-
-let process_player player =
-	while true do
-		let request = input_line player.inchan
-		and req_parse = parse_request request in
-			match List.hd req_parse with
-			|"EXIT" -> process_exit (List.nth req_parse 1)
-			|"NEWPOS" -> process_newpos (List.nth req_parse 1)
-			|_ -> ()
-	done
-
-let process_new_connect client_socket =
-	let inchan = Unix.in_channel_of_descr client_socket
-	and outchan = Unix.out_channel_of_descr client_socket in
-		let request = input_line inchan in
-		let req_parse = parse_request request in
-			try
-				match List.hd req_parse with
-					| "CONNECT" ->
-						let n = (List.nth req_parse 1) in
-							Mutex.lock mutex_list_players;
-							if (List.exists (fun {name;_} -> name==n) current_session.list_players)
-							then raise AlreadyExists
-							else begin
-								let player = (create_player n client_socket inchan outchan) in
-								current_session.list_players<-player::current_session.list_players;
-								make_welcome player;
-								process_player player
-								end
-						    Mutex.unlock mutex_list_players
-					| _ -> raise BadRequest
-			with
-				|BadRequest -> output_string outchan "DENIED/BadRequest\n";
-							   				 flush outchan
-				|AlreadyExists -> output_string outchan "DENIED/AlreadyExists\n";
-							   					flush outchan
-
-=======
 let process_newpos coord player =
 		player.car.position <- parse_coord coord
 
@@ -334,15 +223,10 @@ let start_new_client client_socket =
 (********************** SERVER STARTING ***********************)
 (* fonction de lancement du serveur : à chaque nouvelle connexion
  		lance un thread sur start_new_client sur le socket du client *)
->>>>>>> Stashed changes
 let start_server nb_c =
   let server_socket = Unix.socket Unix.PF_INET SOCK_STREAM 0
   and addr = Unix.inet_addr_of_string "127.0.0.1" in
   begin
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
     Unix.bind server_socket (Unix.ADDR_INET(addr, 2019));
     Unix.listen server_socket nb_c;
     while true do
