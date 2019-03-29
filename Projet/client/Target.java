@@ -1,18 +1,16 @@
-public class Point{
+public class Target{
   private float x;
   private float y;
 
-  public Point(float x,float y){
+  public Target(float x,float y){
     this.x = x;
     this.y = y;
   }
-  public Point(){
-    this.x = (float)0;
-    this.y = (float)0;
-  }
 
+  //GETTERS
   public float getX(){return x;}
   public float getY(){return y;}
+  //SETTERS
   public void setX(float x){this.x = x;}
   public void setY(float y){this.y = y;}
 }

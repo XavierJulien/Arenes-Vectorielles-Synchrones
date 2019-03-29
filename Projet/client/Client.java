@@ -17,86 +17,80 @@ public class Client {
   /***************************DATA****************************/
   private static String user;
   private String session_status;
-  private ArrayList<String> player_list;
-  private ArrayList<PlayerScore> player_score_list;
-  private Point target;
-  private ArrayList<PlayerCoord> player_coord_list;
+  private ArrayList<Player> player_list;
+  private Target target;
 
   /****************************AUX****************************/
 
-  public Client(BufferedReader inchan,
-                PrintStream outchan){
+  public Client(BufferedReader inchan,PrintStream outchan){
     this.inchan = inchan;
     this.outchan = outchan;
     input = new BufferedReader(new InputStreamReader(System.in));
-
   }
-  public ArrayList<PlayerScore> parse_scores(String player_score_string){
-    ArrayList<PlayerScore> res = new ArrayList<PlayerScore>();
+  public ArrayList<Player> parse_scores(String player_score_string){
+    ArrayList<Player> res = new ArrayList<Player>();
     String[] player_score_string_split = player_score_string.split("|");
     for(int i = 0;i<player_score_string_split.length;i++){
       String[] player_score = player_score_string_split[i].split(":");
-      PlayerScore temp = new PlayerScore(player_score[0],player_score[1]);
+      Player temp = new Player(player_score[0],Integer.parseInt(player_score[1]));
       res.add(temp);
     }
     return res;
   }
-  public ArrayList<PlayerCoord> parse_coords(String player_coord_string){
-    ArrayList<PlayerCoord> res = new ArrayList<PlayerCoord>();
+  public void parse_coords(String player_coord_string){
     String[] player_coord_string_split = player_coord_string.split("|");
     for(int i = 0;i<player_coord_string_split.length;i++){
-      String[] player_coord = player_coord_string_split[i].split(":");
-      Point p_temp = parse_coord(player_coord[1]);
-      PlayerCoord temp = new PlayerCoord(player_coord[0],p_temp);
-      res.add(temp);
+      for(int j=0;j<player_list.size();j++){
+        String[] player_coord = player_coord_string_split[i].split(":");
+        if(player_list.get(j).getName() == player_coord[0]){
+          Car vehicule = parse_car(player_coord[1]);
+          player_list.get(j).setVehicule(vehicule);
+        }
+      }
     }
-    return res;
   }
-  public Point parse_coord(String coord_string){
-    Point p = new Point();
+  public Car parse_car(String coord_string){
     String[] pos_target = coord_string.split("[X,Y]+");
-    p.setX(Float.parseFloat(pos_target[0]));
-    p.setY(Float.parseFloat(pos_target[1]));
-    return p;
+    return new Car(Float.parseFloat(pos_target[0]),Float.parseFloat(pos_target[1]));
+  }
+  public Target parse_target(String coord_string){
+    String[] pos_target = coord_string.split("[X,Y]+");
+    return new Target(Float.parseFloat(pos_target[0]),Float.parseFloat(pos_target[1]));
   }
   /******************PROCESS_SERVER_REQUESTS******************/
   public void process_welcome(String[] server_input){
     //PARSE PHASE
     session_status = server_input[1];
     //PARSE PLAYER_SCORE
-    player_score_list = parse_scores(server_input[2]);
+    player_list = parse_scores(server_input[2]);
     //PARSE COORD
-    target = parse_coord(server_input[3]);
+    target = parse_target(server_input[3]);
   }
   public void process_newplayer(String new_user){
-    player_list.add(new_user);
+    player_list.add(new Player(new_user,0));
   }
-  public void process_playerleft(String user){
-    player_list.remove(user);
-    for(int i = 0;i<player_score_list.size();i++){
-      if ((player_score_list.get(i)).getUser() == user) player_score_list.remove(user);
-    }
-    for(int i = 0;i<player_coord_list.size();i++){
-      if ((player_coord_list.get(i)).getUser() == user) player_coord_list.remove(user);
+  public void process_playerleft(String name){
+    for(int i = 0;i<player_list.size();i++){
+      if ((player_list.get(i)).getName() == name) player_list.remove(i);
     }
   }
   public void process_session(String coords,String coord){
-    target = parse_coord(coord);
-    player_coord_list = parse_coords(coords);
+    target = parse_target(coord);
+    parse_coords(coords);
   }
   public void process_winner(String scores){
-    player_score_list = parse_scores(scores);
+    player_list = parse_scores(scores);
     System.out.println("Fin de Session -> RESULTATS :");
-    for(int i = 0;i<player_score_list.size();i++){
-      System.out.println("player "+(player_score_list.get(i)).getUser()+" -> "+(player_score_list.get(i)).getScore()+" points.");
+    for(int i = 0;i<player_list.size();i++){
+      System.out.println("player "+(player_list.get(i)).getName()+" -> "+(player_list.get(i)).getScore()+" points.");
     }
   }
   public void process_tick(String coords){
-    player_coord_list = parse_coords(coords);
+    parse_coords(coords);
   }
   public void process_newobj(String coord,String scores){
-    target = parse_coord(coord);
-    player_score_list = parse_scores(scores);
+    target = parse_target(coord);
+    player_list = parse_scores(scores);
   }
   public void communicate(String[] server_split) throws IOException {
     process_welcome(server_split);//met a jour les données avec le server_input du welcome
