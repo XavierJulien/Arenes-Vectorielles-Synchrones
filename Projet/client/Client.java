@@ -15,7 +15,7 @@ public class Client {
   private String server_input;
 
   /***************************DATA****************************/
-  private static String user;
+  private String user;
   private String session_status;
   private ArrayList<Player> player_list;
   private Target target;
@@ -28,7 +28,6 @@ public class Client {
     input = new BufferedReader(new InputStreamReader(System.in));
   }
   public ArrayList<Player> parse_scores(String player_score_string){
-    System.out.println(player_score_string);
     ArrayList<Player> res = new ArrayList<Player>();
     String[] player_score_string_split = player_score_string.split("[|]");
     for(int i = 0;i<player_score_string_split.length;i++){
@@ -55,7 +54,6 @@ public class Client {
     return new Car(Float.parseFloat(pos_target[0]),Float.parseFloat(pos_target[1]));
   }
   public Target parse_target(String coord_string){
-    System.out.println(coord_string);
     String[] pos_target = coord_string.split("[X,Y]");
     return new Target(Float.parseFloat(pos_target[1]),Float.parseFloat(pos_target[2]));
   }
@@ -105,12 +103,13 @@ public class Client {
       System.out.print("?"); System.out.flush();
       client_input = input.readLine();
       String[] client_split = client_input.split("/");
-      if(client_split[0] == "EXIT"){
-        if(client_split[0] == user){
+      if(client_split[0].equals("EXIT")){
+        if(client_split[1].equals(user)){
           r.setRunning(false);
-          r.interrupt();
           outchan.println(client_input);
           outchan.flush();
+          inchan.close();
+          outchan.close();
           return;
         }else{
           System.out.println("c'est pas bien de tricher");continue;
@@ -128,7 +127,7 @@ public class Client {
         System.out.print("?"); System.out.flush();
         client_input = input.readLine();
         String[] client_split = client_input.split("/");
-        if(client_split[0] == "CONNECT") user = client_split[1];
+        if(client_split[0].equals("CONNECT")) user = client_split[1];
         outchan.println(client_input);
         outchan.flush();
         //Response server
@@ -136,7 +135,7 @@ public class Client {
         System.out.println("! "+server_input);
         String[] server_split = server_input.split("/");
         switch(server_split[0]){
-          case "WELCOME" : communicate(server_split);System.out.println("End of connection");return;
+          case "WELCOME" :communicate(server_split);System.out.println("End of connection");return;
           case "DENIED" : System.out.println("Error : "+server_split[1]);break;
           default : System.out.println("Error : Server side");
         }

@@ -16,26 +16,23 @@ public class Receive extends Thread {
   public void setRunning(boolean b){isRunning = b;}
 
   public void run(){
-    while(true){
-      if(isRunning){
+    while(isRunning){
         try{
           server_input = inchan.readLine();
-          System.out.println(isRunning);
-          String[] server_split = server_input.split("/");
-          switch(server_split[0]){
-            case "NEWPLAYER" : client.process_newplayer(server_split[1]);break;
-            case "PLAYERLEFT" : client.process_playerleft(server_split[1]);break;
-            case "SESSION" : client.process_session(server_split[1],server_split[2]);break;
-            case "WINNER" : client.process_winner(server_split[1]);break;
-            case "TICK" : client.process_tick(server_split[1]);break;
-            case "NEWOBJ" : client.process_newobj(server_split[1],server_split[2]);break;
-          }
+          if(server_input != null){
+            String[] server_split = server_input.split("/");
+            switch(server_split[0]){
+              case "NEWPLAYER" : client.process_newplayer(server_split[1]);break;
+              case "PLAYERLEFT" : client.process_playerleft(server_split[1]);break;
+              case "SESSION" : client.process_session(server_split[1],server_split[2]);break;
+              case "WINNER" : client.process_winner(server_split[1]);break;
+              case "TICK" : client.process_tick(server_split[1]);break;
+              case "NEWOBJ" : client.process_newobj(server_split[1],server_split[2]);break;
+            }
+          }else{/*System.out.println("on ne recoit rien");*/continue;}
         }catch(IOException e){
             System.out.println("je ne sait pas quand ça arrive mais fin de receive");break;
         }
-      }else{
-        break;
-      }
     }
   }
 }

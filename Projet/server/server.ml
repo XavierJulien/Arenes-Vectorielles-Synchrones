@@ -75,6 +75,9 @@ let rec stringify_coords p_list =
 let find_player user_name =
 	List.find (fun p -> if p.name=user_name then true else false) current_session.players_list
 
+let exists_player user_name =
+	List.exists (fun p -> if p.name=user_name then true else false) current_session.players_list
+
 let get_distance (x1,y1) (x2,y2) =
 	sqrt((x2-.x1)*.(x2-.x1)+.(y2-.y1)*.(y2-.y1))
 
@@ -278,14 +281,16 @@ let tick_thread () =
  doivent être dans le même bloc mutex, sinon un autre client peut potentiellement
  s'être inséré entre la vérif et l'ajout de ce client  *)
 let process_connect user_name client_socket inchan outchan =
+	print_endline user_name;
 	Mutex.lock mutex_players_list;
-	if (List.exists (fun {name;_} -> name==user_name) current_session.players_list) then
+	if exists_player user_name then
 		begin
 		Mutex.unlock mutex_players_list;
 		raise AlreadyExists (* est ce qu'il faut libérer avant de raise ? *)
 		end
 	else
 		begin
+		print_endline "passe";
 		let player = (create_player user_name client_socket inchan outchan) in
 		current_session.players_list<-player::current_session.players_list;
 		Condition.signal cond_least1player
@@ -302,17 +307,24 @@ let process_connect user_name client_socket inchan outchan =
 let start_new_client client_socket =
 	let inchan = Unix.in_channel_of_descr client_socket
 	and outchan = Unix.out_channel_of_descr client_socket in
+	let rec try_connect_loop () =
+		begin
 		let request = input_line inchan in
-		let parsed_req = parse_request request in
-			try
-				match List.hd parsed_req with
-					| "CONNECT" -> process_connect (List.nth parsed_req 1) client_socket inchan outchan;
-					| _ -> raise BadRequest
-			with
-				|BadRequest -> output_string outchan "DENIED/BadRequest\n";
-							   flush outchan
-				|AlreadyExists -> output_string outchan "DENIED/AlreadyExists\n";
-							   flush outchan
+			let parsed_req = parse_request request in
+					try
+						match List.hd parsed_req with
+							| "CONNECT" -> process_connect (List.nth parsed_req 1) client_socket inchan outchan;
+							| _ -> raise BadRequest
+					with
+						|BadRequest -> output_string outchan "DENIED/BadRequest\n";
+									   			 flush outchan;
+										 		 	 try_connect_loop ()
+						|AlreadyExists -> output_string outchan "DENIED/AlreadyExists\n";
+									   				  flush outchan;
+										 					try_connect_loop ()
+		end
+	in try_connect_loop ()
+
 
 
 (********************** SERVER STARTING ***********************)
@@ -328,7 +340,6 @@ let start_server nb_c =
       let (client_socket, _) = Unix.accept server_socket in
       	print_endline "Nouvelle connexion\n";
         ignore (Thread.create start_new_client client_socket);
-        print_endline "Nb"
     done
   end;;
 
