@@ -282,7 +282,11 @@ let tick_thread () =
 let process_connect user_name client_socket inchan outchan =
 	print_endline user_name;
 	Mutex.lock mutex_players_list;
+<<<<<<< Updated upstream
 	if exists_player user_name then
+=======
+	if (List.exists (fun p -> p.name==user_name) current_session.players_list) then
+>>>>>>> Stashed changes
 		begin
 		Mutex.unlock mutex_players_list;
 		raise AlreadyExists (* est ce qu'il faut libérer avant de raise ? *)
@@ -309,6 +313,7 @@ let start_new_client client_socket =
 	let rec try_connect_loop () =
 		begin
 		let request = input_line inchan in
+<<<<<<< Updated upstream
 			let parsed_req = parse_request request in
 					try
 						match List.hd parsed_req with
@@ -326,6 +331,23 @@ let start_new_client client_socket =
 
 
 
+=======
+		let parsed_req = parse_request request in
+			try
+				match List.hd parsed_req with
+					| "CONNECT" -> process_connect (List.nth parsed_req 1) client_socket inchan outchan;
+					| _ -> raise BadRequest
+			with
+				|BadRequest -> output_string outchan "DENIED/BadRequest\n";
+							   flush outchan;
+								 try_connect_loop ()
+				|AlreadyExists -> output_string outchan "DENIED/AlreadyExists\n";
+							   flush outchan;
+								 try_connect_loop ()
+		end
+	in
+	try_connect_loop ()
+>>>>>>> Stashed changes
 (********************** SERVER STARTING ***********************)
 (* fonction de lancement du serveur : à chaque nouvelle connexion
  		lance un thread sur start_new_client sur le socket du client *)
