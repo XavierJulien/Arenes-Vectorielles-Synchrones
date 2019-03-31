@@ -28,10 +28,11 @@ public class Client {
     input = new BufferedReader(new InputStreamReader(System.in));
   }
   public ArrayList<Player> parse_scores(String player_score_string){
+    System.out.println(player_score_string);
     ArrayList<Player> res = new ArrayList<Player>();
-    String[] player_score_string_split = player_score_string.split("|");
+    String[] player_score_string_split = player_score_string.split("[|]");
     for(int i = 0;i<player_score_string_split.length;i++){
-      String[] player_score = player_score_string_split[i].split(":");
+      String[] player_score = player_score_string_split[i].split("[:]");
       Player temp = new Player(player_score[0],Integer.parseInt(player_score[1]));
       res.add(temp);
     }
@@ -54,8 +55,9 @@ public class Client {
     return new Car(Float.parseFloat(pos_target[0]),Float.parseFloat(pos_target[1]));
   }
   public Target parse_target(String coord_string){
-    String[] pos_target = coord_string.split("[X,Y]+");
-    return new Target(Float.parseFloat(pos_target[0]),Float.parseFloat(pos_target[1]));
+    System.out.println(coord_string);
+    String[] pos_target = coord_string.split("[X,Y]");
+    return new Target(Float.parseFloat(pos_target[1]),Float.parseFloat(pos_target[2]));
   }
   /******************PROCESS_SERVER_REQUESTS******************/
   public void process_welcome(String[] server_input){
@@ -67,6 +69,7 @@ public class Client {
     target = parse_target(server_input[3]);
   }
   public void process_newplayer(String new_user){
+    System.out.println("newplayer");
     player_list.add(new Player(new_user,0));
   }
   public void process_playerleft(String name){
@@ -96,7 +99,7 @@ public class Client {
     process_welcome(server_split);//met a jour les données avec le server_input du welcome
     r = new Receive(this,inchan);//thread d'écoute de requetes serveur
     //Send s = new Send(outchan);
-    r.run();
+    r.start();
     String client_input;
     while(true){
       System.out.print("?"); System.out.flush();
@@ -104,6 +107,8 @@ public class Client {
       String[] client_split = client_input.split("/");
       if(client_split[0] == "EXIT"){
         if(client_split[0] == user){
+          r.setRunning(false);
+          r.interrupt();
           outchan.println(client_input);
           outchan.flush();
           return;
