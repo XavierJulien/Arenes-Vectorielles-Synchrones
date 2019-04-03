@@ -1,6 +1,7 @@
 exception Fin
 exception BadRequest
 exception AlreadyExists
+exception Disconnection
 
 (* OK pour les mutables, pas besoin de les passer en paramètre *)
 
@@ -60,7 +61,7 @@ let current_session =
 { players_list = [];
 		playing = false;
 		target = alea_pos();
-		win_cap = 10
+		win_cap = 3
   }
 
 let parse_request req_string =
@@ -133,6 +134,7 @@ let send_newplayer user_name =
 
 let send_playerleft user_name =
 	let send_fun p =
+		print_endline p.name;
 		output_string p.outchan ("PLAYERLEFT/"^user_name^"/\n");
 		flush p.outchan
 	in
@@ -193,19 +195,22 @@ let start_session () =
 		Condition.wait cond_least1player mutex_players_list
 	done;
 	Mutex.unlock mutex_players_list;
-	print_endline "debut de l'attente 40sec";
 	Unix.sleep waiting_time;
-	print_endline "fin des 40sec";
 	Mutex.lock mutex_players_list;
+	(* il se peut que l'unique joueur connecté ait quitté
+	la session au cours de l'attente, affecter la valeur de playing en fonction
+	de la longueur de la liste de joueurs *)
+	if (List.length current_session.players_list) > 0 then
+	begin
 	current_session.playing <- true;
-	send_session ();
-	Mutex.unlock mutex_players_list;
-	print_endline "Fin start_session"
-
+	send_session ()
+	end
+	else ();
+	Mutex.unlock mutex_players_list
 
 
 (*********************** RESTARTING SESSION **************************)
-
+(* utilisation de cette fonction suite à un gagnant de session *)
 (* normalement il n'y a qu'un thread client qui a accès à cette fonction à un moment *)
 let restart_session () =
 	Mutex.lock mutex_players_list;
@@ -233,14 +238,17 @@ let process_exit user_name =
 		begin
 		Mutex.lock mutex_players_list;
 		let player = find_player user_name in
-		current_session.players_list <- List.filter (fun p -> p.name=user_name) current_session.players_list;
+		current_session.players_list <- List.filter (fun p -> p.name<>user_name) current_session.players_list;
+		if (List.length current_session.players_list) = 0 then (* dernier joueur*)
+		begin
+		current_session.playing <- false;
+		ignore (Thread.create start_session ());
+		end;
 		Mutex.unlock mutex_players_list;
 		(*ferme le thread*)
 		(* close_in player.inchan; *)
 		(* close_out player.outchan; *)
-		print_endline "avat close";
 		Unix.close player.socket;
-		print_endline "apres close";
 		send_playerleft player.name
 		end
 	with Not_found -> print_endline "Le joueur n'est plus dans la liste"
@@ -259,6 +267,7 @@ let process_newpos coord user_name =
 			if (get_distance current_session.target parsed_coord <= obj_radius) then
 				(* le joueur a touché l'objectif *)
 				begin
+				print_endline "le joueur a touché le target";
 				player.score <- player.score+1;
 				if (player.score = current_session.win_cap) then
 					(* le joueur a atteint win_cap : send_winner & restart_session *)
@@ -284,23 +293,19 @@ let process_newpos coord user_name =
 (********************** thread's looping  ***********************)
 let receive_req user_name =
 	let player = find_player user_name in
+	try
 		while true do
 			let request = input_line player.inchan in
 			let parsed_req = parse_request request in
 			try
 				match List.hd parsed_req with
-				|"EXIT" -> process_exit (List.nth parsed_req 1);
-										if (List.length current_session.players_list) = 0 then
-										begin (* dernier joueur*)
-										current_session.playing =false;
-										Thread.create(start_session ())
-										end;
-										Thread.exit ()
+				|"EXIT" -> process_exit (List.nth parsed_req 1);raise Disconnection
 				|"NEWPOS" -> process_newpos (List.nth parsed_req 1) user_name
 				|_ -> raise BadRequest
 			with BadRequest -> output_string player.outchan "DENIED/BadRequest\n";
 										 			flush player.outchan
 		done
+	with Disconnection -> ()
 
 let tick_thread () =
 	while true do
@@ -343,6 +348,7 @@ let process_connect user_name client_socket inchan outchan =
 (********************** FIRST CONNECTION ***********************)
 (* c'est ce thread qui est lancé lorsqu'un client se connecte *)
 let start_new_client client_socket =
+	print_endline "dans un nouveau client";
 	let inchan = Unix.in_channel_of_descr client_socket
 	and outchan = Unix.out_channel_of_descr client_socket in
 	let rec try_connect_loop () =

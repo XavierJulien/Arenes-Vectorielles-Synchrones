@@ -68,7 +68,7 @@ public class Client {
     target = parse_target(server_input[3]);
   }
   public void process_newplayer(String new_user){
-    System.out.println("newplayer");
+    //System.out.println("newplayer : "+new_user);
     player_list.add(new Player(new_user,0));
   }
   public void process_denied(String error){
@@ -78,11 +78,13 @@ public class Client {
     for(int i = 0;i<player_list.size();i++){
       if ((player_list.get(i)).getName() == name) player_list.remove(i);
     }
+    //System.out.println("playerleft : "+name);
   }
   public void process_session(String coords,String coord){
     target = parse_target(coord);
     parse_coords(coords);
     isPlaying = true;
+    //System.out.println("session : "+coords+" "+coord);
   }
   public void process_winner(String scores){
     player_list = parse_scores(scores);
@@ -98,6 +100,7 @@ public class Client {
   public void process_newobj(String coord,String scores){
     target = parse_target(coord);
     player_list = parse_scores(scores);
+    //System.out.println(coord);
   }
   public void communicate(String[] server_split) throws IOException {
     process_welcome(server_split);//met a jour les données avec le server_input du welcome
@@ -107,9 +110,9 @@ public class Client {
     String client_input;
     while(true){
       System.out.print("?"); System.out.flush();
-      client_input = input.readLine();
+      client_input = input.readLine(); //lecture commande du client
       String[] client_split = client_input.split("/");
-      if(client_split[0].equals("EXIT")){
+      if(client_split[0].equals("EXIT")){ // à ce stade, la seule commande qu'il peut émettre est exit de lui meme
         if(client_split[1].equals(user)){
           r.setRunning(false);
           outchan.println(client_input);
@@ -118,13 +121,15 @@ public class Client {
           outchan.close();
           return;
         }else{
-          System.out.println("c'est pas bien de tricher");continue;
+          System.out.println("Don't try to cheat! ;)");continue;
         }
       }else{
-        //if(isPlaying){
+        if(isPlaying){
           outchan.println(client_input);
           outchan.flush();
-        //}
+        } else {
+            System.out.println("Only EXIT option is available while the session is not started.");
+        }
       }
     }
   }
