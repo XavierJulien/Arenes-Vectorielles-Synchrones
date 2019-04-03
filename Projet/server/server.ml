@@ -210,6 +210,7 @@ let process_exit user_name =
 		let player = find_player user_name in
 		current_session.players_list <- List.filter (fun p -> p.name=user_name) current_session.players_list;
 		Mutex.unlock mutex_players_list;
+		(*ferme le thread*)
 		close_in player.inchan;
 		close_out player.outchan;
 		Unix.close player.socket;
@@ -220,10 +221,14 @@ let process_exit user_name =
 
 let process_newpos coord user_name =
 		Mutex.lock mutex_players_list;
-		if (current_session.playing) then
+		if (current_session.waiting) then
 			let player = find_player user_name
 			and parsed_coord = parse_coord coord in
 			player.car.position <- parsed_coord;
+			let (x,y) = parsed_coord in
+			print_endline "yo";
+			Printf.printf "(%f,%f)\n" x y;
+			print_endline "yop";
 			if (get_distance current_session.target parsed_coord <= obj_radius) then
 				(* le joueur a touché l'objectif *)
 				begin
@@ -280,7 +285,6 @@ let tick_thread () =
  doivent être dans le même bloc mutex, sinon un autre client peut potentiellement
  s'être inséré entre la vérif et l'ajout de ce client  *)
 let process_connect user_name client_socket inchan outchan =
-	print_endline user_name;
 	Mutex.lock mutex_players_list;
 	if exists_player user_name then
 		begin
@@ -289,7 +293,6 @@ let process_connect user_name client_socket inchan outchan =
 		end
 	else
 		begin
-		print_endline "passe";
 		let player = (create_player user_name client_socket inchan outchan) in
 		current_session.players_list<-player::current_session.players_list;
 		Condition.signal cond_least1player
