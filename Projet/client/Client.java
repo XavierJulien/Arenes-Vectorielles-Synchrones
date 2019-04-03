@@ -39,7 +39,7 @@ public class Client {
     return res;
   }
   public void parse_coords(String player_coord_string){
-    String[] player_coord_string_split = player_coord_string.split("|");
+    String[] player_coord_string_split = player_coord_string.split("\\|");
     for(int i = 0;i<player_coord_string_split.length;i++){
       for(int j=0;j<player_list.size();j++){
         String[] player_coord = player_coord_string_split[i].split(":");
@@ -70,6 +70,9 @@ public class Client {
   public void process_newplayer(String new_user){
     System.out.println("newplayer");
     player_list.add(new Player(new_user,0));
+  }
+  public void process_denied(String error){
+    System.out.println("Error : denied/"+error);
   }
   public void process_playerleft(String name){
     for(int i = 0;i<player_list.size();i++){
@@ -118,10 +121,10 @@ public class Client {
           System.out.println("c'est pas bien de tricher");continue;
         }
       }else{
-        if(isPlaying){
+        //if(isPlaying){
           outchan.println(client_input);
           outchan.flush();
-        }
+        //}
       }
     }
   }

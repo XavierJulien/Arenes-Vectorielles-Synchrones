@@ -9,7 +9,7 @@ let mutex_players_list = Mutex.create () (*sync for access to *)
 let cond_least1player = Condition.create ()
 
 let server_tickrate = 10 (* le serveur envoie un tick toutes les server_tickrate secondes *)
-let waiting_time = 5
+let waiting_time = 20
 let obj_radius = 0.05
 let l = 200.0
 let h = 150.0
@@ -39,14 +39,29 @@ type session = {
 
 
 
+
+(**************************** ADDITIONNAL FUNCTIONS *****************************)
+
+
+
+let get_distance (x1,y1) (x2,y2) =
+	sqrt((x2-.x1)*.(x2-.x1)+.(y2-.y1)*.(y2-.y1))
+
+let alea_x () =
+	(Random.float (-.l)) +. Random.float l
+
+let alea_y () =
+	(Random.float (-.h)) +. Random.float h
+
+let alea_pos () =
+	(alea_x (),alea_y ())
+
 let current_session =
 { players_list = [];
 		playing = false;
-		target = (0.0,0.0);
+		target = alea_pos();
 		win_cap = 10
   }
-
-(**************************** ADDITIONNAL FUNCTIONS *****************************)
 
 let parse_request req_string =
   let s = Str.split (Str.regexp "/") req_string in
@@ -78,32 +93,21 @@ let find_player user_name =
 let exists_player user_name =
 	List.exists (fun p -> if p.name=user_name then true else false) current_session.players_list
 
-let get_distance (x1,y1) (x2,y2) =
-	sqrt((x2-.x1)*.(x2-.x1)+.(y2-.y1)*.(y2-.y1))
+(*permet de créer un joueur*)
+let create_player user sock inc out =
+	(* ajouter le comportement random de la position *)
+	{ name = user;
+  	socket = sock;
+    inchan = inc;
+    outchan = out;
+    score = 0;
+    car = {position=alea_pos();direction=0.0;speed=(0.0,0.0)}
+	}
 
-let alea_x () =
-	(Random.float (-.l)) +. Random.float l
-
-let alea_y () =
-	(Random.float (-.h)) +. Random.float h
-
-let alea_pos () =
-	(alea_x (),alea_y ())
 
 let initposplayers () =
 	let f p = p.car.position <- alea_pos() in
 	List.iter f current_session.players_list
-
-	(*permet de créer un joueur*)
-	let create_player user sock inc out =
-		(* ajouter le comportement random de la position *)
-		{ name = user;
-	  	socket = sock;
-	    inchan = inc;
-	    outchan = out;
-	    score = 0;
-	    car = {position=alea_pos();direction=0.0;speed=(0.0,0.0)}
-		}
 (********************** SENDING FUNCTIONS ***********************)
 let send_welcome user_name =
 	Mutex.lock mutex_players_list;
@@ -139,7 +143,7 @@ let send_playerleft user_name =
 
 let send_session () =
 	let send_fun coords c_target p =
-		output_string p.outchan ("SESSION/"^coords^"/"^c_target^"/\n");
+		output_string p.outchan ("SESSION/"^coords^c_target^"/\n");
 		flush p.outchan
 	in
 	let coords = stringify_coords current_session.players_list in
@@ -182,6 +186,24 @@ let send_newobj () =
 	flush chan *)
 
 
+let start_session () =
+	Mutex.lock mutex_players_list;
+	while (List.length current_session.players_list = 0) do
+		(* peut être pas besoin de boucle *)
+		Condition.wait cond_least1player mutex_players_list
+	done;
+	Mutex.unlock mutex_players_list;
+	print_endline "debut de l'attente 40sec";
+	Unix.sleep waiting_time;
+	print_endline "fin des 40sec";
+	Mutex.lock mutex_players_list;
+	current_session.playing <- true;
+	send_session ();
+	Mutex.unlock mutex_players_list;
+	print_endline "Fin start_session"
+
+
+
 (*********************** RESTARTING SESSION **************************)
 
 (* normalement il n'y a qu'un thread client qui a accès à cette fonction à un moment *)
@@ -198,8 +220,11 @@ let restart_session () =
 	(* le mutex est rendu pour que d'autres clients puissent se connecter entre-temps *)
 	Unix.sleep waiting_time;
 	(* Mutex.lock mutex_players_list; *)
+	Mutex.lock mutex_players_list;
 	current_session.playing <- true;
-	send_session ()
+	send_session ();
+	Mutex.unlock mutex_players_list
+
 
 (********************** PROCESSING FUNCTIONS ***********************)
 
@@ -262,10 +287,19 @@ let receive_req user_name =
 		while true do
 			let request = input_line player.inchan in
 			let parsed_req = parse_request request in
+			try
 				match List.hd parsed_req with
-				|"EXIT" -> process_exit (List.nth parsed_req 1);Thread.exit ()
+				|"EXIT" -> process_exit (List.nth parsed_req 1);
+										if (List.length current_session.players_list) = 0 then
+										begin (* dernier joueur*)
+										current_session.playing =false;
+										Thread.create(start_session ())
+										end;
+										Thread.exit ()
 				|"NEWPOS" -> process_newpos (List.nth parsed_req 1) user_name
 				|_ -> raise BadRequest
+			with BadRequest -> output_string player.outchan "DENIED/BadRequest\n";
+										 			flush player.outchan
 		done
 
 let tick_thread () =
@@ -340,6 +374,7 @@ let start_server nb_c =
   begin
     Unix.bind server_socket (Unix.ADDR_INET(addr, 2019));
     Unix.listen server_socket nb_c;
+		ignore (Thread.create start_session ());
     while true do
       let (client_socket, _) = Unix.accept server_socket in
       	print_endline "Nouvelle connexion\n";
