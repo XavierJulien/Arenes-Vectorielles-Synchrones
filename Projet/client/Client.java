@@ -19,6 +19,7 @@ public class Client {
   private String session_status;
   private ArrayList<Player> player_list;
   private Target target;
+  private boolean isPlaying;
 
   /****************************AUX****************************/
 
@@ -50,7 +51,7 @@ public class Client {
     }
   }
   public Car parse_car(String coord_string){
-    String[] pos_target = coord_string.split("[X,Y]+");
+    String[] pos_target = coord_string.split("[X,Y]");
     return new Car(Float.parseFloat(pos_target[0]),Float.parseFloat(pos_target[1]));
   }
   public Target parse_target(String coord_string){
@@ -78,6 +79,7 @@ public class Client {
   public void process_session(String coords,String coord){
     target = parse_target(coord);
     parse_coords(coords);
+    isPlaying = true;
   }
   public void process_winner(String scores){
     player_list = parse_scores(scores);
@@ -85,6 +87,7 @@ public class Client {
     for(int i = 0;i<player_list.size();i++){
       System.out.println("player "+(player_list.get(i)).getName()+" -> "+(player_list.get(i)).getScore()+" points.");
     }
+    isPlaying = false;
   }
   public void process_tick(String coords){
     parse_coords(coords);
@@ -115,8 +118,10 @@ public class Client {
           System.out.println("c'est pas bien de tricher");continue;
         }
       }else{
-        outchan.println(client_input);
-        outchan.flush();
+        if(isPlaying){
+          outchan.println(client_input);
+          outchan.flush();
+        }
       }
     }
   }

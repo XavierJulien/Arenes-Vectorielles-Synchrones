@@ -9,7 +9,7 @@ let mutex_players_list = Mutex.create () (*sync for access to *)
 let cond_least1player = Condition.create ()
 
 let server_tickrate = 10 (* le serveur envoie un tick toutes les server_tickrate secondes *)
-let waiting_time = 20
+let waiting_time = 5
 let obj_radius = 0.05
 let l = 200.0
 let h = 150.0
@@ -211,9 +211,11 @@ let process_exit user_name =
 		current_session.players_list <- List.filter (fun p -> p.name=user_name) current_session.players_list;
 		Mutex.unlock mutex_players_list;
 		(*ferme le thread*)
-		close_in player.inchan;
-		close_out player.outchan;
+		(* close_in player.inchan; *)
+		(* close_out player.outchan; *)
+		print_endline "avat close";
 		Unix.close player.socket;
+		print_endline "apres close";
 		send_playerleft player.name
 		end
 	with Not_found -> print_endline "Le joueur n'est plus dans la liste"
@@ -221,12 +223,12 @@ let process_exit user_name =
 
 let process_newpos coord user_name =
 		Mutex.lock mutex_players_list;
-		if (current_session.waiting) then
+		print_endline "yo";
+		if (current_session.playing) then
 			let player = find_player user_name
 			and parsed_coord = parse_coord coord in
 			player.car.position <- parsed_coord;
 			let (x,y) = parsed_coord in
-			print_endline "yo";
 			Printf.printf "(%f,%f)\n" x y;
 			print_endline "yop";
 			if (get_distance current_session.target parsed_coord <= obj_radius) then
