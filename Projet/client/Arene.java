@@ -1,5 +1,6 @@
 public class Arene{
-  private float cx,cy;//coordonnées centre
+  @SuppressWarnings("unused")
+private float cx,cy;//coordonnées centre
   private float demih,demil;//demihauteur/demilargeur
 
   public Arene(float demih,float demil){
