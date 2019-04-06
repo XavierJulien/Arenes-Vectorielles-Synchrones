@@ -5,101 +5,152 @@ import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+
 
 public class Client {
 
   protected static final int PORT=2019;
+  private final double turnit = 0.1;
+  private final double thrustit = 4.0;
+  private final double refresh_tickrate = 0.0001; // toutes les secondes 
   private Receive r;
   private BufferedReader inchan,input;
   private PrintStream outchan;
-  private String server_input;
+  private Timer timer = new Timer();
+  private RefreshClientTask refreshTask;
+  //private String server_input;
 
   /***************************DATA****************************/
-  private String user;
-  private String session_status;
-  private ArrayList<Player> player_list;
-  private Target target;
+  private String my_name;
+  private Player myself;
+  private Map<String,Player> player_list; // le client courant fait partie de la liste
+  private Point target;
   private boolean isPlaying;
-
+  private ArrayList<Commands> cumulCmds;
+  
+  
   /****************************AUX****************************/
 
   public Client(BufferedReader inchan,PrintStream outchan){
     this.inchan = inchan;
     this.outchan = outchan;
-    input = new BufferedReader(new InputStreamReader(System.in));
+    this.input = new BufferedReader(new InputStreamReader(System.in));
+    this.player_list = new HashMap<>();
+    this.target = null;
+    this.isPlaying = false;
+    this.cumulCmds = new ArrayList<>();
   }
-  public ArrayList<Player> parse_scores(String player_score_string){
-    ArrayList<Player> res = new ArrayList<Player>();
-    String[] player_score_string_split = player_score_string.split("[|]");
-    for(int i = 0;i<player_score_string_split.length;i++){
-      String[] player_score = player_score_string_split[i].split("[:]");
-      Player temp = new Player(player_score[0],Integer.parseInt(player_score[1]));
-      res.add(temp);
-    }
-    return res;
+  public void parse_status(String status) {
+	  if (status == "jeu") {
+		  isPlaying=true;
+	  }
+	  if (status == "attente") {
+		 isPlaying = false;
+	  }
+  }
+  public void parse_scores(String player_score_string){
+	  String[] player_score_string_split = player_score_string.split("\\|");
+	  if (player_list.isEmpty()) { // initialisation, le joueur vient de se connecter
+		 for(int i = 0;i<player_score_string_split.length;i++){
+			 String[] player_score = player_score_string_split[i].split("[:]");
+		     Player p = new Player(player_score[0],Integer.parseInt(player_score[1]));
+		     player_list.put(player_score[0], p);
+	    		 if (player_score[0].equals(my_name)) {
+	    			myself = p;
+	    		 }
+		 }
+	  }else{ // mise à jour des scores
+		  for (int i = 0; i<player_score_string_split.length; i++) {
+		      String[] player_score = player_score_string_split[i].split("[:]");
+			  player_list.get(player_score[0]).setScore(Integer.parseInt(player_score[1]));
+		  }
+	  }
   }
   public void parse_coords(String player_coord_string){
     String[] player_coord_string_split = player_coord_string.split("\\|");
-    for(int i = 0;i<player_coord_string_split.length;i++){
-      for(int j=0;j<player_list.size();j++){
-        String[] player_coord = player_coord_string_split[i].split(":");
-        if(player_list.get(j).getName() == player_coord[0]){
-          Car vehicule = parse_car(player_coord[1]);
-          player_list.get(j).setVehicule(vehicule);
-        }
-      }
+    for(String p : player_coord_string_split) {
+        String[] xy = p.split(":")[1].split("[XY]");
+        double x = Double.parseDouble(xy[1]);
+        double y = Double.parseDouble(xy[2]);
+    		player_list.get(p.split(":")[0]).getVehicule().set_posX(x);
+    		player_list.get(p.split(":")[0]).getVehicule().set_posY(y);
     }
   }
-  public Car parse_car(String coord_string){
+  /**public Car parse_car(String coord_string){
     String[] pos_target = coord_string.split("[X,Y]");
     return new Car(Float.parseFloat(pos_target[0]),Float.parseFloat(pos_target[1]));
+  }**/
+  public void parse_target(String coord_string){
+    String[] pos_target = coord_string.split("[XY]");
+    target = new Point(Double.parseDouble(pos_target[1]),Double.parseDouble(pos_target[2]));
   }
-  public Target parse_target(String coord_string){
-    String[] pos_target = coord_string.split("[X,Y]");
-    return new Target(Float.parseFloat(pos_target[1]),Float.parseFloat(pos_target[2]));
+  /**************************CMDS*****************************/
+  //je sais pas encore comment ou et comment elles peuvent être appelées..
+  public void commandClock() {
+	  Player me = player_list.get(my_name);
+	  me.getVehicule().setAngle(me.getVehicule().getAngle()-turnit);
+	  //cumulCmds.add(Commands.clock);
+  }
+  public void commandAnticlock() {
+	  Player me = player_list.get(my_name);
+	  me.getVehicule().setAngle(me.getVehicule().getAngle()+turnit);
+	  //cumulCmds.add(Commands.anticlock);
+  }
+  public void commandThrust() {
+	  /**
+	   * vx+turnit∗cos(θ), vy+turnit∗sin(θ)
+	   */
+	  Player me = player_list.get(my_name);
+	  double new_vx = me.getVehicule().get_speedX()+turnit*Math.cos(me.getVehicule().getAngle());
+	  double new_vy = me.getVehicule().get_speedY()+turnit*Math.sin(me.getVehicule().getAngle());
+	  me.getVehicule().set_speedXY(new_vx, new_vy);
+	  //cumulCmds.add(Commands.thrust);
   }
   /******************PROCESS_SERVER_REQUESTS******************/
   public void process_welcome(String[] server_input){
     //PARSE PHASE
-    session_status = server_input[1];
-    //PARSE PLAYER_SCORE
-    player_list = parse_scores(server_input[2]);
+    parse_status(server_input[1]);
+    //PARSE PLAYER_SCORE met directement les valeurs dans la structure au lieu de retourner 
+    parse_scores(server_input[2]);
     //PARSE COORD
-    target = parse_target(server_input[3]);
+    parse_target(server_input[3]);
   }
   public void process_newplayer(String new_user){
     //System.out.println("newplayer : "+new_user);
-    player_list.add(new Player(new_user,0));
+    player_list.put(new_user,new Player(new_user,0));
   }
   public void process_denied(String error){
     System.out.println("Error : denied/"+error);
   }
   public void process_playerleft(String name){
-    for(int i = 0;i<player_list.size();i++){
-      if ((player_list.get(i)).getName() == name) player_list.remove(i);
-    }
+    player_list.remove(name);
     //System.out.println("playerleft : "+name);
   }
   public void process_session(String coords,String coord){
-    target = parse_target(coord);
+    parse_target(coord);
     parse_coords(coords);
     isPlaying = true;
+    refreshTask = new RefreshClientTask(myself);
+    timer.scheduleAtFixedRate(refreshTask, 0,(int)(1/refresh_tickrate));
     //System.out.println("session : "+coords+" "+coord);
+    //démarrer la task de clientrefresh ici 
   }
   public void process_winner(String scores){
-    player_list = parse_scores(scores);
+    parse_scores(scores);
     System.out.println("Fin de Session -> RESULTATS :");
-    for(int i = 0;i<player_list.size();i++){
-      System.out.println("player "+(player_list.get(i)).getName()+" -> "+(player_list.get(i)).getScore()+" points.");
-    }
+    player_list.forEach((k,v) -> System.out.println("player "+(k+" -> "+v.getScore()+" points.")));
     isPlaying = false;
+    refreshTask.cancel();
   }
   public void process_tick(String coords){
     parse_coords(coords);
   }
   public void process_newobj(String coord,String scores){
-    target = parse_target(coord);
-    player_list = parse_scores(scores);
+    parse_target(coord);
+    parse_scores(scores);
     //System.out.println(coord);
   }
   public void communicate(String[] server_split) throws IOException {
@@ -113,12 +164,13 @@ public class Client {
       client_input = input.readLine(); //lecture commande du client
       String[] client_split = client_input.split("/");
       if(client_split[0].equals("EXIT")){ // à ce stade, la seule commande qu'il peut émettre est exit de lui meme
-        if(client_split[1].equals(user)){
+        if(client_split[1].equals(my_name)){
           r.setRunning(false);
           outchan.println(client_input);
           outchan.flush();
           inchan.close();
           outchan.close();
+          refreshTask.cancel();
           return;
         }else{
           System.out.println("Don't try to cheat! ;)");continue;
@@ -140,7 +192,7 @@ public class Client {
         System.out.print("?"); System.out.flush();
         client_input = input.readLine();
         String[] client_split = client_input.split("/");
-        if(client_split[0].equals("CONNECT")) user = client_split[1];
+        if(client_split[0].equals("CONNECT")) my_name = client_split[1];
         outchan.println(client_input);
         outchan.flush();
         //Response server

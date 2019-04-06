@@ -4,9 +4,9 @@ public class Player{
   private Car vehicule;
 
   public Player(String name,int score){
-    this.name = name;
+    this.name = name; //superflu
     this.score = score;
-    this.vehicule = null;
+    this.vehicule = new Car(0, 0); // pour ne pas avoir à différencier le cas ou il est null du cas ou il est pas null
   }
 
   public String getName(){return name;}

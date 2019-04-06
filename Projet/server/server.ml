@@ -9,8 +9,10 @@ let mutex_players_list = Mutex.create () (*sync for access to *)
 
 let cond_least1player = Condition.create ()
 
+let turnit = 0.1
+let thrustit = 4.0
 let server_tickrate = 10 (* le serveur envoie un tick toutes les server_tickrate secondes *)
-let waiting_time = 20
+let waiting_time = 10
 let obj_radius = 0.05
 let l = 200.0
 let h = 150.0
@@ -109,16 +111,28 @@ let create_player user sock inc out =
 let initposplayers () =
 	let f p = p.car.position <- alea_pos() in
 	List.iter f current_session.players_list
+
+
 (********************** SENDING FUNCTIONS ***********************)
+let send_session () =
+	let send_fun coords c_target p =
+		output_string p.outchan ("SESSION/"^coords^c_target^"/\n");
+		flush p.outchan
+	in
+	let coords = stringify_coords current_session.players_list in
+		let coord_target = stringify_coord current_session.target in
+			List.iter (send_fun coords coord_target) current_session.players_list
+
 let send_welcome user_name =
 	Mutex.lock mutex_players_list;
-	let phase = if current_session.playing then "playing/" else "waiting/"
+	let phase = if current_session.playing then "jeu/" else "attente/"
 	and scores = stringify_scores current_session.players_list
 	and coord = stringify_coord current_session.target
 	and player = find_player user_name
 	in
 	output_string player.outchan ("WELCOME/"^phase^scores^coord^"/\n");
 	flush player.outchan;
+	if current_session.playing then send_session ();
 	Mutex.unlock mutex_players_list
 
 let send_newplayer user_name =
@@ -142,17 +156,6 @@ let send_playerleft user_name =
 	List.iter send_fun current_session.players_list;
 	Mutex.unlock mutex_players_list
 
-
-let send_session () =
-	let send_fun coords c_target p =
-		output_string p.outchan ("SESSION/"^coords^c_target^"/\n");
-		flush p.outchan
-	in
-	let coords = stringify_coords current_session.players_list in
-		let coord_target = stringify_coord current_session.target in
-			List.iter (send_fun coords coord_target) current_session.players_list
-
-
 (*  Fin de la session courante, scores finaux de la session. protégé par le mutex de l'appelant *)
 let send_winner () =
 	let send_fun scores p =
@@ -162,12 +165,15 @@ let send_winner () =
 	let f_scores = stringify_scores current_session.players_list in
 		List.iter (send_fun f_scores) current_session.players_list
 
+
 (* protégé par le mutex de l'appelant *)
 let send_tick () =
 	let send_fun coords p =
-		output_string p.outchan ("TICK/"^coords^"/\n");
+		output_string p.outchan ("TICK/"^coords^"\n");
 		flush p.outchan
 	in
+	print_endline "Envoie à tous les joueurs, premier joueur dans la liste : %s\n";
+	print_endline (List.hd current_session.players_list).name;
 	let f_coords = stringify_coords current_session.players_list in
 		List.iter (send_fun f_coords) current_session.players_list
 
@@ -299,13 +305,18 @@ let receive_req user_name =
 			let parsed_req = parse_request request in
 			try
 				match List.hd parsed_req with
-				|"EXIT" -> process_exit (List.nth parsed_req 1);raise Disconnection
-				|"NEWPOS" -> process_newpos (List.nth parsed_req 1) user_name
+				|"EXIT" -> if List.length parsed_req <> 2 then raise BadRequest;
+									 process_exit (List.nth parsed_req 1);
+									 raise Disconnection
+				|"NEWPOS" -> if List.length parsed_req <> 2 then raise BadRequest;
+										 process_newpos (List.nth parsed_req 1) user_name
 				|_ -> raise BadRequest
 			with BadRequest -> output_string player.outchan "DENIED/BadRequest\n";
 										 			flush player.outchan
 		done
 	with Disconnection -> ()
+
+
 
 let tick_thread () =
 	while true do
@@ -336,6 +347,8 @@ let process_connect user_name client_socket inchan outchan =
 		begin
 		let player = (create_player user_name client_socket inchan outchan) in
 		current_session.players_list<-player::current_session.players_list;
+		print_endline user_name;
+		print_endline "le joueur dont le nom est au dessus a été ajouté a la liste\n";
 		Condition.signal cond_least1player
 		end;
 	Mutex.unlock mutex_players_list;
@@ -348,7 +361,6 @@ let process_connect user_name client_socket inchan outchan =
 (********************** FIRST CONNECTION ***********************)
 (* c'est ce thread qui est lancé lorsqu'un client se connecte *)
 let start_new_client client_socket =
-	print_endline "dans un nouveau client";
 	let inchan = Unix.in_channel_of_descr client_socket
 	and outchan = Unix.out_channel_of_descr client_socket in
 	let rec try_connect_loop () =
@@ -381,9 +393,10 @@ let start_server nb_c =
     Unix.bind server_socket (Unix.ADDR_INET(addr, 2019));
     Unix.listen server_socket nb_c;
 		ignore (Thread.create start_session ());
+		ignore (Thread.create tick_thread ());
     while true do
       let (client_socket, _) = Unix.accept server_socket in
-      	print_endline "Nouvelle connexion\n";
+      	print_endline "Nouvelle connexion socket";
         ignore (Thread.create start_new_client client_socket);
     done
   end;;
