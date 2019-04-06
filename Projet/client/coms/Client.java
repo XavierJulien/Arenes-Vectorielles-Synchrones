@@ -1,3 +1,5 @@
+package coms;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,12 +12,17 @@ import java.util.Map;
 import java.util.Timer;
 
 
+import ihm.Ship;
+import ihm.Target;
+import javafx.scene.shape.Circle;
+
 public class Client {
 
   protected static final int PORT=2019;
   private final double turnit = 0.1;
   private final double thrustit = 4.0;
-  private final double refresh_tickrate = 0.0001; // toutes les secondes 
+  private final double refresh_tickrate = 0.001; // toutes les secondes
+  //  public final int refresh_rate = 60;
   private Receive r;
   private BufferedReader inchan,input;
   private PrintStream outchan;
@@ -30,8 +37,8 @@ public class Client {
   private Point target;
   private boolean isPlaying;
   private ArrayList<Commands> cumulCmds;
-  
-  
+
+
   /****************************AUX****************************/
 
   public Client(BufferedReader inchan,PrintStream outchan){
@@ -109,11 +116,35 @@ public class Client {
 	  me.getVehicule().set_speedXY(new_vx, new_vy);
 	  //cumulCmds.add(Commands.thrust);
   }
+
+/**
+    for(int i = 0;i<player_coord_string_split.length;i++){
+      for(int j=0;j<player_list.size();j++){
+        String[] player_coord = player_coord_string_split[i].split(":");
+        if(player_list.get(j).getName() == player_coord[0]){
+          Ship vehicule = parse_car(player_coord[1]);
+          player_list.get(j).setVehicule(vehicule);
+        }
+      }
+    }
+  }
+  public Ship parse_car(String coord_string){
+    String[] pos_target = coord_string.split("[X,Y]");
+    return new Ship(new Circle(500,500,20),Double.parseDouble(pos_target[0]),Double.parseDouble(pos_target[1]));
+  }
+  public Target parse_target(String coord_string){
+    String[] pos_target = coord_string.split("[X,Y]");
+    return new Target(Double.parseDouble(pos_target[1]),Double.parseDouble(pos_target[2]));
+*
+*/
+
+
+
   /******************PROCESS_SERVER_REQUESTS******************/
   public void process_welcome(String[] server_input){
     //PARSE PHASE
     parse_status(server_input[1]);
-    //PARSE PLAYER_SCORE met directement les valeurs dans la structure au lieu de retourner 
+    //PARSE PLAYER_SCORE met directement les valeurs dans la structure au lieu de retourner
     parse_scores(server_input[2]);
     //PARSE COORD
     parse_target(server_input[3]);
@@ -136,7 +167,7 @@ public class Client {
     refreshTask = new RefreshClientTask(myself);
     timer.scheduleAtFixedRate(refreshTask, 0,(int)(1/refresh_tickrate));
     //System.out.println("session : "+coords+" "+coord);
-    //démarrer la task de clientrefresh ici 
+    //démarrer la task de clientrefresh ici
   }
   public void process_winner(String scores){
     parse_scores(scores);
