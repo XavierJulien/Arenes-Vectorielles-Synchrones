@@ -1,3 +1,5 @@
+package coms;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -6,9 +8,14 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 
+import ihm.Ship;
+import ihm.Target;
+import javafx.scene.shape.Circle;
+
 public class Client {
 
   protected static final int PORT=2019;
+  public final int refresh_rate = 60;
   private Receive r;
   private BufferedReader inchan,input;
   private PrintStream outchan;
@@ -44,19 +51,19 @@ public class Client {
       for(int j=0;j<player_list.size();j++){
         String[] player_coord = player_coord_string_split[i].split(":");
         if(player_list.get(j).getName() == player_coord[0]){
-          Car vehicule = parse_car(player_coord[1]);
+          Ship vehicule = parse_car(player_coord[1]);
           player_list.get(j).setVehicule(vehicule);
         }
       }
     }
   }
-  public Car parse_car(String coord_string){
+  public Ship parse_car(String coord_string){
     String[] pos_target = coord_string.split("[X,Y]");
-    return new Car(Float.parseFloat(pos_target[0]),Float.parseFloat(pos_target[1]));
+    return new Ship(new Circle(500,500,20),Double.parseDouble(pos_target[0]),Double.parseDouble(pos_target[1]));
   }
   public Target parse_target(String coord_string){
     String[] pos_target = coord_string.split("[X,Y]");
-    return new Target(Float.parseFloat(pos_target[1]),Float.parseFloat(pos_target[2]));
+    return new Target(Double.parseDouble(pos_target[1]),Double.parseDouble(pos_target[2]));
   }
   /******************PROCESS_SERVER_REQUESTS******************/
   public void process_welcome(String[] server_input){
