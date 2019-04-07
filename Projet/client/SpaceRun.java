@@ -1,21 +1,41 @@
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.scene.*;
 import javafx.stage.*;
+import javafx.scene.Scene;
+import javafx.scene.layout.*;
+import javafx.scene.shape.*;
+import javafx.scene.control.*;
+import javafx.scene.input.*;
+import javafx.scene.text.*;
+import javafx.geometry.*;
 
-//import javafx.scene.canvas.Canvas;
-//import javafx.scene.canvas.GraphicsContext;
-//import javafx.geometry.Rectangle2D;
 
 public class SpaceRun extends Application implements Runnable{
 	// private double cx,cy;//coordonnées centre
 	private double demih;//demihauteur
 	private double demil;//demilargeur
+	private String username = "Julien";
 
-	private Pane root;
-	//private Canvas canvas;
+	//Start
+	private Stage primaryStage;
+	private Scene mainScene, lobbyScene;
+
+	//JavaFX Lobby
+	private Text lobby_username_label;
+	private TextField lobby_username_field;
+	private Button connect;
+	private GridPane lobbyPane;
+
+	//JavaFX Main
+	private Text main_username_label;
+	private Pane playPane;
 	private Player player;
+	private SplitPane mainPane;
+	private Button exit;
+	private HBox playbox, chatbox;
+	private GridPane descPane;
+
 
 	public void move(Shape p){//simule le monde thorique, a revoir avec -demih et -demil
 		if(p.getTranslateX() > demil) {p.setTranslateX(0);System.out.println("newx = "+p.getTranslateX());}
@@ -31,58 +51,132 @@ public class SpaceRun extends Application implements Runnable{
 	}
 
 	@Override
-	public void start(Stage stage) throws Exception {
-
-		// Rectangle2D primaryScreenBounds = Screen.getPrimary().getVisualBounds();
-		// demil = primaryScreenBounds.getWidth();
-		// demih = primaryScreenBounds.getHeight();
-		demil = 500;
-		demih = 500;
-		//Screen Config
-		root = new Pane();
-		Scene scene = new Scene(root,500,500);
-    stage.setScene(scene);
-
-    // //canvas = new Canvas(demil,demih);
-    // root.getChildren().add(canvas);
-    // GraphicsContext gc = canvas.getGraphicsContext2D();
-
-		//************ADD PLAYERS****************
-		
-		player = new Player("juju",0);
-		root.getChildren().add(player.getVehicule().getShip());
-		//***************************************
-		//************UPDATE HANDLER*************
-    new AnimationTimer(){//peut etre inutile si on peut directement appeler update dans la partie EVENT HANDLER
-        public void handle(long currentNanoTime){onUpdate();}
-    }.start();
-		//***************************************
-		//*************EVENT HANDLER*************
-		stage.getScene().setOnKeyPressed(e -> {
-    	if (e.getCode() == KeyCode.UP) {
+	public void start(Stage primaryStage) throws Exception {
+		this.primaryStage = primaryStage;
+		initializeMain();
+		initializeLobby();
+		primaryStage.getScene().setOnKeyPressed(e -> {
+			if (e.getCode() == KeyCode.UP) {
 				player.getVehicule().thrust();
+				System.out.println("thrust");
 			}
 			if (e.getCode() == KeyCode.LEFT) {
 				player.getVehicule().clock();
+				System.out.println("clock");
 			}
 			if (e.getCode() == KeyCode.RIGHT) {
 				player.getVehicule().anticlock();
+				System.out.println("anticlock");
 			}
 		});
-		//***************************************
-	  stage.show();
+		primaryStage.show();
 	}
 
-	public static void main(String[] args) {
-		launch(args);
+	public void initializeMain(){
+		// demil = 500;
+		// demih = 500;
+		// //Screen Config
+
+
+		//
+		// //************ADD PLAYERS****************
+		//
+		// player = new Player("juju",0);
+		//root.getChildren().add(player.getVehicule().getShip());
+		// //***************************************
+		// //************UPDATE HANDLER*************
+    // new AnimationTimer(){//peut etre inutile si on peut directement appeler update dans la partie EVENT HANDLER
+    //     public void handle(long currentNanoTime){onUpdate();}
+    // }.start();
+		// //***************************************
+		// //*************EVENT HANDLER*************
+		// mainScene.setOnKeyPressed(e -> {
+    // 	if (e.getCode() == KeyCode.UP) {
+		// 		player.getVehicule().thrust();
+		// 	}
+		// 	if (e.getCode() == KeyCode.LEFT) {
+		// 		player.getVehicule().clock();
+		// 	}
+		// 	if (e.getCode() == KeyCode.RIGHT) {
+		// 		player.getVehicule().anticlock();
+		// 	}
+		// });
+		// //***************************************
+		//
+
+		playPane = new Pane();
+		playPane.setMinWidth(500);
+		playPane.setMinHeight(500);
+
+		//************ADD PLAYERS****************
+		player = new Player("juju",0);
+		playPane.getChildren().addAll(player.getVehicule().getShip());
+		//************UPDATE HANDLER*************
+		new AnimationTimer(){//peut etre inutile si on peut directement appeler update dans la partie EVENT HANDLER
+		    public void handle(long currentNanoTime){onUpdate();}
+		}.start();
+		//*************EVENT HANDLER*************
+
+		main_username_label= new Text(username);
+		exit = new Button("EXIT");
+		exit.setOnAction(e -> primaryStage.setScene(lobbyScene));
+		descPane = new GridPane();
+		descPane.setVgap(5);
+		descPane.setHgap(10);
+		descPane.setHgap(10);
+		descPane.setAlignment(Pos.CENTER);
+		descPane.add(exit, 2, 0);
+		descPane.add(main_username_label, 2, 1);
+
+		//PlayBox
+		playbox = new HBox();
+		playbox.getChildren().addAll(playPane,descPane);
+
+		//ChatBox
+		chatbox = new HBox();
+		chatbox.setMaxHeight(200);
+		chatbox.setMinHeight(100);
+		//Layout
+		mainPane = new SplitPane();
+		mainPane.setOrientation(Orientation.VERTICAL);
+		mainPane.setMinSize(800, 600);
+		mainPane.getItems().addAll(playbox, chatbox);
+
+		//Scene
+		mainScene = new Scene(mainPane,800,600);
+		//Stage
+		primaryStage.setScene(mainScene);
 	}
 
-	@Override
-	public void run() {
-		launch();
+	public void initializeLobby(){
+			//label username
+      lobby_username_label = new Text("Username");
+      //Text Filed for username
+      lobby_username_field = new TextField();
+      //Buttons
+      connect = new Button("Connect");
+			connect.setOnAction(e -> primaryStage.setScene(mainScene));
+      //Grid Pane
+      lobbyPane = new GridPane();
+      lobbyPane.setMinSize(400, 200);
+      lobbyPane.setPadding(new Insets(10, 10, 10, 10));
+      lobbyPane.setVgap(5);
+      lobbyPane.setHgap(10);
+      lobbyPane.setAlignment(Pos.CENTER);
+      lobbyPane.add(lobby_username_label, 0, 0);
+      lobbyPane.add(lobby_username_field, 1, 0);
+      lobbyPane.add(connect, 0, 1);
 
-
+			//Scene
+      lobbyScene = new Scene(lobbyPane);
+			//Stage
+      primaryStage.setTitle("SpaceRun");
+      primaryStage.setScene(lobbyScene);
 	}
+
+	//Run
+	public static void main(String[] args) {launch(args);}
+	@Override public void run() {launch();}
 }
 
 //Image earth = new Image( "ihm/images/ship.png" );

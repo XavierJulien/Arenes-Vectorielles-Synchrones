@@ -10,8 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 
-import javafx.scene.shape.Circle;
-
 public class Client {
 
   protected static final int PORT=2019;
@@ -111,13 +109,6 @@ public class Client {
 	  //cumulCmds.add(Commands.thrust);
   }
 
-/**
-  public Ship parse_car(String coord_string){
-    String[] pos_target = coord_string.split("[X,Y]");
-    return new Ship(new Circle(500,500,20),Double.parseDouble(pos_target[0]),Double.parseDouble(pos_target[1]));
-  }
-*
-*/
 
   /******************PROCESS_SERVER_REQUESTS******************/
   public void process_welcome(String[] server_input){
