@@ -1,4 +1,3 @@
-package coms;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,9 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 
-
-import ihm.Ship;
-import ihm.Target;
 import javafx.scene.shape.Circle;
 
 public class Client {
@@ -22,13 +18,11 @@ public class Client {
   private final double turnit = 0.1;
   private final double thrustit = 4.0;
   private final double refresh_tickrate = 0.001; // toutes les secondes
-  //  public final int refresh_rate = 60;
   private Receive r;
   private BufferedReader inchan,input;
   private PrintStream outchan;
   private Timer timer = new Timer();
   private RefreshClientTask refreshTask;
-  //private String server_input;
 
   /***************************DATA****************************/
   private String my_name;
@@ -86,24 +80,23 @@ public class Client {
     		player_list.get(p.split(":")[0]).getVehicule().set_posY(y);
     }
   }
-  /**public Car parse_car(String coord_string){
-    String[] pos_target = coord_string.split("[X,Y]");
-    return new Car(Float.parseFloat(pos_target[0]),Float.parseFloat(pos_target[1]));
-  }**/
   public void parse_target(String coord_string){
     String[] pos_target = coord_string.split("[XY]");
     target = new Point(Double.parseDouble(pos_target[1]),Double.parseDouble(pos_target[2]));
   }
+
   /**************************CMDS*****************************/
   //je sais pas encore comment ou et comment elles peuvent être appelées..
   public void commandClock() {
 	  Player me = player_list.get(my_name);
 	  me.getVehicule().setAngle(me.getVehicule().getAngle()-turnit);
+    //me.getVehicule().clock();
 	  //cumulCmds.add(Commands.clock);
   }
   public void commandAnticlock() {
 	  Player me = player_list.get(my_name);
 	  me.getVehicule().setAngle(me.getVehicule().getAngle()+turnit);
+    //me.getVehicule().anticlock();
 	  //cumulCmds.add(Commands.anticlock);
   }
   public void commandThrust() {
@@ -114,31 +107,17 @@ public class Client {
 	  double new_vx = me.getVehicule().get_speedX()+turnit*Math.cos(me.getVehicule().getAngle());
 	  double new_vy = me.getVehicule().get_speedY()+turnit*Math.sin(me.getVehicule().getAngle());
 	  me.getVehicule().set_speedXY(new_vx, new_vy);
+    //me.getVehicule().thrust();
 	  //cumulCmds.add(Commands.thrust);
   }
 
 /**
-    for(int i = 0;i<player_coord_string_split.length;i++){
-      for(int j=0;j<player_list.size();j++){
-        String[] player_coord = player_coord_string_split[i].split(":");
-        if(player_list.get(j).getName() == player_coord[0]){
-          Ship vehicule = parse_car(player_coord[1]);
-          player_list.get(j).setVehicule(vehicule);
-        }
-      }
-    }
-  }
   public Ship parse_car(String coord_string){
     String[] pos_target = coord_string.split("[X,Y]");
     return new Ship(new Circle(500,500,20),Double.parseDouble(pos_target[0]),Double.parseDouble(pos_target[1]));
   }
-  public Target parse_target(String coord_string){
-    String[] pos_target = coord_string.split("[X,Y]");
-    return new Target(Double.parseDouble(pos_target[1]),Double.parseDouble(pos_target[2]));
 *
 */
-
-
 
   /******************PROCESS_SERVER_REQUESTS******************/
   public void process_welcome(String[] server_input){
@@ -150,15 +129,16 @@ public class Client {
     parse_target(server_input[3]);
   }
   public void process_newplayer(String new_user){
-    //System.out.println("newplayer : "+new_user);
+    System.out.println("newplayer : "+new_user);
     player_list.put(new_user,new Player(new_user,0));
   }
   public void process_denied(String error){
-    System.out.println("Error : denied/"+error);
+    System.out.println("Error : DENIED/"+error);
   }
   public void process_playerleft(String name){
+    System.out.println("playerleft : "+name);
     player_list.remove(name);
-    //System.out.println("playerleft : "+name);
+
   }
   public void process_session(String coords,String coord){
     parse_target(coord);
@@ -182,12 +162,13 @@ public class Client {
   public void process_newobj(String coord,String scores){
     parse_target(coord);
     parse_scores(scores);
-    //System.out.println(coord);
+    System.out.println("new_obj : " + coord);
   }
   public void communicate(String[] server_split) throws IOException {
     process_welcome(server_split);//met a jour les données avec le server_input du welcome
     r = new Receive(this,inchan);//thread d'écoute de requetes serveur
-    //Send s = new Send(outchan);
+    Thread ihm = new Thread() {@Override public void run() {javafx.application.Application.launch(SpaceRun.class);}};
+    ihm.start();
     r.start();
     String client_input;
     while(true){
@@ -201,7 +182,7 @@ public class Client {
           outchan.flush();
           inchan.close();
           outchan.close();
-          refreshTask.cancel();
+          if(refreshTask != null) refreshTask.cancel();
           return;
         }else{
           System.out.println("Don't try to cheat! ;)");continue;
@@ -237,6 +218,7 @@ public class Client {
         }
       }
   }
+
   /****************************MAIN***************************/
   public static void main(String[] args) {
     Socket sock = null;
@@ -253,7 +235,7 @@ public class Client {
     }catch (IOException e) {
       System.err.println(e);
     }finally {
-      try{ if (sock != null) sock.close(); }catch (IOException e2){System.err.println(e2);}
+      try{ if (sock != null) sock.close();}catch (IOException e2){System.err.println(e2);}
     }
   }
 

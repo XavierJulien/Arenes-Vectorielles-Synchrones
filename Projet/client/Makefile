@@ -2,8 +2,7 @@ CC=javac
 
 all : compile
 
-compile :
-
+compile :clean
 	$(CC) *.java
 
 clean :

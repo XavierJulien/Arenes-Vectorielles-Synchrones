@@ -1,11 +1,9 @@
-/Client.class
-/Arene.class
 /Car.class
+/Client.class
+/Commands.class
 /Player.class
 /Point.class
 /Receive.class
-/Target.class
-/Interface.class
-/Commands.class
 /RefreshClientTask.class
+/Ship.class
 /SpaceShip.class
