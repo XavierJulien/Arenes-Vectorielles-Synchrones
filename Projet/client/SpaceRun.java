@@ -9,7 +9,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.text.*;
 import javafx.geometry.*;
-
+import javafx.event.*;
 
 public class SpaceRun extends Application implements Runnable{
 	// private double cx,cy;//coordonnées centre
@@ -19,7 +19,7 @@ public class SpaceRun extends Application implements Runnable{
 
 	//Start
 	private Stage primaryStage;
-	private Scene mainScene, lobbyScene;
+	private Scene mainScene, lobbyScene, playScene;
 
 	//JavaFX Lobby
 	private Text lobby_username_label;
@@ -53,70 +53,52 @@ public class SpaceRun extends Application implements Runnable{
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		this.primaryStage = primaryStage;
-		initializeMain();
+		Scene temp = initializeMain();
 		initializeLobby();
-		primaryStage.getScene().setOnKeyPressed(e -> {
+		primaryStage.show();
+		primaryStage.setScene(temp);
+		System.out.println("temp mis");
+		temp.setOnKeyPressed(e -> {
 			if (e.getCode() == KeyCode.UP) {
 				player.getVehicule().thrust();
-				System.out.println("thrust");
+				System.out.println("salut");
 			}
 			if (e.getCode() == KeyCode.LEFT) {
 				player.getVehicule().clock();
-				System.out.println("clock");
+				System.out.println("salut");
 			}
 			if (e.getCode() == KeyCode.RIGHT) {
 				player.getVehicule().anticlock();
-				System.out.println("anticlock");
+				System.out.println("salut");
 			}
 		});
-		primaryStage.show();
 	}
 
-	public void initializeMain(){
-		// demil = 500;
-		// demih = 500;
-		// //Screen Config
-
-
-		//
-		// //************ADD PLAYERS****************
-		//
-		// player = new Player("juju",0);
-		//root.getChildren().add(player.getVehicule().getShip());
-		// //***************************************
-		// //************UPDATE HANDLER*************
-    // new AnimationTimer(){//peut etre inutile si on peut directement appeler update dans la partie EVENT HANDLER
-    //     public void handle(long currentNanoTime){onUpdate();}
-    // }.start();
-		// //***************************************
-		// //*************EVENT HANDLER*************
-		// mainScene.setOnKeyPressed(e -> {
-    // 	if (e.getCode() == KeyCode.UP) {
-		// 		player.getVehicule().thrust();
-		// 	}
-		// 	if (e.getCode() == KeyCode.LEFT) {
-		// 		player.getVehicule().clock();
-		// 	}
-		// 	if (e.getCode() == KeyCode.RIGHT) {
-		// 		player.getVehicule().anticlock();
-		// 	}
-		// });
-		// //***************************************
-		//
-
+	public Scene initializeMain(){
 		playPane = new Pane();
 		playPane.setMinWidth(500);
 		playPane.setMinHeight(500);
-
-		//************ADD PLAYERS****************
+		playScene = new Scene(playPane,500,500);
+  	//************ADD PLAYERS****************
 		player = new Player("juju",0);
 		playPane.getChildren().addAll(player.getVehicule().getShip());
-		//************UPDATE HANDLER*************
-		new AnimationTimer(){//peut etre inutile si on peut directement appeler update dans la partie EVENT HANDLER
-		    public void handle(long currentNanoTime){onUpdate();}
-		}.start();
-		//*************EVENT HANDLER*************
-
+		playPane.setOnMousePressed(new EventHandler<MouseEvent>() {
+        @Override
+        public void handle(MouseEvent event) {
+					System.out.println("mouse click detected! "+event.getSource());
+					playPane.setOnKeyPressed(e -> {
+						if (e.getCode() == KeyCode.UP) {
+							player.getVehicule().thrust();
+						}
+						if (e.getCode() == KeyCode.LEFT) {
+							player.getVehicule().clock();
+						}
+						if (e.getCode() == KeyCode.RIGHT) {
+							player.getVehicule().anticlock();
+						}
+					});
+        }
+    });
 		main_username_label= new Text(username);
 		exit = new Button("EXIT");
 		exit.setOnAction(e -> primaryStage.setScene(lobbyScene));
@@ -146,6 +128,14 @@ public class SpaceRun extends Application implements Runnable{
 		mainScene = new Scene(mainPane,800,600);
 		//Stage
 		primaryStage.setScene(mainScene);
+		//************UPDATE HANDLER*************
+		new AnimationTimer(){//peut etre inutile si on peut directement appeler update dans la partie EVENT HANDLER
+				public void handle(long currentNanoTime){
+					onUpdate();
+				}
+		}.start();
+		//*************EVENT HANDLER*************
+		return mainScene;
 	}
 
 	public void initializeLobby(){
@@ -182,3 +172,33 @@ public class SpaceRun extends Application implements Runnable{
 //Image earth = new Image( "ihm/images/ship.png" );
 //Image sun   = new Image( "ihm/images/target.png" );
 //Image space = new Image( "ihm/images/space.png" );
+// demil = 500;
+// demih = 500;
+// //Screen Config
+
+
+//
+// //************ADD PLAYERS****************
+//
+// player = new Player("juju",0);
+//root.getChildren().add(player.getVehicule().getShip());
+// //***************************************
+// //************UPDATE HANDLER*************
+// new AnimationTimer(){//peut etre inutile si on peut directement appeler update dans la partie EVENT HANDLER
+//     public void handle(long currentNanoTime){onUpdate();}
+// }.start();
+// //***************************************
+// //*************EVENT HANDLER*************
+// mainScene.setOnKeyPressed(e -> {
+// 	if (e.getCode() == KeyCode.UP) {
+// 		player.getVehicule().thrust();
+// 	}
+// 	if (e.getCode() == KeyCode.LEFT) {
+// 		player.getVehicule().clock();
+// 	}
+// 	if (e.getCode() == KeyCode.RIGHT) {
+// 		player.getVehicule().anticlock();
+// 	}
+// });
+// //***************************************
+//
