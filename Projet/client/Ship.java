@@ -3,7 +3,7 @@ import javafx.scene.shape.*;
 
 public class Ship{
 	//constant(modifier selon la latence)
-	public final double turnit = 30.0;
+	public final double turnit = 20.0;
 	public final double thrustit = 1.0;
 	public final double maxSpeed = 5.0;
 
