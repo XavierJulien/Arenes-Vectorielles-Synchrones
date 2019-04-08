@@ -1,0 +1,40 @@
+node fib (x : int) returns (y : int);
+let
+  y = 1 -> (pre y + pre (pre y));
+tel
+
+
+/*
+
+Pas tres joli car
+
+y1 = 1
+y2 = 1 + ? = 1    <==
+y3 = 2
+
+$ fib
+## STEP 1 ##########
+x (integer) ? 5
+y = 1 
+## STEP 2 ##########
+x (integer) ? 5
+y = 1 
+## STEP 3 ##########
+x (integer) ? 5
+y = 2 
+## STEP 4 ##########
+x (integer) ? 5
+y = 3 
+## STEP 5 ##########
+x (integer) ? 5
+y = 5 
+## STEP 6 ##########
+x (integer) ? 5
+y = 8 
+## STEP 7 ##########
+x (integer) ? 5
+y = 13 
+## STEP 8 ##########
+x (integer) ? 
+
+*/

@@ -1,0 +1,34 @@
+module avance_recule :
+
+input  ENTER, ESCAPE, LEFT, RIGHT;
+%input  A_isMoving, B_isMoving, C_isMoving;
+%input  Distance : integer, Depassement_Lumiere, Sound;
+%input  Touch;
+
+%output A_Vitesse : integer, B_Vitesse : integer, C_Vitesse : integer;
+output A_Avance, B_Avance, C_Avance;
+%output tmpsig;
+%output LCD : string, LCDint : integer, LCDfloat : float;
+output A_Recul, B_Recul, C_Recul;
+%output A_Stop, B_Stop, C_Stop;
+%output Bip;
+sensor Light : float;
+
+%.....
+abort
+	loop
+		repeat 30 times
+			emit A_Avance;
+			emit C_Avance;
+			pause;
+		end repeat;
+		pause;
+		repeat 30 times
+			emit A_Recul;
+			emit C_Recul;
+			pause;
+		end repeat;
+	end loop;
+when ESCAPE;
+
+end module

@@ -24,6 +24,7 @@ public class Client {
 
   /***************************DATA****************************/
   private String my_name;
+  private int score;
   private Player myself;
   private Map<String,Player> player_list; // le client courant fait partie de la liste
   private Point target;
@@ -41,6 +42,14 @@ public class Client {
     this.target = null;
     this.isPlaying = false;
     this.cumulCmds = new ArrayList<>();
+  }
+  
+  public Client(String name) {
+	this.score = 0;
+	this.player_list = new HashMap<>();
+	this.target = null;
+	this.isPlaying = false;
+	this.cumulCmds = new ArrayList<>();
   }
   public void parse_status(String status) {
 	  if (status == "jeu") {
@@ -83,6 +92,14 @@ public class Client {
     target = new Point(Double.parseDouble(pos_target[1]),Double.parseDouble(pos_target[2]));
   }
 
+  /*************************GETTERS/SETTERS*******************/
+  public String getMy_name() {
+	return my_name;
+  }
+  public void setMy_name(String my_name) {
+	this.my_name = my_name;
+  }
+  
   /**************************CMDS*****************************/
   //je sais pas encore comment ou et comment elles peuvent être appelées..
   public void commandClock() {
@@ -129,7 +146,6 @@ public class Client {
   public void process_playerleft(String name){
     System.out.println("playerleft : "+name);
     player_list.remove(name);
-
   }
   public void process_session(String coords,String coord){
     parse_target(coord);

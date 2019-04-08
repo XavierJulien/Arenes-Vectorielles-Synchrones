@@ -1,0 +1,7 @@
+node ces (in,  out : bool) returns (compteur : int);
+var c_in, c_out : int;
+let
+  c_in  = if in then 1 else 0;
+  c_out = if out then -1 else 0;
+  compteur = c_in + c_out + (0 -> pre compteur);
+tel;

@@ -3,7 +3,7 @@ import javafx.scene.shape.*;
 
 public class Ship{
 	//constant(modifier selon la latence)
-	public final double turnit = 20.0;
+	public final double turnit = 90.0;
 	public final double thrustit = 1.0;
 	public final double maxSpeed = 5.0;
 
@@ -20,7 +20,7 @@ public class Ship{
 		this.p = new Polygon(new double[]{
 					x, y,
 					x+20, y+10,
-					x+30, y,
+					x+15, y,
 					x+20, y-10
 			 });
 		position = new Point(x,y);
@@ -45,8 +45,8 @@ public class Ship{
 	public void tick() {
 		position.setX(position.getX()+vect_vitesse.getX());
 		position.setY(position.getY()+vect_vitesse.getY());
-		p.setTranslateX(p.getTranslateX()+vect_vitesse.getX());
-		p.setTranslateY(p.getTranslateY()+vect_vitesse.getY());
+		p.setTranslateX(p.getTranslateX()-vect_vitesse.getX());
+		p.setTranslateY(p.getTranslateY()-vect_vitesse.getY());
 		p.setRotate(angle);
 	}
 	//controls

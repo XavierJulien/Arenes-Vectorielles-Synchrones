@@ -1,0 +1,40 @@
+node fib (x : bool) returns (y : int);
+let
+  y = (1 -> pre (1 -> y + pre y));
+tel
+
+
+/*
+
+$ fib
+## STEP 1 ##########
+x (1,t,T/0,f,F) ? t
+y = 1 
+## STEP 2 ##########
+x (1,t,T/0,f,F) ? t
+y = 1 
+## STEP 3 ##########
+x (1,t,T/0,f,F) ? t
+y = 2 
+## STEP 4 ##########
+x (1,t,T/0,f,F) ? t
+y = 3 
+## STEP 5 ##########
+x (1,t,T/0,f,F) ? t
+y = 5 
+## STEP 6 ##########
+x (1,t,T/0,f,F) ? t
+y = 8 
+## STEP 7 ##########
+x (1,t,T/0,f,F) ? t
+y = 13 
+## STEP 8 ##########
+x (1,t,T/0,f,F) ? t
+y = 21 
+## STEP 9 ##########
+x (1,t,T/0,f,F) ? t
+y = 34 
+## STEP 10 ##########
+x (1,t,T/0,f,F) ?
+
+*/

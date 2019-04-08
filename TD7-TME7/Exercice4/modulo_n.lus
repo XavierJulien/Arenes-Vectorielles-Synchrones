@@ -1,0 +1,73 @@
+node modulo_n (n : int) returns (max_modulo : int; nombre : int);
+var inc : int;
+let
+  (nombre, max_modulo) = (inc, current (inc when ((inc mod n) = 0)));
+  inc      = 0 -> 1 + pre inc;	/* l'increment */
+tel;
+
+
+/*
+
+Sans current, on aura un probleme d'horloge, en effet
+l'horloge du resultat est celui correspondant a la valeur
+true de ((inc mod n) = 0)). Donc, decale.
+current permet donc de rendre la valeur courrante avec l'horloge fourni
+par inc (le meme que n). C'est donc ici l'horloge de base.
+
+$ modulo_n
+## STEP 1 ##########
+n (integer) ? 5
+max_modulo = 0 
+nombre = 0 
+## STEP 2 ##########
+n (integer) ? 5
+max_modulo = 0 
+nombre = 1 
+## STEP 3 ##########
+n (integer) ? 5
+max_modulo = 0 
+nombre = 2 
+## STEP 4 ##########
+n (integer) ? 5
+max_modulo = 0 
+nombre = 3 
+## STEP 5 ##########
+n (integer) ? 5
+max_modulo = 0 
+nombre = 4 
+## STEP 6 ##########
+n (integer) ? 5
+max_modulo = 5 
+nombre = 5 
+## STEP 7 ##########
+n (integer) ? 5
+max_modulo = 5 
+nombre = 6 
+## STEP 8 ##########
+n (integer) ? 5
+max_modulo = 5 
+nombre = 7 
+## STEP 9 ##########
+n (integer) ? 5
+max_modulo = 5 
+nombre = 8 
+## STEP 10 ##########
+n (integer) ? 5
+max_modulo = 5 
+nombre = 9 
+## STEP 11 ##########
+n (integer) ? 5
+max_modulo = 10 
+nombre = 10 
+## STEP 12 ##########
+n (integer) ? 5
+max_modulo = 10 
+nombre = 11 
+## STEP 13 ##########
+n (integer) ? 5
+max_modulo = 10 
+nombre = 12 
+## STEP 14 ##########
+n (integer) ?
+
+*/

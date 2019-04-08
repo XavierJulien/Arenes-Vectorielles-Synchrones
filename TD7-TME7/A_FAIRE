@@ -1,0 +1,20 @@
+export LUSTRE_INSTALL=/Vrac/PC2R/lustre
+
+. $LUSTRE_INSTALL/setenv.sh
+
+lus2c  nom_fichier.lus  nom_noeud_principal  -loop
+==>
+ca genere 2 fichiers :
+  - nom_noeud_principal.c
+  - et  nom_noeud_principal_loop.c (ou il y a le main())
+
+gcc  nom_chier.c  nom_fichier_loop.c  -o  nom
+
+
+******************** test *********************
+
+$nom
+## STEP 1 ##########
+...
+## STEP 6 ##########
+...

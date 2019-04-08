@@ -1,0 +1,43 @@
+node fib (max : int) returns (y : int);
+let
+  y = if ((1 -> pre y) < max) then
+        (1 -> pre (1 -> y + pre y))
+      else
+        pre y;
+tel
+
+
+/*
+
+$ fib
+## STEP 1 ##########
+max (integer) ? 10
+y = 1 
+## STEP 2 ##########
+max (integer) ? 10
+y = 1 
+## STEP 3 ##########
+max (integer) ? 10
+y = 2 
+## STEP 4 ##########
+max (integer) ? 10
+y = 3 
+## STEP 5 ##########
+max (integer) ? 10
+y = 5 
+## STEP 6 ##########
+max (integer) ? 10
+y = 8 
+## STEP 7 ##########
+max (integer) ? 10
+y = 13 
+## STEP 8 ##########
+max (integer) ? 10
+y = 13 
+## STEP 9 ##########
+max (integer) ? 10
+y = 13 
+## STEP 10 ##########
+max (integer) ?
+
+*/

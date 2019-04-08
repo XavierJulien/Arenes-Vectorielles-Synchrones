@@ -1,0 +1,43 @@
+node fib (n : int) returns (y : int);
+var i : int;
+
+let
+  i = 0 -> 1 + pre i;
+  y = if (i <= n) then
+        (1 -> pre (1 -> y + pre y))
+      else
+        pre y;
+tel;
+
+
+/*
+
+$ fib
+## STEP 1 ##########
+n (integer) ? 5
+y = 1 
+## STEP 2 ##########
+n (integer) ? 5
+y = 1 
+## STEP 3 ##########
+n (integer) ? 5
+y = 2 
+## STEP 4 ##########
+n (integer) ? 5
+y = 3 
+## STEP 5 ##########
+n (integer) ? 5
+y = 5 
+## STEP 6 ##########
+n (integer) ? 5
+y = 8 
+## STEP 7 ##########
+n (integer) ? 5
+y = 8 
+## STEP 8 ##########
+n (integer) ? 5
+y = 8 
+## STEP 9 ##########
+n (integer) ?
+
+*/

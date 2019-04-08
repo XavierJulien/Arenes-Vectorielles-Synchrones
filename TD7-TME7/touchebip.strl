@@ -1,0 +1,11 @@
+module touchbip:
+
+input Touch;
+output Bip;
+
+	loop 
+		await Touch;
+		emit Bip;
+	end loop
+
+end 
