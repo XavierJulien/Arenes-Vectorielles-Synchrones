@@ -4,20 +4,31 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.stage.*;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.layout.*;
-import javafx.scene.shape.*;
-import javafx.scene.control.*;
-import javafx.scene.input.*;
-import javafx.scene.text.*;
-import javafx.scene.paint.*;
-import javafx.geometry.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Shape;
+import javafx.scene.text.Text;
+import javafx.stage.Stage; 
 
 public class SpaceRun extends Application implements Runnable{
 	private double demih;
@@ -33,15 +44,16 @@ public class SpaceRun extends Application implements Runnable{
 	private GridPane lobbyPane;
 
 	//JavaFX Main
-	private Text main_username_label,main_score_label;
-	private BorderPane playPane;
-	private Player player;
-	private Pane mainPane;
-	private Button exit;
-	private HBox chatbox;
-	private StackPane playbox;
-	private GridPane descPane;
-	private Canvas canvas;
+	private BorderPane mainPane;
+		//right
+		private VBox right;
+			//desc
+			private Text main_score;
+			
+			//list
+			
+		//left
+		private Canvas left;
 
 	//Communication Client/Server
 	private Client c;
@@ -59,20 +71,26 @@ public class SpaceRun extends Application implements Runnable{
 	}
 
 	public void onUpdate() {//met à jour les positions des joueurs à chaque
-		for(Player c : c.getPlayer_list().values()) {
-			draw(c);
+		for(Player c : c.getPlayers_list().values()) {
+			//draw(c);
 			c.getShip().tick();
 			move(c.getShip().getShape());
   	  	}	 
 	}
 
-	private void draw(Player c2) {
-		
-		canvas.getGraphicsContext2D().fillPolygon(new double[]{10, 40, 10, 40},
-                new double[]{210, 210, 240, 240}, 4);
-		
+	private void updateListPlayer() {
+		Map<String,Player> map_players = c.getPlayers_list();
+		ListView<String> aff_list_players = (ListView<String>)right.getChildren().get(1);
+		List<String> list = new ArrayList<>();
+		map_players.forEach((k,v) -> {
+			String player_desc = "Player : "+k+" | Score : "+v.getScore();
+			list.add(player_desc);	
+		});
+		ObservableList<String> newItems = FXCollections.observableList(list);
+		aff_list_players.setItems(newItems);
 	}
 
+	
 	//**************************AFFICHAGE**********************
 	@Override
 	public void start(Stage primaryStage) throws Exception {
@@ -95,12 +113,12 @@ public class SpaceRun extends Application implements Runnable{
 	public void initializeMain(){
 		demil = 500;
 		demih = 500;
-		mainPane = new Pane();
+		//mainPane = new Pane();
 		mainScene = new Scene(mainPane,800,500,Color.BLACK);
 		primaryStage.setScene(mainScene);
 		
 		//************ADD PLAYERS****************
-		for(Player c : c.getPlayer_list().values()) {
+		for(Player c : c.getPlayers_list().values()) {
 			System.out.println("x = "+c.getShip().get_posX()+", y = "+c.getShip().get_posY());
 			c.setShip(new Ship(c.getShip().get_posX(),c.getShip().get_posY()));
 			mainPane.getChildren().add(c.getShip().getShape());
@@ -113,25 +131,39 @@ public class SpaceRun extends Application implements Runnable{
 		//*************EVENT HANDLER*************
 		mainScene.setOnKeyPressed(e -> {
 			if (e.getCode() == KeyCode.UP) {
-				c.getPlayer_list().get(name).getShip().thrust();
+				c.getPlayers_list().get(name).getShip().thrust();
 			}
 			if (e.getCode() == KeyCode.LEFT) {
-				c.getPlayer_list().get(name).getShip().clock();
+				c.getPlayers_list().get(name).getShip().clock();
 			}
 			if (e.getCode() == KeyCode.RIGHT) {
-				c.getPlayer_list().get(name).getShip().anticlock();
+				c.getPlayers_list().get(name).getShip().anticlock();
 			}
 		});
 		
 	}
 
-	public void initializeMain2() {
+	public void initializeMain2() throws IOException {
+		mainPane = (BorderPane) FXMLLoader.load(getClass().getResource("main.fxml"));
+		playScene = new Scene(mainPane, 1000, 1000);
 		
-		playPane = new BorderPane();
-		playScene = new Scene(playPane, 800, 800);
+		//-----------------DESSIN---------------------------------
+		left = (Canvas)mainPane.getLeft();
+		left.getGraphicsContext2D().fillRect(0, 0, left.getHeight(), left.getWidth());
+
+		
+		
 		
 		//--------------RIGHTPANEL-----------------------------
-	    Button exit = new Button("Exit");
+		//*******Description*********
+		right = (VBox)mainPane.getRight();
+		Pane descJoueur = (Pane)right.getChildren().get(0);
+		
+		Text main_username = (Text)descJoueur.getChildren().get(0);
+		main_username.setText("User : "+c.getMy_name());
+		main_score = (Text)descJoueur.getChildren().get(1);
+		main_score.setText("Score : "+String.valueOf(c.getScore()));
+	    Button exit = (Button)descJoueur.getChildren().get(2);
 	    exit.setOnAction(e -> {
 	    	r.setRunning(false);
 	    	outchan.println("EXIT/"+name+"/");
@@ -146,52 +178,15 @@ public class SpaceRun extends Application implements Runnable{
 				// TODO Auto-generated catch block
 				System.out.println("blabla");
 			}});
-	    exit.setPadding(new Insets(10, 10, 10, 10));
+		
 	    
-	    main_username_label= new Text(name);
-	    main_score_label = new Text("Score : "+c.getScore());
-	    
-		FlowPane flow = new FlowPane(Orientation.VERTICAL);
-		flow.setPrefWrapLength(500);
-		flow.setColumnHalignment(HPos.LEFT);
-		flow.setHgap(4);
-		flow.getChildren().add(exit);
-		flow.getChildren().add(main_username_label);
-		flow.getChildren().add(main_score_label);
-		//--------------BOTTOMPANEL------------------------------
-	   	chatbox = new HBox();
-	  	Text t = new Text("blabla");
-	  	chatbox.getChildren().add(t);
-	  	chatbox.setMaxHeight(200);
-	  	chatbox.setMinHeight(100);
-	    playPane.setBottom(chatbox);
-	  	
-	    
-	    //----------------CENTERPANEL-----------------------------
-	    canvas = new Canvas();
-	    canvas.setWidth(700);
-	    canvas.setHeight(500);
-	    GraphicsContext gc = canvas.getGraphicsContext2D();
-	    
-	    gc.setFill(Color.PINK);
-	    gc.fillRect(0,0,canvas.getHeight(),canvas.getWidth());
-	    gc.setFill(Color.BLACK);
-	    gc.fillPolygon(new double[]{
-				player.getShip().get_posX(), player.getShip().get_posY(),
-				player.getShip().get_posX()+20, player.getShip().get_posY()+10,
-				player.getShip().get_posX()+15, player.getShip().get_posY(),
-				player.getShip().get_posX()+20, player.getShip().get_posY()-10
-		 }, null, 0);
-	    
+		//listjoueur
+	    updateListPlayer();
 	    
 	    //------------------FIX POSITION---------------------------
 		new AnimationTimer(){//peut etre inutile si on peut directement appeler update dans la partie EVENT HANDLER
 			public void handle(long currentNanoTime){onUpdate();}
 		}.start();
-	    playPane.setRight(flow);
-	    playPane.setCenter(canvas);
-	    
-	    
 	}
 
 	public void initializeLobby() {
@@ -219,7 +214,7 @@ public class SpaceRun extends Application implements Runnable{
 			  			  primaryStage.setScene(playScene);
 			        	  break;
 			          case "DENIED" : 
-			        	  Text t = new Text("Nickname already taken.");
+			        	  Text t = new Text("Nickname already took.");
 			        	  t.setFill(Color.RED);
 			        	  lobbyPane.add(t, 1, 1);
 			        	  System.out.println("Error : "+server_split[1]);break;
@@ -251,7 +246,7 @@ public class SpaceRun extends Application implements Runnable{
 	@Override public void run() {launch();}
 }
 
-/*for(Player c : c.getPlayer_list().values()) {
+/*for(Player c : c.getPlayers_list().values()) {
 System.out.println("x = "+c.getShip().get_posX()+", y = "+c.getShip().get_posY());
 c.setShip(new Ship(c.getShip().get_posX(),c.getShip().get_posY()));
 playPane.getChildren().add(c.getShip().getShip());
@@ -264,13 +259,13 @@ new AnimationTimer(){//peut etre inutile si on peut directement appeler update d
 //*************EVENT HANDLER*************
 playScene.setOnKeyPressed(e -> {
 if (e.getCode() == KeyCode.UP) {
-	c.getPlayer_list().get(name).getShip().thrust();
+	c.getPlayers_list().get(name).getShip().thrust();
 }
 if (e.getCode() == KeyCode.LEFT) {
-	c.getPlayer_list().get(name).getShip().clock();
+	c.getPlayers_list().get(name).getShip().clock();
 }
 if (e.getCode() == KeyCode.RIGHT) {
-	c.getPlayer_list().get(name).getShip().anticlock();
+	c.getPlayers_list().get(name).getShip().anticlock();
 }
 });*/
 

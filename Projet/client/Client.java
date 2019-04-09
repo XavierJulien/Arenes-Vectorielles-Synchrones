@@ -44,6 +44,7 @@ public class Client {
     this.cumulCmds = new ArrayList<>();
   }
   public Client(String name) {
+	 this.my_name = name;
 	this.score = 0;
 	this.player_list = new HashMap<>();
 	this.target = null;
@@ -103,7 +104,7 @@ public class Client {
   }
   public int getScore() {return score;}
   public void setScore(int score) {this.score = score;}
-  public Map<String, Player> getPlayer_list() {return player_list;}
+  public Map<String, Player> getPlayers_list() {return player_list;}
   public Point getTarget() {return target;}
   /**************************CMDS*****************************/
   //je sais pas encore comment ou et comment elles peuvent être appelées..

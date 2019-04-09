@@ -396,6 +396,7 @@ let start_server nb_c =
 		ignore (Thread.create tick_thread ());
     while true do
       let (client_socket, _) = Unix.accept server_socket in
+      Unix.setsockopt client_socket Unix.SO_REUSEADDR true;
       	print_endline "Nouvelle connexion socket";
         ignore (Thread.create start_new_client client_socket);
     done

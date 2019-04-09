@@ -21,7 +21,7 @@ public class Receive extends Thread {
         try{
           server_input = inchan.readLine();
           if(server_input != null){
-            //System.out.println(server_input);
+            System.out.println(server_input);
             String[] server_split = server_input.split("/");
             switch(server_split[0]){
               case "NEWPLAYER" : client.process_newplayer(server_split[1]);break;
