@@ -83,10 +83,10 @@ public class Client {
         String[] xy = p.split(":")[1].split("[XY]");
         double x = Double.parseDouble(xy[1]);
         double y = Double.parseDouble(xy[2]);
-        player_list.get(p.split(":")[0]).getVehicule().set_posX(x);
-    	player_list.get(p.split(":")[0]).getVehicule().set_posY(y);
-    	player_list.get(p.split(":")[0]).getVehicule().getShip().setTranslateX(x);
-    	player_list.get(p.split(":")[0]).getVehicule().getShip().setTranslateX(y);
+        player_list.get(p.split(":")[0]).getShip().set_posX(x);
+    	player_list.get(p.split(":")[0]).getShip().set_posY(y);
+    	player_list.get(p.split(":")[0]).getShip().getShape().setTranslateX(x);
+    	player_list.get(p.split(":")[0]).getShip().getShape().setTranslateX(y);
     }
   }
   public void parse_target(String coord_string){
@@ -109,14 +109,14 @@ public class Client {
   //je sais pas encore comment ou et comment elles peuvent être appelées..
   public void commandClock() {
 	  Player me = player_list.get(my_name);
-	  me.getVehicule().setAngle(me.getVehicule().getAngle()-turnit);
-    //me.getVehicule().clock();
+	  me.getShip().setAngle(me.getShip().getAngle()-turnit);
+    //me.getShip().clock();
 	  //cumulCmds.add(Commands.clock);
   }
   public void commandAnticlock() {
 	  Player me = player_list.get(my_name);
-	  me.getVehicule().setAngle(me.getVehicule().getAngle()+turnit);
-    //me.getVehicule().anticlock();
+	  me.getShip().setAngle(me.getShip().getAngle()+turnit);
+    //me.getShip().anticlock();
 	  //cumulCmds.add(Commands.anticlock);
   }
   public void commandThrust() {
@@ -124,10 +124,10 @@ public class Client {
 	   * vx+turnit∗cos(θ), vy+turnit∗sin(θ)
 	   */
 	  Player me = player_list.get(my_name);
-	  double new_vx = me.getVehicule().get_speedX()+turnit*Math.cos(me.getVehicule().getAngle());
-	  double new_vy = me.getVehicule().get_speedY()+turnit*Math.sin(me.getVehicule().getAngle());
-	  me.getVehicule().set_speedXY(new_vx, new_vy);
-    //me.getVehicule().thrust();
+	  double new_vx = me.getShip().get_speedX()+turnit*Math.cos(me.getShip().getAngle());
+	  double new_vy = me.getShip().get_speedY()+turnit*Math.sin(me.getShip().getAngle());
+	  me.getShip().set_speedXY(new_vx, new_vy);
+    //me.getShip().thrust();
 	  //cumulCmds.add(Commands.thrust);
   }
 

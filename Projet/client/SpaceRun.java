@@ -9,6 +9,8 @@ import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.stage.*;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.*;
 import javafx.scene.shape.*;
 import javafx.scene.control.*;
@@ -16,11 +18,10 @@ import javafx.scene.input.*;
 import javafx.scene.text.*;
 import javafx.scene.paint.*;
 import javafx.geometry.*;
-//import javafx.event.*;
 
 public class SpaceRun extends Application implements Runnable{
-	private double demih;//demihauteur
-	private double demil;//demilargeur
+	private double demih;
+	private double demil;
 	protected static final int PORT=2019;
 	private String name;
 	
@@ -32,14 +33,15 @@ public class SpaceRun extends Application implements Runnable{
 	private GridPane lobbyPane;
 
 	//JavaFX Main
-	private Text main_username_label;
-	private Pane playPane;
+	private Text main_username_label,main_score_label;
+	private BorderPane playPane;
 	private Player player;
 	private Pane mainPane;
 	private Button exit;
 	private HBox chatbox;
 	private StackPane playbox;
 	private GridPane descPane;
+	private Canvas canvas;
 
 	//Communication Client/Server
 	private Client c;
@@ -57,11 +59,18 @@ public class SpaceRun extends Application implements Runnable{
 	}
 
 	public void onUpdate() {//met à jour les positions des joueurs à chaque
-		
 		for(Player c : c.getPlayer_list().values()) {
-			c.getVehicule().tick();
-			move(c.getVehicule().getShip());
+			draw(c);
+			c.getShip().tick();
+			move(c.getShip().getShape());
   	  	}	 
+	}
+
+	private void draw(Player c2) {
+		
+		canvas.getGraphicsContext2D().fillPolygon(new double[]{10, 40, 10, 40},
+                new double[]{210, 210, 240, 240}, 4);
+		
 	}
 
 	//**************************AFFICHAGE**********************
@@ -92,9 +101,9 @@ public class SpaceRun extends Application implements Runnable{
 		
 		//************ADD PLAYERS****************
 		for(Player c : c.getPlayer_list().values()) {
-			System.out.println("x = "+c.getVehicule().get_posX()+", y = "+c.getVehicule().get_posY());
-			c.setVehicule(new Ship(c.getVehicule().get_posX(),c.getVehicule().get_posY()));
-			mainPane.getChildren().add(c.getVehicule().getShip());
+			System.out.println("x = "+c.getShip().get_posX()+", y = "+c.getShip().get_posY());
+			c.setShip(new Ship(c.getShip().get_posX(),c.getShip().get_posY()));
+			mainPane.getChildren().add(c.getShip().getShape());
   	  	}
 		
 		//************UPDATE HANDLER*************
@@ -104,103 +113,86 @@ public class SpaceRun extends Application implements Runnable{
 		//*************EVENT HANDLER*************
 		mainScene.setOnKeyPressed(e -> {
 			if (e.getCode() == KeyCode.UP) {
-				c.getPlayer_list().get(name).getVehicule().thrust();
+				c.getPlayer_list().get(name).getShip().thrust();
 			}
 			if (e.getCode() == KeyCode.LEFT) {
-				c.getPlayer_list().get(name).getVehicule().clock();
+				c.getPlayer_list().get(name).getShip().clock();
 			}
 			if (e.getCode() == KeyCode.RIGHT) {
-				c.getPlayer_list().get(name).getVehicule().anticlock();
+				c.getPlayer_list().get(name).getShip().anticlock();
 			}
 		});
 		
 	}
 
 	public void initializeMain2() {
-		BorderPane root = new BorderPane();
 		
-		root.setPadding(new Insets(15, 20, 10, 10));
-		 
-	      // TOP
-	      Button btnTop = new Button("Top");
-	      btnTop.setPadding(new Insets(10, 10, 10, 10));
-	      root.setTop(btnTop);
-	      // Set margin for top area.
-	      BorderPane.setMargin(btnTop, new Insets(10, 10, 10, 10));
-	      
-	 
-	      // LEFT
-	      Button btnLeft = new Button("Left");
-	      btnLeft.setPadding(new Insets(5, 5, 5, 5));
-	      root.setLeft(btnLeft);
-	      // Set margin for left area.
-	      BorderPane.setMargin(btnLeft, new Insets(10, 10, 10, 10));
-	 
-	      // CENTER
-	      Button btnCenter = new Button("Center");
-	      btnCenter.setPadding(new Insets(5, 5, 5, 5));
-	      root.setCenter(btnCenter);
-	       // Alignment.
-	       BorderPane.setAlignment(btnCenter, Pos.BOTTOM_CENTER);
-	 
-	      // RIGHT
-	      Button btnRight = new Button("Right");
-	      btnRight.setPadding(new Insets(5, 5, 5, 5));
-	      root.setRight(btnRight);
-	      // Set margin for right area.
-	      BorderPane.setMargin(btnRight, new Insets(10, 10, 10, 10));
-	 
-	      // BOTTOM
-	      Button btnBottom = new Button("Bottom");
-	      btnBottom.setPadding(new Insets(5, 5, 5, 5));
-	      root.setBottom(btnBottom);
-	      // Alignment.
-	      BorderPane.setAlignment(btnBottom, Pos.TOP_RIGHT);
-	 
-	      // Set margin for bottom area.
-	      BorderPane.setMargin(btnBottom, new Insets(10, 10, 10, 10));
-	 
-	      Scene scene = new Scene(root, 550, 250);
-	      primaryStage.setScene(scene);
+		playPane = new BorderPane();
+		playScene = new Scene(playPane, 800, 800);
+		
+		//--------------RIGHTPANEL-----------------------------
+	    Button exit = new Button("Exit");
+	    exit.setOnAction(e -> {
+	    	r.setRunning(false);
+	    	outchan.println("EXIT/"+name+"/");
+	    	outchan.flush();
+	    	try {
+	    		//if(refreshTask != null) refreshTask.cancel();
+	    		inchan.close();
+	    		outchan.close();
+				sock.close();
+				System.exit(0);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				System.out.println("blabla");
+			}});
+	    exit.setPadding(new Insets(10, 10, 10, 10));
+	    
+	    main_username_label= new Text(name);
+	    main_score_label = new Text("Score : "+c.getScore());
+	    
+		FlowPane flow = new FlowPane(Orientation.VERTICAL);
+		flow.setPrefWrapLength(500);
+		flow.setColumnHalignment(HPos.LEFT);
+		flow.setHgap(4);
+		flow.getChildren().add(exit);
+		flow.getChildren().add(main_username_label);
+		flow.getChildren().add(main_score_label);
+		//--------------BOTTOMPANEL------------------------------
+	   	chatbox = new HBox();
+	  	Text t = new Text("blabla");
+	  	chatbox.getChildren().add(t);
+	  	chatbox.setMaxHeight(200);
+	  	chatbox.setMinHeight(100);
+	    playPane.setBottom(chatbox);
+	  	
+	    
+	    //----------------CENTERPANEL-----------------------------
+	    canvas = new Canvas();
+	    canvas.setWidth(700);
+	    canvas.setHeight(500);
+	    GraphicsContext gc = canvas.getGraphicsContext2D();
+	    
+	    gc.setFill(Color.PINK);
+	    gc.fillRect(0,0,canvas.getHeight(),canvas.getWidth());
+	    gc.setFill(Color.BLACK);
+	    gc.fillPolygon(new double[]{
+				player.getShip().get_posX(), player.getShip().get_posY(),
+				player.getShip().get_posX()+20, player.getShip().get_posY()+10,
+				player.getShip().get_posX()+15, player.getShip().get_posY(),
+				player.getShip().get_posX()+20, player.getShip().get_posY()-10
+		 }, null, 0);
+	    
+	    
+	    //------------------FIX POSITION---------------------------
+		new AnimationTimer(){//peut etre inutile si on peut directement appeler update dans la partie EVENT HANDLER
+			public void handle(long currentNanoTime){onUpdate();}
+		}.start();
+	    playPane.setRight(flow);
+	    playPane.setCenter(canvas);
+	    
+	    
 	}
-		//private BufferedReader inchan,input;
-  		//private PrintStream outchan;
-		//playScene = new Scene(playPane,500,500);
-		//exit = new Button("EXIT");
-		//exit.setOnAction(e -> primaryStage.setScene(lobbyScene));
-		//playPane = new Pane(500,500);
-		//Client c
-		//
-		//main_username_label= new Text(username);
-		//descPane = new GridPane();
-		//descPane.setVgap(5);
-		//descPane.setHgap(10);
-		//descPane.setHgap(10);
-		//descPane.setAlignment(Pos.CENTER);
-		//descPane.add(exit, 2, 0);
-		//descPane.add(main_username_label, 2, 1);
-		//
-		//mainPane.getChildren().addAll(playPane,descPane);
-		//PlayBox
-		//playbox = new StackPane();
-		//playbox.getChildren().addAll(mainPane,descPane);
-		//
-		//ChatBox
-		//chatbox = new HBox();
-		//chatbox.setMaxHeight(200);
-		//chatbox.setMinHeight(100);
-		//Layout
-		//mainPane = new Pane();
-		//mainPane.setOrientation(Orientation.VERTICAL);
-		//mainPane.setMinSize(800, 600);
-		//mainPane.getItems().addAll(playbox, chatbox);
-		//Client c
-		//Scene
-		//mainScene = new Scene(playPane,800,600,Color.PINK);
-		//Stage
-		//primaryStage.setScene(mainScene);
-		
-
 
 	public void initializeLobby() {
 		//label username
@@ -224,7 +216,7 @@ public class SpaceRun extends Application implements Runnable{
 			        	  initializeMain2();
 			        	  r = new Receive(c,inchan);
 			        	  r.start();
-			  			  primaryStage.setScene(mainScene);
+			  			  primaryStage.setScene(playScene);
 			        	  break;
 			          case "DENIED" : 
 			        	  Text t = new Text("Nickname already taken.");
@@ -258,3 +250,60 @@ public class SpaceRun extends Application implements Runnable{
 	public static void main(String[] args) {launch(args);}
 	@Override public void run() {launch();}
 }
+
+/*for(Player c : c.getPlayer_list().values()) {
+System.out.println("x = "+c.getShip().get_posX()+", y = "+c.getShip().get_posY());
+c.setShip(new Ship(c.getShip().get_posX(),c.getShip().get_posY()));
+playPane.getChildren().add(c.getShip().getShip());
+}
+
+//************UPDATE HANDLER*************
+new AnimationTimer(){//peut etre inutile si on peut directement appeler update dans la partie EVENT HANDLER
+	public void handle(long currentNanoTime){onUpdate();}
+}.start();
+//*************EVENT HANDLER*************
+playScene.setOnKeyPressed(e -> {
+if (e.getCode() == KeyCode.UP) {
+	c.getPlayer_list().get(name).getShip().thrust();
+}
+if (e.getCode() == KeyCode.LEFT) {
+	c.getPlayer_list().get(name).getShip().clock();
+}
+if (e.getCode() == KeyCode.RIGHT) {
+	c.getPlayer_list().get(name).getShip().anticlock();
+}
+});*/
+
+//private BufferedReader inchan,input;
+	//private PrintStream outchan;
+//playScene = new Scene(playPane,500,500);
+//exit = new Button("EXIT");
+//exit.setOnAction(e -> primaryStage.setScene(lobbyScene));
+//playPane = new Pane(500,500);
+//Client c
+//
+//main_username_label= new Text(username);
+//descPane = new GridPane();
+//descPane.setVgap(5);
+//descPane.setHgap(10);
+//descPane.setHgap(10);
+//descPane.setAlignment(Pos.CENTER);
+//descPane.add(exit, 2, 0);
+//descPane.add(main_username_label, 2, 1);
+//
+//mainPane.getChildren().addAll(playPane,descPane);
+//PlayBox
+//playbox = new StackPane();
+//playbox.getChildren().addAll(mainPane,descPane);
+//
+//Layout
+//mainPane = new Pane();
+//mainPane.setOrientation(Orientation.VERTICAL);
+//mainPane.setMinSize(800, 600);
+//mainPane.getItems().addAll(playbox, chatbox);
+//Client c
+//Scene
+//mainScene = new Scene(playPane,800,600,Color.PINK);
+//Stage
+//primaryStage.setScene(mainScene);
+

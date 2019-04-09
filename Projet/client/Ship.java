@@ -32,7 +32,7 @@ public class Ship{
 	public double get_posX(){return position.getX();}
 	public double get_posY(){return position.getY();}
 	public double getAngle(){return angle;}
-	public Shape getShip() {return p;}
+	public Shape getShape() {return p;}
 	public double get_speedX(){return vect_vitesse.getX();}
 	public double get_speedY(){return vect_vitesse.getY();}
 	public void set_posX(double x){position.setX(x);}

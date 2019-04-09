@@ -1,21 +1,21 @@
 
-import javafx.scene.shape.Circle;
 
 public class Player{
   private String name;
   private int score;
-  private Ship vehicule;
+  private Ship ship;
 
   public Player(String name,int score){
-    this.name = name; //superflu
+    this.name = name;
     this.score = score;
-    this.vehicule = new Ship(0, 0); // pour ne pas avoir à différencier le cas ou il est null du cas ou il est pas null
+    this.ship = new Ship(100, 100); // pour ne pas avoir à différencier le cas ou il est null du cas ou il est pas null
   //  this.vehicule = new Ship(new Circle(0,0,20),0,0);
   }
+  
 
   public String getName(){return name;}
   public int getScore(){return score;}
-  public Ship getVehicule(){return vehicule;}
+  public Ship getShip(){return ship;}
   public void setScore(int score){this.score = score;}
-  public void setVehicule(Ship vehicule){this.vehicule = vehicule;}
+  public void setShip(Ship ship){this.ship = ship;}
 }
