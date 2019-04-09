@@ -1,3 +1,4 @@
+
 public class Point{
   //position
   private double x;
