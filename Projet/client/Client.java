@@ -43,7 +43,6 @@ public class Client {
     this.isPlaying = false;
     this.cumulCmds = new ArrayList<>();
   }
-  
   public Client(String name) {
 	this.score = 0;
 	this.player_list = new HashMap<>();
@@ -51,6 +50,7 @@ public class Client {
 	this.isPlaying = false;
 	this.cumulCmds = new ArrayList<>();
   }
+  
   public void parse_status(String status) {
 	  if (status == "jeu") {
 		  isPlaying=true;
@@ -83,8 +83,10 @@ public class Client {
         String[] xy = p.split(":")[1].split("[XY]");
         double x = Double.parseDouble(xy[1]);
         double y = Double.parseDouble(xy[2]);
-    		player_list.get(p.split(":")[0]).getVehicule().set_posX(x);
-    		player_list.get(p.split(":")[0]).getVehicule().set_posY(y);
+        player_list.get(p.split(":")[0]).getVehicule().set_posX(x);
+    	player_list.get(p.split(":")[0]).getVehicule().set_posY(y);
+    	player_list.get(p.split(":")[0]).getVehicule().getShip().setTranslateX(x);
+    	player_list.get(p.split(":")[0]).getVehicule().getShip().setTranslateX(y);
     }
   }
   public void parse_target(String coord_string){
@@ -99,7 +101,10 @@ public class Client {
   public void setMy_name(String my_name) {
 	this.my_name = my_name;
   }
-  
+  public int getScore() {return score;}
+  public void setScore(int score) {this.score = score;}
+  public Map<String, Player> getPlayer_list() {return player_list;}
+  public Point getTarget() {return target;}
   /**************************CMDS*****************************/
   //je sais pas encore comment ou et comment elles peuvent être appelées..
   public void commandClock() {
@@ -171,6 +176,8 @@ public class Client {
     parse_scores(scores);
     System.out.println("new_obj : " + coord);
   }
+  
+  
   public void communicate(String[] server_split) throws IOException {
     process_welcome(server_split);//met a jour les données avec le server_input du welcome
     r = new Receive(this,inchan);//thread d'écoute de requetes serveur
