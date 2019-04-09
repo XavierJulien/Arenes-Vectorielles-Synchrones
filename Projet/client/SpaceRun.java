@@ -93,14 +93,12 @@ public class SpaceRun extends Application implements Runnable{
 	
 	//**************************AFFICHAGE**********************
 	@Override
-	public void start(Stage primaryStage) throws Exception {
+	public void start(Stage primaryStage) throws Exception { //CE QUI EST LANCE PAR LAUNCH
 		this.primaryStage = primaryStage;
 		try {
 		  sock = new Socket (InetAddress.getByName("127.0.0.1"),PORT);
 		  inchan = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 		  outchan = new PrintStream(sock.getOutputStream());
-		  System.out.println(outchan);
-		  System.out.println(inchan);
 		  System.out.println("Connection established : "+sock.getInetAddress()+" port : "+sock.getPort());
 	      initializeLobby();
 		  primaryStage.show();
@@ -150,9 +148,6 @@ public class SpaceRun extends Application implements Runnable{
 		//-----------------DESSIN---------------------------------
 		left = (Canvas)mainPane.getLeft();
 		left.getGraphicsContext2D().fillRect(0, 0, left.getHeight(), left.getWidth());
-
-		
-		
 		
 		//--------------RIGHTPANEL-----------------------------
 		//*******Description*********
