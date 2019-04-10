@@ -44,7 +44,7 @@ public class Client {
     this.cumulCmds = new ArrayList<>();
   }
   public Client(String name) {
-	 this.my_name = name;
+	this.my_name = name;
 	this.score = 0;
 	this.player_list = new HashMap<>();
 	this.target = null;
@@ -181,10 +181,10 @@ public class Client {
   
   public void communicate(String[] server_split) throws IOException {
     process_welcome(server_split);//met a jour les données avec le server_input du welcome
-    r = new Receive(this,inchan);//thread d'écoute de requetes serveur
+    //r = new Receive(this,inchan);//thread d'écoute de requetes serveur
     Thread ihm = new Thread() {@Override public void run() {javafx.application.Application.launch(SpaceRun.class);}};
     ihm.start();
-    r.start();
+    //r.start();
     String client_input;
     while(true){
       System.out.print("?"); System.out.flush();

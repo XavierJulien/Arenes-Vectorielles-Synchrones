@@ -4,12 +4,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 
 public class Receive extends Thread {
-  private Client client;
+  private SpaceRun client;
   private BufferedReader inchan;
   private String server_input;
   private boolean isRunning;
 
-  public Receive(Client c,BufferedReader br){
+  public Receive(SpaceRun c,BufferedReader br){
     client = c;
     inchan = br;
     isRunning = true;

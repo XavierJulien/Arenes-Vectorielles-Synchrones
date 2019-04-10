@@ -1,5 +1,3 @@
-
-
 import javafx.scene.shape.*;
 
 public class Ship{
@@ -15,15 +13,10 @@ public class Ship{
 	//vecteur vitesse
 	private Point vect_vitesse;
 	//forme
-	private Shape p;
+	private Polygon p;
 
 	public Ship(double x,double y){
-		this.p = new Polygon(new double[]{
-					x, y,
-					x+20, y+10,
-					x+15, y,
-					x+20, y-10
-			 });
+		this.p = new Polygon(new double[]{x,x+20,x+15,x+20,y,y+10,y,y-10});
 		position = new Point(x,y);
 		angle = 0.0;
 		vect_vitesse = new Point(0.0,0.0);
@@ -33,7 +26,7 @@ public class Ship{
 	public double get_posX(){return position.getX();}
 	public double get_posY(){return position.getY();}
 	public double getAngle(){return angle;}
-	public Shape getShape() {return p;}
+	public Polygon getShape() {return p;}
 	public double get_speedX(){return vect_vitesse.getX();}
 	public double get_speedY(){return vect_vitesse.getY();}
 	public void set_posX(double x){position.setX(x);}
@@ -46,9 +39,11 @@ public class Ship{
 	public void tick() {
 		position.setX(position.getX()+vect_vitesse.getX());
 		position.setY(position.getY()+vect_vitesse.getY());
-		p.setTranslateX(p.getTranslateX()-vect_vitesse.getX());
+		p.setTranslateX(p.getTranslateX()/vect_vitesse.getX());
 		p.setTranslateY(p.getTranslateY()-vect_vitesse.getY());
 		p.setRotate(angle);
+		double x = p.getTranslateX();
+		double y = p.getTranslateY();
 	}
 	//controls
 	public void clock() {
