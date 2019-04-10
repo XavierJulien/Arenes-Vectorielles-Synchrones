@@ -18,12 +18,15 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -45,23 +48,44 @@ public class SpaceRun extends Application implements Runnable{
 	private GridPane lobbyPane;
 
 	//JavaFX Main
-	private BorderPane mainPane;
+	private HBox mainPane;
+		//left
+		private Canvas canvas;
+		private GraphicsContext gc;
 		//right
 		private VBox right;
 			//desc
 			private Text main_score;
+			private ListView<String> list_scores;
 			
 			//list
-			
-		//left
-		private Canvas left;
 
-	//Communication Client/Server
-	private Client c;
-	private BufferedReader inchan;
-  	private PrintStream outchan;
-  	private Socket sock;
-    private Receive r;
+
+//Communication Client/Server
+private Client c;
+private BufferedReader inchan;
+private PrintStream outchan;
+private Socket sock;
+private Receive r;
+
+
+/**************************SEND FUNCTIONS**************************/
+public void sendConnect (String username) {
+	outchan.println("CONNECT/"+name+"/");
+	outchan.flush();
+}
+
+public void sendExit (String username) {
+	outchan.println("EXIT/"+name+"/");
+	outchan.flush();
+}
+
+public void sendNewpos (double x, double y) {
+	outchan.println("NEWPOS/X"+x+"Y"+y+"/");
+	outchan.flush();
+}
+
+
 
     //*********************MAJ PLAYERS*************************
 	public void move(Shape p){//simule le monde thorique, a revoir avec -demih et -demil
@@ -76,9 +100,11 @@ public class SpaceRun extends Application implements Runnable{
 			//draw(c);
 			c.getShip().tick();
 			move(c.getShip().getShape());
+			updateListPlayer(); // je le calle la pour l'instant 
   	  	}	 
 	}
 
+	@SuppressWarnings("unchecked")
 	private void updateListPlayer() {
 		Map<String,Player> map_players = c.getPlayers_list();
 		ListView<String> aff_list_players = (ListView<String>)right.getChildren().get(1);
@@ -143,16 +169,18 @@ public class SpaceRun extends Application implements Runnable{
 	}
 
 	public void initializeMain2() throws IOException {
-		mainPane = (BorderPane) FXMLLoader.load(getClass().getResource("main.fxml"));
+		mainPane = (HBox) FXMLLoader.load(getClass().getResource("main.fxml"));
 		playScene = new Scene(mainPane, 1000, 1000);
 		
 		//-----------------DESSIN---------------------------------
-		left = (Canvas)mainPane.getLeft();
-		left.getGraphicsContext2D().fillRect(0, 0, left.getHeight(), left.getWidth());
-		
+		canvas = (Canvas)mainPane.getChildren().get(0);
+		gc = canvas.getGraphicsContext2D();
+		gc.fillRect(0, 0, canvas.getHeight(), canvas.getWidth());
+		//Image img = new Image("./images/waitingspace.png");
+		//gc.drawImage(img, 0, 0, left.getWidth(), left.getHeight());
 		//--------------RIGHTPANEL-----------------------------
 		//*******Description*********
-		right = (VBox)mainPane.getRight();
+		right = (VBox)mainPane.getChildren().get(1);
 		Pane descJoueur = (Pane)right.getChildren().get(0);
 		
 		Text main_username = (Text)descJoueur.getChildren().get(0);
@@ -162,8 +190,7 @@ public class SpaceRun extends Application implements Runnable{
 	    Button exit = (Button)descJoueur.getChildren().get(2);
 	    exit.setOnAction(e -> {
 	    	r.setRunning(false);
-	    	outchan.println("EXIT/"+name+"/");
-	    	outchan.flush();
+	    	sendExit(name);
 	    	try {
 	    		//if(refreshTask != null) refreshTask.cancel();
 	    		inchan.close();
@@ -194,8 +221,7 @@ public class SpaceRun extends Application implements Runnable{
 		Button connect = new Button("Connect");
 		connect.setOnAction(e -> {
 			name = lobby_username_field.getText();
-			outchan.println("CONNECT/"+name+"/");
-			outchan.flush();
+			sendConnect(name);
 			try {
 				String server_input = inchan.readLine();
 				String[] server_split = server_input.split("/");
@@ -210,7 +236,7 @@ public class SpaceRun extends Application implements Runnable{
 			  			  primaryStage.setScene(playScene);
 			        	  break;
 			          case "DENIED" : 
-			        	  Text t = new Text("Nickname already took.");
+			        	  Text t = new Text("Nickname already taken.");
 			        	  t.setFill(Color.RED);
 			        	  lobbyPane.add(t, 1, 1);
 			        	  System.out.println("Error : "+server_split[1]);break;
