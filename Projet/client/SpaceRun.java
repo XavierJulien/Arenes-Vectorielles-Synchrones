@@ -32,7 +32,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage; 
 
-public class SpaceRun extends Application implements Runnable{
+public class SpaceRun extends Application{
 	//DATA
 	//private double demih;
 	//private double demil;
@@ -73,37 +73,11 @@ public class SpaceRun extends Application implements Runnable{
 	private Receive r;
 	private Image ship = new Image("images/ship.png");
 
-	
-	public void init() {
-		this.score = 0;
-		this.player_list = new HashMap<>();
-		this.target = null;
-		this.isPlaying = false;
-		this.cumulCmds = new ArrayList<>();
-	}
-
-	/**************************SEND FUNCTIONS**************************/
-	public void sendConnect (String username) {
-		outchan.println("CONNECT/"+name+"/");
-		outchan.flush();
-	}
-	
-	public void sendExit (String username) {
-		outchan.println("EXIT/"+name+"/");
-		outchan.flush();
-	}
-	
-	public void sendNewpos (double x, double y) {
-		outchan.println("NEWPOS/X"+x+"Y"+y+"/");
-		outchan.flush();
-	}
-
-
-
     //*********************MAJ PLAYERS*************************
 	public void move(Ship p){//simule le monde thorique, a revoir avec -demih et -demil
-		if(p.get_posX()+100 > canvas.getWidth()) {p.set_posX(0);/*System.out.println("newx = "+myself.getShip().get_posX());*/}
-		if(p.get_posY()+100 > canvas.getHeight()) {p.set_posY(0);/*System.out.println("newy = "+myself.getShip().get_posY());*/}
+		
+		if(p.get_posX() > canvas.getWidth()) {p.set_posX(0);/*System.out.println("newx = "+myself.getShip().get_posX());*/}
+		if(p.get_posY() > canvas.getHeight()) {p.set_posY(0);/*System.out.println("newy = "+myself.getShip().get_posY());*/}
 		if(p.get_posX() < 0) {p.set_posX(canvas.getWidth());/*System.out.println("newx = "+myself.getShip().get_posX());*/}
 		if(p.get_posY() < 0) {p.set_posY(canvas.getHeight());/*System.out.println("newy = "+myself.getShip().get_posY());*/}
 	}
@@ -119,18 +93,18 @@ public class SpaceRun extends Application implements Runnable{
 			}else {
 				ctx.setFill(Color.CORNFLOWERBLUE);
 			}
-		p.getShip().tick();
-		move(p.getShip());
-		updateListPlayer(); // je le calle la pour l'instant 
-		double x = p.getShip().get_posX();
-		double y = p.getShip().get_posY();
-		
-		double[] posx = new double[] {x,x+20,x+20};
-		double[] posy = new double[] {y,y+10,y-10};
+		p.getShip().refresh_pos(canvas.getHeight(),canvas.getWidth());
+		ObservableList<Double> listpoints = p.getShip().getShape().getPoints();
+		List<Double> lx = listpoints.subList(0, listpoints.size()/2);
+		List<Double> ly = listpoints.subList(listpoints.size()/2, listpoints.size());
+		double[] posx = new double[lx.size()];
+		double[] posy = new double[ly.size()];
+		for(int i =0;i<lx.size();i++) posx[i] = lx.get(i);
+		for(int i =0;i<ly.size();i++) posy[i] = ly.get(i);
 		ctx.fillPolygon(posx,posy, 3);
 		//ctx.drawImage(ship,x,y,100,100);
 
-  	  	}	 
+  	  	}	
 	}
 
 	@SuppressWarnings("unchecked")
@@ -162,7 +136,6 @@ public class SpaceRun extends Application implements Runnable{
 		  sock.close();
 		}
 	}
-
 	public void initializeMain() throws IOException {
 		mainPane = (HBox) FXMLLoader.load(getClass().getResource("main.fxml"));
 		playScene = new Scene(mainPane, 1200, 700);
@@ -227,7 +200,6 @@ public class SpaceRun extends Application implements Runnable{
 		});
 		
 	}
-
 	public void initializeLobby() {
 		//label username
 		Text lobby_username_label = new Text("Username");
@@ -282,9 +254,16 @@ public class SpaceRun extends Application implements Runnable{
 	
 	//Run
 	public static void main(String[] args) {launch(args);}
-	@Override public void run() {launch();}
+	
 	
 	//**************************AUX***************************************
+  	public void init() {
+		this.score = 0;
+		this.player_list = new HashMap<>();
+		this.target = null;
+		this.isPlaying = false;
+		this.cumulCmds = new ArrayList<>();
+	}
 	public void parse_status(String status) {
 		if (status == "jeu") {
 			isPlaying=true;
@@ -372,4 +351,22 @@ public class SpaceRun extends Application implements Runnable{
 	    parse_scores(scores);
 	    System.out.println("new_obj : " + coord);
 	}
+
+	/**************************SEND FUNCTIONS**************************/
+	public void sendConnect (String username) {
+		outchan.println("CONNECT/"+name+"/");
+		outchan.flush();
+	}
+	
+	public void sendExit (String username) {
+		outchan.println("EXIT/"+name+"/");
+		outchan.flush();
+	}
+	
+	public void sendNewpos (double x, double y) {
+		outchan.println("NEWPOS/X"+x+"Y"+y+"/");
+		outchan.flush();
+	}
+
+
 }
