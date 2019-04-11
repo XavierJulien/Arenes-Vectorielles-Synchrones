@@ -8,15 +8,16 @@ exception Disconnection
 let mutex_players_list = Mutex.create () (*sync for access to *)
 
 let cond_least1player = Condition.create ()
-let limit_pousse = 5.0
-let turnit = 0.1
-let thrustit = 4.0
-let server_tickrate = 10 (* le serveur envoie un tick toutes les server_tickrate secondes *)
+let maxspeed = 5.0
+let turnit = 45.0
+let thrustit = 1.0
+let server_tickrate = 10 (* le serveur envoie server_tickrate fois par seconde *)
 let server_refresh_tickrate = 20
 let waiting_time = 10
 let obj_radius = 0.05
-let l = 200.0
-let h = 150.0
+let w = 900.0
+let h = 700.0
+
 
 type command = Cmd of float * float | None
 
@@ -33,15 +34,15 @@ type player = {
     outchan: out_channel;
     mutable score: int;
     car : vehicule;
-		mutable cmd: command
+	mutable cmd: command
     (*mutable playing: status*)
 	}
 
 type session = {
-		mutable players_list : player list;
+	mutable players_list : player list;
     mutable playing : bool;
     mutable target: float * float;
-		win_cap : int
+	win_cap : int
 }
 
 
@@ -55,10 +56,10 @@ let get_distance (x1,y1) (x2,y2) =
 	sqrt((x2-.x1)*.(x2-.x1)+.(y2-.y1)*.(y2-.y1))
 
 let alea_x () =
-	(Random.float (-.l)) +. Random.float l
+	(Random.float w)
 
 let alea_y () =
-	(Random.float (-.h)) +. Random.float h
+	(Random.float h)
 
 let alea_pos () =
 	(alea_x (),alea_y ())
@@ -92,11 +93,25 @@ let rec stringify_scores p_list =
 let stringify_coord (x,y) =
 	"X"^(string_of_float x)^"Y"^(string_of_float y)
 
-let rec stringify_coords p_list =
+let stringify_speed (vx,vy) =
+	"VX"^(string_of_float vx)^"VY"^(string_of_float vy)
+
+(* angle en radian sur le sujet, à decider ici si degre ou radian *)
+let stringify_angle a =
+	"T"^(string_of_float a)
+
+let rec stringify_coords p_list = (* string du TICK pour la partie A : seulement les positions *)
 	match p_list with
 	|hd::[] -> hd.name^":"^(stringify_coord hd.car.position)^"/"
 	|hd::tl -> hd.name^":"^(stringify_coord hd.car.position)^"|"^(stringify_coords tl)
 	|[] -> "" (* n'arrivera jamais juste pour la complétude du pattern matching*)
+
+let rec stringify_tick p_list = (* string du TICK pour la partie B : avec les vitesses et l'angle *)
+	match p_list with
+	|hd::[] -> hd.name^":"^(stringify_coord hd.car.position)^"/"
+	|hd::tl -> hd.name^":"^(stringify_coord hd.car.position)^(stringify_speed hd.car.speed)^(stringify_angle hd.car.direction)^"|"^(stringify_tick tl)
+	|[] -> "" (* n'arrivera jamais juste pour la complétude du pattern matching*)
+
 
 let find_player user_name =
 	List.find (fun p -> if p.name=user_name then true else false) current_session.players_list
@@ -113,7 +128,7 @@ let create_player user sock inc out =
     outchan = out;
     score = 0;
     car = {position=alea_pos();direction=0.0;speed=(0.0,0.0)};
-		cmd = None
+    cmd = None
 	}
 
 
@@ -141,10 +156,16 @@ let send_welcome user_name =
 	in
 	output_string player.outchan ("WELCOME/"^phase^scores^coord^"/\n");
 	flush player.outchan;
-	if current_session.playing then send_session ();
+	if current_session.playing then
+	begin
+		let coords = stringify_coords current_session.players_list in
+			let coord_target = stringify_coord current_session.target in
+			output_string player.outchan ("SESSION/"^coords^coord_target^"/\n");
+			flush player.outchan
+	end
 	Mutex.unlock mutex_players_list
 
-let send_newplayer user_name =
+let send_newplayer user_name = (* donne seulement le nom du nouveau joueur, le client attend le tick pour placer le joueur sur le canvas *)
 	let send_fun p =
 		if p.name<>user_name then
 		begin
@@ -177,13 +198,13 @@ let send_winner () =
 
 (* protégé par le mutex de l'appelant *)
 let send_tick () =
-	let send_fun coords p =
-		output_string p.outchan ("TICK/"^coords^"\n");
+	let send_fun to_send p =
+		output_string p.outchan ("TICK/"^to_send^"\n");
 		flush p.outchan
 	in
 	print_endline "Envoie à tous les joueurs, premier joueur dans la liste : %s\n";
 	print_endline (List.hd current_session.players_list).name;
-	let f_coords = stringify_coords current_session.players_list in
+	let f_coords = stringify_tick current_session.players_list in
 		List.iter (send_fun f_coords) current_session.players_list
 
 
@@ -343,17 +364,27 @@ let tick_thread () =
 		Mutex.unlock mutex_players_list
 	done
 
+
+let checked_vx newvx =
+    if vx > maxspeed then maxspeed
+    else if vx < -.maxspeed then -.maxspeed else newvx
+
+let checked_vy newvy =
+    if vy > maxspeed then maxspeed
+    else if vx < -.mexspeed then -.maxspeed else newvy
+
 let compute_cmd player =
  	match player.cmd with
 	|None -> ()
 	|Cmd(angle,pousse) -> begin
-	 												player.car.direction <- mod_float (player.car.direction+.angle) 360.0;
-													player.car.position <- let x = fst player.car.position
-																											and y = snd player.car.position in
-																											if (pousse > limit_pousse)
-																											then (x*.limit_pousse,y*.limit_pousse)
-																											else (x*.pousse,y*.pousse)
-												end
+                            player.car.direction <- mod_float (player.car.direction+.angle) Float.pi;
+                            let new_vx = (fst player.car.speed) +. thrustit *. cos player.car.direction
+                            and new_vy = (snd player.car.speed) -. thrustit *. sin player.car.direction in
+                            player.car.speed <- (checked_vx new_vx,checked_vy new_vy);
+                            let new_x = mod_float ((fst player.car.position) +. (fst player.car.speed)) float_of_int w
+                            and new_y = mod_float ((snd player.car.position) +. (snd player.car.speed)) float_of_int h in
+                            player.car.position (new_x,new_y)
+                          end
 
 let server_refresh_tick_thread () =
 	while true do
