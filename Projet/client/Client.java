@@ -86,8 +86,6 @@ public class Client {
         double y = Double.parseDouble(xy[2]);
         player_list.get(p.split(":")[0]).getShip().set_posX(x);
     	player_list.get(p.split(":")[0]).getShip().set_posY(y);
-    	player_list.get(p.split(":")[0]).getShip().getShape().setTranslateX(x);
-    	player_list.get(p.split(":")[0]).getShip().getShape().setTranslateX(y);
     }
   }
   public void parse_target(String coord_string){
@@ -157,7 +155,6 @@ public class Client {
     parse_target(coord);
     parse_coords(coords);
     isPlaying = true;
-    refreshTask = new RefreshClientTask(myself);
     timer.scheduleAtFixedRate(refreshTask, 0,(int)(1/refresh_tickrate));
     //System.out.println("session : "+coords+" "+coord);
     //démarrer la task de clientrefresh ici
