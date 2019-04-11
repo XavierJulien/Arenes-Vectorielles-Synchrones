@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,10 +41,11 @@ public class SpaceRun extends Application{
 //	  																	  //	
 //------------------------------------------------------------------------//
 	protected static final int PORT=2019;
-	protected static final int ve_radius = 20;
+	protected static final int ve_radius = 30;
 	protected static final int ob_radius = 20;
 	protected static final int server_tickrate = 100;
-
+	private static final double demih = 350;
+	private static final double demil = 450;
 	
 //------------------------------------------------------------------------//
 //																		  //
@@ -65,8 +67,7 @@ public class SpaceRun extends Application{
 //	  																	  //	
 //------------------------------------------------------------------------//
 
-	private double demih;
-	private double demil;
+
 	//JAVAFX
 	private Stage primaryStage;
 	//JavaFX Lobby
@@ -134,10 +135,10 @@ public class SpaceRun extends Application{
 //------------------------------------------------------------------------//
 	
 	public void move(Ship p){//simule le monde thorique, a revoir avec -demih et -demil
-		if(p.get_posX() > canvas.getWidth()) p.set_posX(p.get_posX()%canvas.getWidth());
-		if(p.get_posY() > canvas.getHeight()) p.set_posY(p.get_posY()%canvas.getHeight());
-		if(p.get_posX() < 0) p.set_posX(canvas.getWidth()-p.get_posX()%canvas.getWidth());
-		if(p.get_posY() < 0) p.set_posY(canvas.getHeight()-p.get_posY()%canvas.getHeight());
+		if(p.get_posX() > demil) p.set_posX(-demil+p.get_posX()%demil);
+		if(p.get_posY() > demih) p.set_posY(-demil+p.get_posY()%demih);
+		if(p.get_posX() < -demil) p.set_posX(demil-p.get_posX()%demil);
+		if(p.get_posY() < -demih) p.set_posY(demih-p.get_posY()%demih);
 	}
 
 	public void onUpdate() {//met à jour les positions des joueurs à chaque
@@ -149,22 +150,23 @@ public class SpaceRun extends Application{
 		drawer.drawTarget();
 		drawer.drawPlayers();
 		move(myself.getShip());
-		sendNewpos(myself.getShip().get_posX(), myself.getShip().get_posY());
 	}
 	
 	public boolean collisionTargetShip(Ship s,Point t){
-	   double dist = (t.getX()-s.get_posX())*(t.getX()-s.get_posX()) + (t.getY()-s.get_posY())*(t.getY()-s.get_posY());
-	   if (dist>s.getRadius()+30*s.getRadius()+30)
-	      return false;
-	   else
+	   double dist = (s.get_posX()-t.getX())*(s.get_posX()-t.getX()) + 
+			   				   (s.get_posY()-t.getY())*(s.get_posY()-t.getY());
+	   if (dist <= (SpaceRun.ve_radius+SpaceRun.ob_radius)*
+			   	  (SpaceRun.ve_radius+SpaceRun.ob_radius)) {
 	      return true;
+	   }else {
+	      return false;}
 	}
 	
 	private void updateScore() {
 		for(Player p : player_list.values()) {
 			Ship s = p.getShip();
 			if(collisionTargetShip(s, target)) {
-				p.setScore(p.getScore()+1);
+				p.setScore(p.getScore()+1);	
 			}
 		}
 		
@@ -210,9 +212,6 @@ public class SpaceRun extends Application{
 		playScene = new Scene(mainPane, 1200, 700);
 		//-----------------DESSIN---------------------------------
 		canvas = (Canvas)mainPane.getChildren().get(0);
-		System.out.println("height:"+canvas.getHeight()+",width"+canvas.getWidth());
-		demih = canvas.getHeight()/2;
-		demil = canvas.getWidth()/2;
 		ctx = canvas.getGraphicsContext2D();
 		drawer = new Drawer(this);
 		drawer.drawPlayers();
@@ -247,7 +246,6 @@ public class SpaceRun extends Application{
 		}.start();
 		//*************EVENT HANDLER*************
 		playScene.setOnKeyPressed(e -> {
-			//System.out.println(e.getText().equals("z"));
 			if (e.getText().equals("z")) {
 				cumulCmds.add(Commands.thrust);
 				player_list.get(name).getShip().thrust();
@@ -355,7 +353,6 @@ public class SpaceRun extends Application{
 		String[] player_coord_string_split = player_coord_string.split("\\|");
 		for(String p : player_coord_string_split) {
 			String[] xy = p.split(":")[1].split("[XY]|VX|VY|T");
-			for(String s : xy) System.out.println(s);
 			double x = Double.parseDouble(xy[1]);
 			double y = Double.parseDouble(xy[2]);
 			String name = p.split(":")[0];
@@ -367,7 +364,6 @@ public class SpaceRun extends Application{
 		String[] player_coord_string_split = player_coord_string.split("\\|");
 		for(String p : player_coord_string_split) {
 			String[] xy = p.split(":")[1].split("[XY]|VX|VY|T");
-			for(String s : xy) System.out.println(s);
 			double x = Double.parseDouble(xy[1]);
 			double y = Double.parseDouble(xy[2]);
 			double vx = Double.parseDouble(xy[3]);
@@ -408,11 +404,10 @@ public class SpaceRun extends Application{
 	}
 	public void process_session(String coords,String coord){
 		parse_target(coord);
-		parse_target("X500.0Y500.0");
 		parse_coords(coords);
 		isPlaying = true;
 		serverTickrateTask = new RefreshClientTask(this);
-		serverTickrateTimer.schedule(new RefreshClientTask(this), server_tickrate);
+		serverTickrateTimer.scheduleAtFixedRate(new RefreshClientTask(this),new Date(),server_tickrate);
 	}
 	public void process_winner(String scores){
 		parse_scores(scores);
@@ -421,8 +416,9 @@ public class SpaceRun extends Application{
 		isPlaying = false;
 		serverTickrateTimer.cancel();
 	}
-	public void process_tick(String coords){
-		parse_coords(coords);
+	public void process_tick(String vcoords){
+		System.out.println("tick : "+vcoords);
+		parse_vcoords(vcoords);
 		
 	}
 	public void process_newobj(String coord,String scores){
@@ -436,12 +432,10 @@ public class SpaceRun extends Application{
 		outchan.println("CONNECT/"+name+"/");
 		outchan.flush();
 	}
-
 	public void sendExit (String username) {
 		outchan.println("EXIT/"+name+"/");
 		outchan.flush();
 	}
-
 	public void sendNewpos (double x, double y) {
 		outchan.println("NEWPOS/X"+x+"Y"+y+"/");
 		outchan.flush();
@@ -449,7 +443,7 @@ public class SpaceRun extends Application{
 	public void sendNewCom () {
 		double a = 0.;//angle en radian
 		int t = 0;//poussée
-		ArrayList<Commands> temp = cumulCmds;
+		ArrayList<Commands> temp = (ArrayList<Commands>) cumulCmds.clone();
 		cumulCmds.clear();
 		for(Commands c : temp) {
 			if(c == Commands.thrust) {
@@ -462,6 +456,7 @@ public class SpaceRun extends Application{
 				a = (a+myself.getShip().turnit)%360;
 			}
 		}
+		//System.out.println("NEWCOM/A"+a+"T"+t+"/");
 		outchan.println("NEWCOM/A"+a+"T"+t+"/");
 		outchan.flush();
 	}

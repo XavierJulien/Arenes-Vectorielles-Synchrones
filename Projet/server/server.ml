@@ -15,8 +15,8 @@ let server_tickrate = 10 (* le serveur envoie server_tickrate fois par seconde *
 let server_refresh_tickrate = 20
 let waiting_time = 10
 let obj_radius = 0.05
-let w = 900.0
-let h = 700.0
+let w = 450.0
+let h = 350.0
 
 
 type command = Cmd of float * float | None
@@ -56,16 +56,16 @@ let get_distance (x1,y1) (x2,y2) =
 	sqrt((x2-.x1)*.(x2-.x1)+.(y2-.y1)*.(y2-.y1))
 
 let alea_x () =
-	(Random.float w)
+	(Random.float (-.w)) +. Random.float w
 
 let alea_y () =
-	(Random.float h)
+	(Random.float (-.h)) +. Random.float h
 
 let alea_pos () =
 	(alea_x (),alea_y ())
 
 let current_session =
-{ players_list = [];
+	{ players_list = [];
 		playing = false;
 		target = alea_pos();
 		win_cap = 3
@@ -108,7 +108,7 @@ let rec stringify_coords p_list = (* string du TICK pour la partie A : seulement
 
 let rec stringify_tick p_list = (* string du TICK pour la partie B : avec les vitesses et l'angle *)
 	match p_list with
-	|hd::[] -> hd.name^":"^(stringify_coord hd.car.position)^"/"
+	|hd::[] -> hd.name^":"^(stringify_coord hd.car.position)^(stringify_speed hd.car.speed)^(stringify_angle hd.car.direction)^"/"
 	|hd::tl -> hd.name^":"^(stringify_coord hd.car.position)^(stringify_speed hd.car.speed)^(stringify_angle hd.car.direction)^"|"^(stringify_tick tl)
 	|[] -> "" (* n'arrivera jamais juste pour la complétude du pattern matching*)
 
@@ -205,6 +205,7 @@ let send_tick () =
 	print_endline "Envoie à tous les joueurs, premier joueur dans la liste : %s\n";
 	print_endline (List.hd current_session.players_list).name;
 	let f_coords = stringify_tick current_session.players_list in
+		print_endline f_coords;
 		List.iter (send_fun f_coords) current_session.players_list
 
 
@@ -378,8 +379,8 @@ let compute_cmd player =
 	|None -> ()
 	|Cmd(angle,pousse) -> begin
                             player.car.direction <- mod_float (player.car.direction+.angle) Float.pi;
-                            let new_vx = (fst player.car.speed) +. thrustit *. cos player.car.direction
-                            and new_vy = (snd player.car.speed) -. thrustit *. sin player.car.direction in
+                            let new_vx = (fst player.car.speed) +. ((thrustit *. cos player.car.direction) *. pousse)
+                            and new_vy = (snd player.car.speed) +. ((thrustit *. sin player.car.direction) *. pousse) in
                             player.car.speed <- (checked_vx new_vx,checked_vy new_vy);
                             let new_x = mod_float ((fst player.car.position) +. (fst player.car.speed)) w
                             and new_y = mod_float ((snd player.car.position) +. (snd player.car.speed)) h in
@@ -458,8 +459,8 @@ let start_server nb_c =
     Unix.bind server_socket (Unix.ADDR_INET(addr, 2019));
     Unix.listen server_socket nb_c;
 		ignore (Thread.create start_session ());
-		(* ignore (Thread.create tick_thread ()); *)
-		(* ignore (Thread.create server_refresh_tick_thread ()); *)
+		ignore (Thread.create tick_thread ()); 
+		ignore (Thread.create server_refresh_tick_thread ()); 
 		while true do
       let (client_socket, _) = Unix.accept server_socket in
       Unix.setsockopt client_socket Unix.SO_REUSEADDR true;

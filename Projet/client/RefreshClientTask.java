@@ -13,8 +13,5 @@ public class RefreshClientTask extends TimerTask {
 	@Override
 	public void run() {
 		s.sendNewCom();
-		//myself.getShip().set_posX(myself.getShip().get_posX()+myself.getShip().get_speedX());
-		//myself.getShip().set_posY(myself.getShip().get_posY()+myself.getShip().get_speedY());
-		
 	}
 }

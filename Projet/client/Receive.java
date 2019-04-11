@@ -25,7 +25,7 @@ public class Receive extends Thread {
 					System.out.println(server_input);
 					String[] server_split = server_input.split("/");
 					switch(server_split[0]){
-					case "NEWPLAYER" : {client.process_newplayer(server_split[1]);System.out.println("bbbb");break;}
+					case "NEWPLAYER" : {client.process_newplayer(server_split[1]);break;}
 					case "PLAYERLEFT" : client.process_playerleft(server_split[1]);break;
 					case "SESSION" : client.process_session(server_split[1],server_split[2]);break;
 					case "WINNER" : client.process_winner(server_split[1]);break;

@@ -1,10 +1,9 @@
 
 public class Ship{
 	//constant(modifier selon la latence)
-	public final double turnit = 20.0;
+	public final double turnit = 45.0;
 	public final double thrustit = 1.0;
 	public final double maxSpeed = 5.0;
-	public final double ve_radius = 40;
 
 	//position
 	private Point position;
@@ -23,7 +22,6 @@ public class Ship{
 	public double get_posX(){return position.getX();}
 	public double get_posY(){return position.getY();}
 	public double getAngle(){return angle;}
-	public double getRadius() {return ve_radius;}
 	public double get_speedX(){return vect_vitesse.getX();}
 	public double get_speedY(){return vect_vitesse.getY();}
 	public void set_posX(double x){position.setX(x);}
@@ -35,7 +33,7 @@ public class Ship{
 	//update
 	public void refresh_pos() {
 		position.setX(position.getX()+vect_vitesse.getX());
-		position.setY(position.getY()+vect_vitesse.getY());
+		position.setY(position.getY()-vect_vitesse.getY());
 	}
 
 	//controls
@@ -47,7 +45,7 @@ public class Ship{
 	}
 	public void thrust() {
 		double newvx = vect_vitesse.getX()+(thrustit*Math.cos(Math.toRadians(angle)));
-		double newvy = vect_vitesse.getY()-(thrustit*Math.sin(Math.toRadians(angle)));
+		double newvy = vect_vitesse.getY()+(thrustit*Math.sin(Math.toRadians(angle)));
 		if(newvx>maxSpeed) {
 			newvx = maxSpeed;
 		}else {

@@ -1,4 +1,5 @@
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
 public class Drawer {
@@ -6,11 +7,13 @@ public class Drawer {
 	private GraphicsContext ctx;
 	private SpaceRun s;
 	private double ve_radius = SpaceRun.ve_radius;
-	private double ob_radius = SpaceRun.ve_radius;
+	private double ob_radius = SpaceRun.ob_radius;
+	//private Image coin = new Image("images/target.png");
 	
 	public Drawer(SpaceRun s) {
 		this.s = s;
 		ctx = s.getGraphicsContext();
+		
 	}
 
 	public void drawPlayers() {
@@ -21,10 +24,10 @@ public class Drawer {
 		double x4,y4;
 		for(Player p : s.getPlayer_list().values()) {
 			Ship ship = p.getShip();
-			posx = ship.get_posX();
-			posy = ship.get_posY();
+			posx = ship.get_posX()+s.getDemil();
+			posy = ship.get_posY()+s.getDemih();
 			angle = Math.toRadians(ship.getAngle());
-			ve_radius = ship.getRadius();
+			ve_radius = SpaceRun.ve_radius;
 			x1 = posx + ve_radius * Math.cos(angle);
 			y1 = posy - ve_radius * Math.sin(angle);
 			x2 = posx + ve_radius * Math.cos(angle + Math.PI + Math.PI/5);
@@ -38,18 +41,20 @@ public class Drawer {
 			if(p == s.getMyself()) {
 				ctx.setFill(Color.DARKRED);
 			}else {
-				ctx.setFill(Color.YELLOW);
+				ctx.setFill(Color.ROYALBLUE);
 			}
-			ctx.fillOval(posx-ship.getRadius(),posy-ship.getRadius(), ship.getRadius()*2, ship.getRadius()*2);
-			ctx.setFill(Color.RED);
+			ctx.fillOval(posx-ve_radius,posy-ve_radius, ve_radius*2, ve_radius*2);
+			ctx.setFill(Color.GREEN);
 			ctx.fillPolygon(xval, yval, 4);
 			
 		}
 	}
 	
 	public void drawTarget() {
-		//System.out.println("x : "+s.getTarget().getX()+",y : "+s.getTarget().getY());
 		ctx.setFill(Color.GOLDENROD);
-		ctx.fillOval(s.getTarget().getX(), s.getTarget().getY(), ob_radius, ob_radius);
+		double x = s.getTarget().getX()+s.getDemil();
+		double y = s.getTarget().getY()+s.getDemih();
+		ctx.fillOval(x-ob_radius,y-ob_radius, ob_radius*2, ob_radius*2);
+		//ctx.drawImage(coin, x-ob_radius,y-ob_radius, ob_radius*2, ob_radius*2);
 	}
 }
