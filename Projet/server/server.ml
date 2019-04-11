@@ -8,14 +8,17 @@ exception Disconnection
 let mutex_players_list = Mutex.create () (*sync for access to *)
 
 let cond_least1player = Condition.create ()
-
+let limit_pousse = 5.0
 let turnit = 0.1
 let thrustit = 4.0
 let server_tickrate = 10 (* le serveur envoie un tick toutes les server_tickrate secondes *)
+let server_refresh_tickrate = 20
 let waiting_time = 10
 let obj_radius = 0.05
 let l = 200.0
 let h = 150.0
+
+type command = Cmd of float * float | None
 
 type vehicule = {
 	mutable position: float * float;
@@ -29,7 +32,8 @@ type player = {
     inchan: in_channel;
     outchan: out_channel;
     mutable score: int;
-    car : vehicule
+    car : vehicule;
+		mutable cmd: command
     (*mutable playing: status*)
 	}
 
@@ -65,6 +69,10 @@ let current_session =
 		target = alea_pos();
 		win_cap = 3
   }
+
+let parse_cmd cmd_string =
+	let s = Str.split (Str.regexp "A\|T") cmd_string in
+		Cmd(float_of_string (List.nth s 0), float_of_string (List.nth s 1))
 
 let parse_request req_string =
   let s = Str.split (Str.regexp "/") req_string in
@@ -104,7 +112,8 @@ let create_player user sock inc out =
     inchan = inc;
     outchan = out;
     score = 0;
-    car = {position=alea_pos();direction=0.0;speed=(0.0,0.0)}
+    car = {position=alea_pos();direction=0.0;speed=(0.0,0.0)};
+		cmd = None
 	}
 
 
@@ -294,7 +303,10 @@ let process_newpos coord user_name =
 			else Mutex.unlock mutex_players_list
 		else Mutex.unlock mutex_players_list
 
-
+(* acquerir mutex avant ? *)
+let process_newcom cmd_string user_name =
+	let player = find_player user_name in
+		player.cmd <- parse_cmd cmd_string
 
 (********************** thread's looping  ***********************)
 let receive_req user_name =
@@ -310,6 +322,8 @@ let receive_req user_name =
 									 raise Disconnection
 				|"NEWPOS" -> if List.length parsed_req <> 2 then raise BadRequest;
 										 process_newpos (List.nth parsed_req 1) user_name
+				|"NEWCOM" -> if List.length parsed_req <> 2 then raise BadRequest;
+											process_newcom (List.nth parsed_req 1) user_name
 				|_ -> raise BadRequest
 			with BadRequest -> output_string player.outchan "DENIED/BadRequest\n";
 										 			flush player.outchan
@@ -326,6 +340,26 @@ let tick_thread () =
 			begin
 			send_tick ()
 			end;
+		Mutex.unlock mutex_players_list
+	done
+
+let compute_cmd player =
+ 	match player.cmd with
+	|None -> ()
+	|Cmd(angle,pousse) -> begin
+	 												player.car.direction <- mod_float (player.car.direction+.angle) 360.0;
+													player.car.position <- let x = fst player.car.position
+																											and y = snd player.car.position in
+																											if (pousse > limit_pousse)
+																											then (x*.limit_pousse,y*.limit_pousse)
+																											else (x*.pousse,y*.pousse)
+												end
+
+let server_refresh_tick_thread () =
+	while true do
+		Unix.sleep server_refresh_tickrate;
+		Mutex.lock mutex_players_list;
+		if current_session.playing then	List.iter compute_cmd current_session.players_list;
 		Mutex.unlock mutex_players_list
 	done
 
@@ -393,8 +427,9 @@ let start_server nb_c =
     Unix.bind server_socket (Unix.ADDR_INET(addr, 2019));
     Unix.listen server_socket nb_c;
 		ignore (Thread.create start_session ());
-		ignore (Thread.create tick_thread ());
-    while true do
+		(* ignore (Thread.create tick_thread ()); *)
+		(* ignore (Thread.create server_refresh_tick_thread ()); *)
+		while true do
       let (client_socket, _) = Unix.accept server_socket in
       Unix.setsockopt client_socket Unix.SO_REUSEADDR true;
       	print_endline "Nouvelle connexion socket";
