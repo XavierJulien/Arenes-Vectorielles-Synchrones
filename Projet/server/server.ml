@@ -162,7 +162,7 @@ let send_welcome user_name =
 			let coord_target = stringify_coord current_session.target in
 			output_string player.outchan ("SESSION/"^coords^coord_target^"/\n");
 			flush player.outchan
-	end
+	end;
 	Mutex.unlock mutex_players_list
 
 let send_newplayer user_name = (* donne seulement le nom du nouveau joueur, le client attend le tick pour placer le joueur sur le canvas *)
@@ -366,12 +366,12 @@ let tick_thread () =
 
 
 let checked_vx newvx =
-    if vx > maxspeed then maxspeed
-    else if vx < -.maxspeed then -.maxspeed else newvx
+    if newvx > maxspeed then maxspeed
+    else if newvx < -.maxspeed then -.maxspeed else newvx
 
 let checked_vy newvy =
-    if vy > maxspeed then maxspeed
-    else if vx < -.mexspeed then -.maxspeed else newvy
+    if newvy > maxspeed then maxspeed
+    else if newvy < -.maxspeed then -.maxspeed else newvy
 
 let compute_cmd player =
  	match player.cmd with
@@ -381,9 +381,9 @@ let compute_cmd player =
                             let new_vx = (fst player.car.speed) +. thrustit *. cos player.car.direction
                             and new_vy = (snd player.car.speed) -. thrustit *. sin player.car.direction in
                             player.car.speed <- (checked_vx new_vx,checked_vy new_vy);
-                            let new_x = mod_float ((fst player.car.position) +. (fst player.car.speed)) float_of_int w
-                            and new_y = mod_float ((snd player.car.position) +. (snd player.car.speed)) float_of_int h in
-                            player.car.position (new_x,new_y)
+                            let new_x = mod_float ((fst player.car.position) +. (fst player.car.speed)) w
+                            and new_y = mod_float ((snd player.car.position) +. (snd player.car.speed)) h in
+                            player.car.position <- (new_x,new_y)
                           end
 
 let server_refresh_tick_thread () =
