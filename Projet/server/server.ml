@@ -205,7 +205,8 @@ let send_tick () =
 	print_endline "Envoie à tous les joueurs, premier joueur dans la liste : %s\n";
 	print_endline (List.hd current_session.players_list).name;
 	let f_coords = stringify_tick current_session.players_list in
-		print_endline f_coords;
+		let s = "TICK/"^f_coords in
+		print_endline s;
 		List.iter (send_fun f_coords) current_session.players_list
 
 
@@ -269,6 +270,27 @@ let restart_session () =
 
 
 (********************** PROCESSING FUNCTIONS ***********************)
+let checked_vx newvx =
+    if newvx > maxspeed then maxspeed
+    else if newvx < -.maxspeed then -.maxspeed else newvx
+
+let checked_vy newvy =
+    if newvy > maxspeed then maxspeed
+    else if newvy < -.maxspeed then -.maxspeed else newvy
+
+let compute_cmd player =
+ 	match player.cmd with
+	|None -> ()
+	|Cmd(angle,pousse) -> begin
+                            player.car.direction <- mod_float (player.car.direction+.angle) Float.pi;
+                            let new_vx = (fst player.car.speed) +. ((thrustit *. cos player.car.direction) *. pousse)
+                            and new_vy = (snd player.car.speed) +. ((thrustit *. sin player.car.direction) *. pousse) in
+                            player.car.speed <- (checked_vx new_vx,checked_vy new_vy);
+                            let new_x = mod_float ((fst player.car.position) +. (fst player.car.speed)) w
+                            and new_y = mod_float ((snd player.car.position) +. (snd player.car.speed)) h in
+                            player.car.position <- (new_x,new_y);
+														send_tick ()
+                          end
 
 let process_exit user_name =
 	try
@@ -328,7 +350,9 @@ let process_newpos coord user_name =
 (* acquerir mutex avant ? *)
 let process_newcom cmd_string user_name =
 	let player = find_player user_name in
-		player.cmd <- parse_cmd cmd_string
+		print_endline cmd_string;
+		player.cmd <- parse_cmd cmd_string;
+		compute_cmd player
 
 (********************** thread's looping  ***********************)
 let receive_req user_name =
@@ -354,7 +378,7 @@ let receive_req user_name =
 
 
 
-let tick_thread () =
+(* let tick_thread () =
 	while true do
 		Unix.sleep server_tickrate;
 		Mutex.lock mutex_players_list;
@@ -363,35 +387,16 @@ let tick_thread () =
 			send_tick ()
 			end;
 		Mutex.unlock mutex_players_list
-	done
+	done *)
 
 
-let checked_vx newvx =
-    if newvx > maxspeed then maxspeed
-    else if newvx < -.maxspeed then -.maxspeed else newvx
-
-let checked_vy newvy =
-    if newvy > maxspeed then maxspeed
-    else if newvy < -.maxspeed then -.maxspeed else newvy
-
-let compute_cmd player =
- 	match player.cmd with
-	|None -> ()
-	|Cmd(angle,pousse) -> begin
-                            player.car.direction <- mod_float (player.car.direction+.angle) Float.pi;
-                            let new_vx = (fst player.car.speed) +. ((thrustit *. cos player.car.direction) *. pousse)
-                            and new_vy = (snd player.car.speed) +. ((thrustit *. sin player.car.direction) *. pousse) in
-                            player.car.speed <- (checked_vx new_vx,checked_vy new_vy);
-                            let new_x = mod_float ((fst player.car.position) +. (fst player.car.speed)) w
-                            and new_y = mod_float ((snd player.car.position) +. (snd player.car.speed)) h in
-                            player.car.position <- (new_x,new_y)
-                          end
 
 let server_refresh_tick_thread () =
 	while true do
 		Unix.sleep server_refresh_tickrate;
 		Mutex.lock mutex_players_list;
-		if current_session.playing then	List.iter compute_cmd current_session.players_list;
+		print_endline "maj players";
+		if current_session.playing then	(print_endline "maj players";List.iter compute_cmd current_session.players_list);
 		Mutex.unlock mutex_players_list
 	done
 
@@ -459,8 +464,8 @@ let start_server nb_c =
     Unix.bind server_socket (Unix.ADDR_INET(addr, 2019));
     Unix.listen server_socket nb_c;
 		ignore (Thread.create start_session ());
-		ignore (Thread.create tick_thread ()); 
-		ignore (Thread.create server_refresh_tick_thread ()); 
+		(* ignore (Thread.create tick_thread ());  *)
+		(* ignore (Thread.create server_refresh_tick_thread ());  *)
 		while true do
       let (client_socket, _) = Unix.accept server_socket in
       Unix.setsockopt client_socket Unix.SO_REUSEADDR true;

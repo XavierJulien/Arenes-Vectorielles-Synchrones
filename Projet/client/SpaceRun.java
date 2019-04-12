@@ -63,7 +63,7 @@ public class SpaceRun extends Application{
 	
 //------------------------------------------------------------------------//
 //																		  //
-//							JAVAFX VARIABLES							  //
+//							JAVAFX VARIABLES							  //qqqq
 //	  																	  //	
 //------------------------------------------------------------------------//
 
@@ -456,7 +456,7 @@ public class SpaceRun extends Application{
 				a = (a+myself.getShip().turnit)%360;
 			}
 		}
-		//System.out.println("NEWCOM/A"+a+"T"+t+"/");
+		System.out.println("NEWCOM/A"+a+"T"+t+"/");
 		outchan.println("NEWCOM/A"+a+"T"+t+"/");
 		outchan.flush();
 	}

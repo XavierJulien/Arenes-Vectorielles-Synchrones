@@ -8,7 +8,7 @@ public class Drawer {
 	private SpaceRun s;
 	private double ve_radius = SpaceRun.ve_radius;
 	private double ob_radius = SpaceRun.ob_radius;
-	//private Image coin = new Image("images/target.png");
+	private Image coin = new Image("images/target.png");
 	
 	public Drawer(SpaceRun s) {
 		this.s = s;
@@ -55,6 +55,6 @@ public class Drawer {
 		double x = s.getTarget().getX()+s.getDemil();
 		double y = s.getTarget().getY()+s.getDemih();
 		ctx.fillOval(x-ob_radius,y-ob_radius, ob_radius*2, ob_radius*2);
-		//ctx.drawImage(coin, x-ob_radius,y-ob_radius, ob_radius*2, ob_radius*2);
+		ctx.drawImage(coin, x-ob_radius,y-ob_radius, ob_radius*2, ob_radius*2);
 	}
 }
