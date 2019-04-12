@@ -118,6 +118,7 @@ public class SpaceRun extends Application{
 	public Point getTarget() {return target;}
 	public double getDemih() {return demih;}
 	public double getDemil() {return demil;}
+	
 	public void init() {
 		this.score = 0;
 		this.player_list = new HashMap<>();
@@ -221,9 +222,9 @@ public class SpaceRun extends Application{
 		right = (VBox)mainPane.getChildren().get(1);
 		Pane descJoueur = (Pane)right.getChildren().get(0);
 		Text main_username = (Text)descJoueur.getChildren().get(0);
-		main_username.setText("User : "+c.getMy_name());
+		main_username.setText("User : "+name);
 		main_score = (Text)descJoueur.getChildren().get(1);
-		main_score.setText("Score : "+String.valueOf(c.getScore()));
+		main_score.setText("Score : "+String.valueOf(score));
 		Button exit = (Button)descJoueur.getChildren().get(2);
 		exit.setOnAction(e -> {
 			r.setRunning(false);
@@ -248,15 +249,15 @@ public class SpaceRun extends Application{
 		playScene.setOnKeyPressed(e -> {
 			if (e.getText().equals("z")) {
 				cumulCmds.add(Commands.thrust);
-				player_list.get(name).getShip().thrust();
+				//player_list.get(name).getShip().thrust();
 			}
 			if (e.getText().equals("d")) {
 				cumulCmds.add(Commands.clock);
-				player_list.get(name).getShip().clock();
+				//player_list.get(name).getShip().clock();
 			}
 			if (e.getText().equals("q")) {
 				cumulCmds.add(Commands.anticlock);
-				player_list.get(name).getShip().anticlock();
+				//player_list.get(name).getShip().anticlock();
 			}
 		});
 
@@ -278,8 +279,8 @@ public class SpaceRun extends Application{
 					switch(server_split[0]){
 					case "WELCOME" :
 						init();
-						serverTickrateTimer = new Timer();
-						c = new Client(name);
+						serverTickrateTimer = new Timer(); // les deux lignes peuvent être fait directement dans la définition des attributs au debut je crois non ?
+						//c = new Client(name);
 						process_welcome(server_split);
 						initializeMain();
 						r = new Receive(this,inchan);
@@ -287,10 +288,18 @@ public class SpaceRun extends Application{
 						primaryStage.setScene(playScene);
 						break;
 					case "DENIED" : 
-						Text t = new Text("Nickname already taken.");
-						t.setFill(Color.RED);
-						lobbyPane.add(t, 1, 1);
-						System.out.println("Error : "+server_split[1]);break;
+						Text t;
+						if (server_split.length > 1) {
+							t = new Text(server_split[1]);
+							t.setFill(Color.RED);
+							lobbyPane.add(t, 1, 1);
+						}else{
+							t = new Text("Connection denied");
+							t.setFill(Color.RED);
+							lobbyPane.add(t, 1, 1);
+						}
+						break;
+					default : System.out.println("Unknown protocol");	
 					}
 				}else {throw new IOException();}
 			}catch(IOException e2) {
@@ -317,9 +326,9 @@ public class SpaceRun extends Application{
 	public static void main(String[] args) {launch(args);}
 
 //------------------------------------------------------------------------//
-//																		  //
-//							COMMUNICATIONS								  //
-//																		  //	
+//																      	//
+//							COMMUNICATIONS								//
+//																		//	
 //------------------------------------------------------------------------//
 	//**************************AUX***************************************
 	

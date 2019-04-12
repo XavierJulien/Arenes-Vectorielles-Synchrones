@@ -28,7 +28,6 @@ public class Drawer {
 			posx = ship.get_posX()+s.getDemil();
 			posy = s.getDemih()-ship.get_posY();
 			angle = Math.toRadians(ship.getAngle());
-			ve_radius = SpaceRun.ve_radius;
 			x1 = posx + ve_radius * Math.cos(angle);
 			y1 = posy - ve_radius * Math.sin(angle);
 			x2 = posx + ve_radius * Math.cos(angle + Math.PI + Math.PI/5);
@@ -40,14 +39,16 @@ public class Drawer {
 			double[] xval = {x1,x2,x3,x4};
 			double[] yval = {y1,y2,y3,y4};
 			if(p == s.getMyself()) {
+				ctx.setFill(Color.INDIANRED);
+				ctx.fillOval(posx-ve_radius,posy-ve_radius, ve_radius*2, ve_radius*2);
 				ctx.setFill(Color.DARKRED);
+				ctx.fillPolygon(xval, yval, 4);
 			}else {
+				ctx.setFill(Color.CORNFLOWERBLUE);
+				ctx.fillOval(posx-ve_radius,posy-ve_radius, ve_radius*2, ve_radius*2);
 				ctx.setFill(Color.ROYALBLUE);
+				ctx.fillPolygon(xval, yval, 4);
 			}
-			ctx.fillOval(posx-ve_radius,posy-ve_radius, ve_radius*2, ve_radius*2);
-			ctx.setFill(Color.GREEN);
-			ctx.fillPolygon(xval, yval, 4);
-			
 		}
 	}
 	

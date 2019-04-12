@@ -2,11 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3dfbb53d-c358-4ba9-96c3-aa9103eb5874" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/client/Drawer.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/Drawer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/SpaceRun.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/SpaceRun.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/server" beforeDir="false" afterPath="$PROJECT_DIR$/server/server" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/server.cmi" beforeDir="false" afterPath="$PROJECT_DIR$/server/server.cmi" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/server.cmo" beforeDir="false" afterPath="$PROJECT_DIR$/server/server.cmo" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/server.ml" beforeDir="false" afterPath="$PROJECT_DIR$/server/server.ml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -23,8 +23,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/server/server.ml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="521">
-              <caret line="44" column="145" selection-start-line="44" selection-start-column="145" selection-end-line="44" selection-end-column="145" />
+            <state relative-caret-position="11">
+              <caret line="10" column="18" lean-forward="true" selection-start-line="10" selection-start-column="18" selection-end-line="10" selection-end-column="18" />
             </state>
           </provider>
         </entry>
@@ -76,9 +76,13 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RunDashboard">
@@ -105,12 +109,12 @@
       <updated>1555002635114</updated>
       <workItem from="1555002636716" duration="155000" />
       <workItem from="1555002825540" duration="6035000" />
-      <workItem from="1555090912998" duration="896000" />
+      <workItem from="1555090912998" duration="1033000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="7086000" />
+    <option name="totallyTimeSpent" value="7223000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
@@ -190,8 +194,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/server/server.ml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="521">
-          <caret line="44" column="145" selection-start-line="44" selection-start-column="145" selection-end-line="44" selection-end-column="145" />
+        <state relative-caret-position="11">
+          <caret line="10" column="18" lean-forward="true" selection-start-line="10" selection-start-column="18" selection-end-line="10" selection-end-column="18" />
         </state>
       </provider>
     </entry>
