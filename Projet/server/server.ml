@@ -15,11 +15,9 @@ let server_tickrate = 10 (* le serveur envoie server_tickrate fois par seconde *
 let server_refresh_tickrate = 20
 let waiting_time = 10
 let obj_radius = 0.05
-let w = 450.0
-let h = 350.0
+let demil = 450.0 
+let demih = 350.0
 
-
-type command = Cmd of float * float | None
 
 type vehicule = {
 	mutable position: float * float;
@@ -34,8 +32,6 @@ type player = {
     outchan: out_channel;
     mutable score: int;
     car : vehicule;
-	mutable cmd: command
-    (*mutable playing: status*)
 	}
 
 type session = {
@@ -56,10 +52,9 @@ let get_distance (x1,y1) (x2,y2) =
 	sqrt((x2-.x1)*.(x2-.x1)+.(y2-.y1)*.(y2-.y1))
 
 let alea_x () =
-	(Random.float (-.w)) +. Random.float w
-
+	(Random.float demil*.2.0) -.demil
 let alea_y () =
-	(Random.float (-.h)) +. Random.float h
+	(Random.float demih*.2.0) -.demih
 
 let alea_pos () =
 	(alea_x (),alea_y ())
@@ -72,15 +67,15 @@ let current_session =
   }
 
 let parse_cmd cmd_string =
-	let s = Str.split (Str.regexp "A\|T") cmd_string in
-		Cmd(float_of_string (List.nth s 0), float_of_string (List.nth s 1))
+	let s = Str.split (Str.regexp "A\\|T") cmd_string in
+		(float_of_string (List.nth s 0), float_of_string (List.nth s 1))
 
 let parse_request req_string =
   let s = Str.split (Str.regexp "/") req_string in
   if (List.length s) > 0 then s else raise BadRequest
 
 let parse_coord c_string =
-	let lcoord = Str.split (Str.regexp "X\|Y") c_string in
+	let lcoord = Str.split (Str.regexp "X\\|Y") c_string in
 		(float_of_string (List.nth lcoord 0),float_of_string (List.nth lcoord 1))
 
 let rec stringify_scores p_list =
@@ -128,7 +123,6 @@ let create_player user sock inc out =
     outchan = out;
     score = 0;
     car = {position=alea_pos();direction=0.0;speed=(0.0,0.0)};
-    cmd = None
 	}
 
 
@@ -278,19 +272,21 @@ let checked_vy newvy =
     if newvy > maxspeed then maxspeed
     else if newvy < -.maxspeed then -.maxspeed else newvy
 
-let compute_cmd player =
- 	match player.cmd with
-	|None -> ()
-	|Cmd(angle,pousse) -> begin
-                            player.car.direction <- mod_float (player.car.direction+.angle) Float.pi;
-                            let new_vx = (fst player.car.speed) +. ((thrustit *. cos player.car.direction) *. pousse)
-                            and new_vy = (snd player.car.speed) +. ((thrustit *. sin player.car.direction) *. pousse) in
-                            player.car.speed <- (checked_vx new_vx,checked_vy new_vy);
-                            let new_x = mod_float ((fst player.car.position) +. (fst player.car.speed)) w
-                            and new_y = mod_float ((snd player.car.position) +. (snd player.car.speed)) h in
-                            player.car.position <- (new_x,new_y);
-														send_tick ()
-                          end
+(* compute_cmd calcul les nouvelles donnnées pour le joueur, et le stock en mémoire *)
+let compute_cmd player (angle,pousse) =
+		player.car.direction <- mod_float (player.car.direction+.angle) Float.pi;
+		let new_vx = (fst player.car.speed) +. ((thrustit *. cos player.car.direction) *. pousse)
+		and new_vy = (snd player.car.speed) +. ((thrustit *. sin player.car.direction) *. pousse) in
+		player.car.speed <- (checked_vx new_vx,checked_vy new_vy);
+		let new_x = (fst player.car.position) +. (fst player.car.speed)
+		and new_y = (snd player.car.position) +. (snd player.car.speed) in
+		if new_x > demil then player.car.position <- ((-.demil)+.(mod_float (fst player.car.position) demil),snd player.car.position);
+		if new_y > demih then player.car.position <- (fst player.car.position,(-.demih)+.(mod_float (fst player.car.position) demih));
+		if new_x < -.demil then player.car.position <- (demil-.(mod_float (fst player.car.position) demil),snd player.car.position);
+		if new_y < -.demih then player.car.position <- (fst player.car.position,demih-.(mod_float (fst player.car.position) demih));
+
+		print_endline (string_of_float new_x);
+		print_endline (string_of_float new_y)
 
 let process_exit user_name =
 	try
@@ -351,9 +347,9 @@ let process_newpos coord user_name =
 let process_newcom cmd_string user_name =
 	let player = find_player user_name in
 		print_endline cmd_string;
-		player.cmd <- parse_cmd cmd_string;
-		compute_cmd player
-
+		compute_cmd player (parse_cmd cmd_string); (* met a jour les (vx,vy) du joueur user_name e et refresh les données du client  *)
+		send_tick ()
+			
 (********************** thread's looping  ***********************)
 let receive_req user_name =
 	let player = find_player user_name in
@@ -387,18 +383,20 @@ let receive_req user_name =
 			send_tick ()
 			end;
 		Mutex.unlock mutex_players_list
-	done *)
+	done *)  
 
 
 
 let server_refresh_tick_thread () =
-	while true do
-		Unix.sleep server_refresh_tickrate;
-		Mutex.lock mutex_players_list;
-		print_endline "maj players";
-		if current_session.playing then	(print_endline "maj players";List.iter compute_cmd current_session.players_list);
-		Mutex.unlock mutex_players_list
-	done
+	let refresh p = p.car.position <- (fst p.car.position+.(fst p.car.speed),snd p.car.position+.(snd p.car.speed)) in
+		while true do
+			Unix.sleep server_refresh_tickrate;
+			Mutex.lock mutex_players_list;
+			if current_session.playing then	
+					(print_endline "maj players";
+					List.iter refresh current_session.players_list);
+			Mutex.unlock mutex_players_list
+		done
 
 
 
@@ -465,7 +463,7 @@ let start_server nb_c =
     Unix.listen server_socket nb_c;
 		ignore (Thread.create start_session ());
 		(* ignore (Thread.create tick_thread ());  *)
-		(* ignore (Thread.create server_refresh_tick_thread ());  *)
+		ignore (Thread.create server_refresh_tick_thread ()); 
 		while true do
       let (client_socket, _) = Unix.accept server_socket in
       Unix.setsockopt client_socket Unix.SO_REUSEADDR true;

@@ -136,20 +136,20 @@ public class SpaceRun extends Application{
 	
 	public void move(Ship p){//simule le monde thorique, a revoir avec -demih et -demil
 		if(p.get_posX() > demil) p.set_posX(-demil+p.get_posX()%demil);
-		if(p.get_posY() > demih) p.set_posY(-demil+p.get_posY()%demih);
+		if(p.get_posY() > demih) p.set_posY(-demih+p.get_posY()%demih);
 		if(p.get_posX() < -demil) p.set_posX(demil-p.get_posX()%demil);
 		if(p.get_posY() < -demih) p.set_posY(demih-p.get_posY()%demih);
 	}
 
 	public void onUpdate() {//met à jour les positions des joueurs à chaque
-		for(Player p : player_list.values()) p.getShip().refresh_pos();
+		//for(Player p : player_list.values()) p.getShip().refresh_pos();
 		updateListPlayer();
 		updateScore();
 		ctx.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
 		ctx.drawImage(new Image("images/space.png"), 0, 0, canvas.getWidth(),canvas.getHeight());
 		drawer.drawTarget();
 		drawer.drawPlayers();
-		move(myself.getShip());
+		//move(myself.getShip());
 	}
 	
 	public boolean collisionTargetShip(Ship s,Point t){
@@ -373,7 +373,7 @@ public class SpaceRun extends Application{
 			player_list.get(name).getShip().set_posX(x);
 			player_list.get(name).getShip().set_posY(y);
 			player_list.get(name).getShip().set_speedXY(vx, vy);
-			player_list.get(name).getShip().setAngle(t);
+			player_list.get(name).getShip().setAngle(Math.toDegrees(t));
 		}
 	}
 	public void parse_target(String coord_string){
