@@ -43,7 +43,7 @@ public class SpaceRun extends Application{
 	protected static final int PORT=2019;
 	protected static final int ve_radius = 30;
 	protected static final int ob_radius = 20;
-	protected static final int server_tickrate = 100;
+	protected static final int server_tickrate = 100; // 100 ms = 0.1s -> frequence de 10
 	private static final double demih = 350;
 	private static final double demil = 450;
 	

@@ -12,7 +12,7 @@ let maxspeed = 5.0
 let turnit = 45.0
 let thrustit = 2.0
 let server_tickrate = 10 (* le serveur envoie server_tickrate fois par seconde *)
-let server_refresh_tickrate = 20
+let server_refresh_tickrate = 40.0
 let waiting_time = 10
 let obj_radius = 0.05
 let demil = 450.0 
@@ -42,7 +42,7 @@ type session = {
 }
 
 
-
+(* modifier dans le serveur : ajouter la vérif de radius_obj à chaque calcul de nouvelle position : si ok touché -> incre score et envoyer newobj  *)
 
 (**************************** ADDITIONNAL FUNCTIONS *****************************)
 
@@ -396,7 +396,7 @@ let receive_req user_name =
 let server_refresh_tick_thread () =
 	let refresh p = p.car.position <- (fst p.car.position+.(fst p.car.speed),snd p.car.position+.(snd p.car.speed)) in
 		while true do
-			Unix.sleep server_refresh_tickrate;
+			Unix.sleepf (1.0/.server_refresh_tickrate);
 			Mutex.lock mutex_players_list;
 			if current_session.playing then	
 					(print_endline "maj players";
