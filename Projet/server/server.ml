@@ -10,7 +10,7 @@ let mutex_players_list = Mutex.create () (*sync for access to *)
 let cond_least1player = Condition.create ()
 let maxspeed = 5.0
 let turnit = 45.0
-let thrustit = 1.0
+let thrustit = 2.0
 let server_tickrate = 10 (* le serveur envoie server_tickrate fois par seconde *)
 let server_refresh_tickrate = 20
 let waiting_time = 10
@@ -274,17 +274,23 @@ let checked_vy newvy =
 
 (* compute_cmd calcul les nouvelles donnnées pour le joueur, et le stock en mémoire *)
 let compute_cmd player (angle,pousse) =
-		player.car.direction <- mod_float (player.car.direction+.angle) Float.pi;
+		player.car.direction <- mod_float (player.car.direction+.angle) (2.0*.Float.pi);
 		let new_vx = (fst player.car.speed) +. ((thrustit *. cos player.car.direction) *. pousse)
 		and new_vy = (snd player.car.speed) +. ((thrustit *. sin player.car.direction) *. pousse) in
 		player.car.speed <- (checked_vx new_vx,checked_vy new_vy);
 		let new_x = (fst player.car.position) +. (fst player.car.speed)
 		and new_y = (snd player.car.position) +. (snd player.car.speed) in
-		if new_x > demil then player.car.position <- ((-.demil)+.(mod_float (fst player.car.position) demil),snd player.car.position);
-		if new_y > demih then player.car.position <- (fst player.car.position,(-.demih)+.(mod_float (fst player.car.position) demih));
-		if new_x < -.demil then player.car.position <- (demil-.(mod_float (fst player.car.position) demil),snd player.car.position);
-		if new_y < -.demih then player.car.position <- (fst player.car.position,demih-.(mod_float (fst player.car.position) demih));
-
+		print_endline (string_of_float new_x);
+		print_endline (string_of_float new_y);
+		player.car.position<-(new_x,new_y);
+		if new_x > demil then player.car.position <- ((-.demil)+.(mod_float (fst player.car.position) demil),
+																									snd player.car.position);
+		if new_y > demih then player.car.position <- (fst player.car.position,
+																									(-.demih)+.((snd player.car.position)-.demih));
+		if new_x < -.demil then player.car.position <- (demil-.(mod_float (fst player.car.position) demil),
+																										snd player.car.position);
+		if new_y < -.demih then player.car.position <- (fst player.car.position,
+																										demih-.(mod_float (snd player.car.position) demih));
 		print_endline (string_of_float new_x);
 		print_endline (string_of_float new_y)
 

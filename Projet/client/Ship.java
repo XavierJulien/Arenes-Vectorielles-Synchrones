@@ -2,7 +2,7 @@
 public class Ship{
 	//constant(modifier selon la latence)
 	public final double turnit = 45.0;
-	public final double thrustit = 1.0;
+	public final double thrustit = 2.0;
 	public final double maxSpeed = 5.0;
 
 	//position
@@ -33,7 +33,7 @@ public class Ship{
 	//update
 	public void refresh_pos() {
 		position.setX(position.getX()+vect_vitesse.getX());
-		position.setY(position.getY()-vect_vitesse.getY());
+		position.setY(position.getY()+vect_vitesse.getY());
 	}
 
 	//controls

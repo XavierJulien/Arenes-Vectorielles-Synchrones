@@ -251,11 +251,11 @@ public class SpaceRun extends Application{
 				player_list.get(name).getShip().thrust();
 			}
 			if (e.getText().equals("d")) {
-				cumulCmds.add(Commands.anticlock);
+				cumulCmds.add(Commands.clock);
 				player_list.get(name).getShip().clock();
 			}
 			if (e.getText().equals("q")) {
-				cumulCmds.add(Commands.clock);
+				cumulCmds.add(Commands.anticlock);
 				player_list.get(name).getShip().anticlock();
 			}
 		});

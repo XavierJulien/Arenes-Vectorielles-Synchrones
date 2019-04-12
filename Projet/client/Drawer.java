@@ -24,8 +24,9 @@ public class Drawer {
 		double x4,y4;
 		for(Player p : s.getPlayer_list().values()) {
 			Ship ship = p.getShip();
+			System.out.println("x:"+ship.get_posX()+",y:"+ship.get_posY());
 			posx = ship.get_posX()+s.getDemil();
-			posy = ship.get_posY()+s.getDemih();
+			posy = s.getDemih()-ship.get_posY();
 			angle = Math.toRadians(ship.getAngle());
 			ve_radius = SpaceRun.ve_radius;
 			x1 = posx + ve_radius * Math.cos(angle);
