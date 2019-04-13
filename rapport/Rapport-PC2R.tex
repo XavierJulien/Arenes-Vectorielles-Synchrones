@@ -1,0 +1,181 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc} 
+\usepackage[francais]{babel}  
+\usepackage[top=3cm, bottom=3cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{caption}
+
+\lstset{
+	frame=single,
+	basicstyle=\ttfamily\scriptsize,
+	numbers=left
+	}
+
+\begin{document}
+ 
+\begin{titlepage}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
+
+\center % Center everything on the page
+ 
+%----------------------------------------------------------------------------------------
+%	HEADING SECTIONS
+%----------------------------------------------------------------------------------------
+
+\includegraphics{logo_su.jpg}\\[1cm] 
+
+\textsc{\LARGE M1 Informatique - Projet de PC2R}\\[1.5cm] % Name of your university/college
+\textsc{\Large RAPPORT}\\[1cm] % Major heading such as course name
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\HRule \\[1cm]
+{ \huge Arènes Vectorielles Synchrones}\\[0.4cm] % Title of your document
+\HRule \\[1.5cm]
+ 
+%----------------------------------------------------------------------------------------
+%	AUTHOR SECTION
+%----------------------------------------------------------------------------------------
+\emph{Étudiants:}\\
+Suxue \textsc{Li} \\% Your name
+Julien \textsc{Xavier}\\ % Your name
+%----------------------------------------------------------------------------------------
+%	DATE SECTION
+%----------------------------------------------------------------------------------------
+\vspace{6cm}
+
+
+{\large \today}\\[5cm] % Date, change the \today to a set date if you want to be precise
+
+
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\setlength\parindent{0pt}
+\section{Introduction}
+
+Le devoir de programmation de cette année a pour objectif de réaliser une application clients-serveur permettant à des utilisateurs de jouer simultanément à un jeu de course de voitures dans l'espace représenté par une arène dite torique, signifiant une arène sous la forme d'un "donut".\\
+ Ainsi, le but du jeu est de permettre à plusieurs joueurs de s'affronter dans des sessions de jeu ayant alors pour objectif de passer à certains endroits particuliers de l'arène, appelés objectifs.\\
+Afin de réaliser cette application, nous avons fait le choix d'implémenter la partie serveur en Ocaml et la partie client en Java.\\
+Ce rapport présente d'abord la structure générale du projet, puis nos choix/difficultés d'implémentation et enfin un petit manuel de jeu.
+
+\section{Structure générale du projet}
+\subsection{Principe de communication}
+Afin de réaliser la communication entre le serveur et les clients, nous avons utilisé un système de communication par socket, ce qui nous permet ici de réaliser des sessions TCP, afin de facilement et de manière fiable, envoyer des informations dans les deux sens de communication.\\
+Celle-ci se fera via des protocoles afin de séparer et traiter chaque envoi/réception de manière individuelle.
+
+\subsection{server.ml}
+C'est ici que ce passe tous les systèmes de communication et d'interprétation des protocoles côté Serveur.\\
+On divise ici le travail en plusieurs parties : \\
+- Une partie d'initialisation/threading (start), qui permet de créer toutes structures de données utilisées pour l'application du serveur et de démarrer les différents services en parralèles.\\
+-Une partie réception (process), qui permet l'interprétation de chacun des services proposés par les protocoles de réception client->serveur.\\
+-Une partie d'envoi (send), qui permet de préparer les commandes et d'envoyer aux différents clients les informations nécéssaire au bon déroulement du jeu.
+
+\subsection{SpaceRun.java}
+%A REVOIR avec les vrais noms de pane
+Programme principal côté client. Ici , on as deux parties principales :\\
+- La partie Interface graphique, faite à l'aide de JavaFX et de SceneBuilder, logiciel tierce permettant la création de scènes JavaFX et générant des ficher .fxml . De plus, nous avons alors la génération d'éléments graphique (Drawer.java) et l'update des éléments de jeu (canvas) ou encore de description(descPane/listview) et le chat (chatbox).
+- La partie réception, permettant lui aussi la réception et l'envoie de protocoles via la socket.
+%a finir
+
+
+%%PARTIE DU PROJET CA
+Ensuite, pour exécuter un programme bytecode sur la machine, nous avons écrit deux versions dans deux fichiers distincts : {\em main\_direct.ml}, et {\em main\_trace.ml}. Le premier permet d'obtenir simplement une sortie standard et un valeur de retour, tandis que le deuxième affiche l'état des registres de la mini-ZAM après chaque instruction évaluée, la trace de l'exécution "corrompt" l'affichage réel du programme, par contre la valeur de retour sera toujours affichée à la fin.
+\subsection{makefile \& readme.md}
+Nous avons également écrit un {\em makefile} contenant plusieurs cibles, permettant de compiler les différents fichiers, pour créer des exécutables. Vous trouverez plus de précision concernant l'utilisation du makefile dans le fichier {\em readme.md} qui vous décrit plus en détail les différentes cibles.
+
+
+\section{Choix d'implémentation}
+
+\subsection{Valeurs}
+La mini-ZAM manipule des valeurs d'un type {\em mlvalue} que nous avons choisi de définir ainsi :
+%\lstinputlisting[firstline=7, lastline=10]{../minizam.ml}
+
+\vspace{0.5cm}
+
+Le constructeur Entier permet de construire des valeurs représentant les valeurs immédiates entières, mais également les booléens, et (). \\
+
+Le constructeur Fermeture prend en argument un entier et une valeur de type {\em mlvalue} construite avec Env, pour représenter respectivement le pointeur de code ainsi que l'environnement d'exécution de la fermeture.\\
+
+Le constructeur Env prend une liste de {\em mlvalue} constituant l'environnement à représenter. Env n'existait pas au début du projet, il a été introduit lors du développement. Nous n'avions pas de constructeur pour l'environnement, il était représenté par une simple liste de {\em mlvalue}, mais cela n'a pas fonctionné. \\
+Un premier problème a été rencontré lors de l'implémentation de l'instruction APPLY, lorsque qu'un environnement vide devait être empilé dans la pile ({\em mlvalue list}). La concaténation d'une liste vide avec une autre liste faisait disparaitre la liste vide ce qui faussait l'état de la pile. Pour garder cet environnement dans la pile, nous avons donc pensé à ajouter un constructeur constant None dans la définition du type mlvalue. Une liste avec None a l'intérieur représentait donc un environnement vide. Quelques premiers tests qui ne manipulaient pas l'environnement fonctionnaient avec cette version mais un deuxième problème s'est présenté assez rapidement. Nous pensions de l'environnement comme étant un tout, c'est-à-dire une valeur, et que lorsqu'on l'empilait dans la pile parmi d'autres éléments, cet environnement serait gardé comme un tout. Or, nous n'avions pas pris en compte le fait que la concaténation aplatissait les listes, la liste représentant l'environnement n'était plus une liste, mais juste une suite de mlvalue parmi d'autres dans la pile. Il fallait donc trouver un moyen d'envelopper l'environnement, pour permettre de la stocker dans la pile. Etant donné que la pile ne prend que des mlvalue, il a été évident d'ajouter dans le type un constructeur Env pour envelopper la liste de mlvalue de  l'environnement.\\
+
+Enfin le constructeur Bloc a été ajouté pour l'extension sur les blocs. il prend un {\em mlvalue array} en argument. Nous l'avions d'abord implémenté avec une liste, mais les instructions SETFIELD, SETVECTITEM et ASSIGN nous ont très vite arrêtés et nous a contraints à changer notre implémentation pour l'array compte tenu du caractère mutable des blocs et des effets de bord que cela implique. \\
+\newpage
+
+\subsection{Registres}
+La mini-ZAM contient au total 7 registres, ils sont définis comme variables globales dans {\em minizam.ml}.
+
+%\lstinputlisting[firstline=15, lastline=21]{../minizam.ml}
+
+\vspace{0.5cm}
+
+En Ocaml, il n'y a pas de déclaration de variable, lorsqu'on introduit une variable, on doit lui affecter directement une valeur pour que le compilateur infère le type. Pour que la compilation se passe correctement, nous devons donc lui préciser le type des références. Pour le registre stack par exemple, on l'initialisait par une ref sur une liste vide, le compilateur inférait le type {\em '\_weak1 list ref}, ce qui n'était pas bon. C'est pourquoi nous avons indiqué clairement le type des variables telles que prog, stack et env.\\
+
+Le registre prog permet de stocker le programme à exécuter. Nous avons choisi de représenter chaque instruction par un enregistrement. Cela prend moins de place en mémoire par rapport à un n-uplet. De plus on peut manipuler les champs directement par leur nom, ce qui est rapide et plus facile. Nous avons donc déclaré le type de cet enregistrement dans le fichier {\em parser.ml} sous le nom de {\em triplet}. Prog est une liste de triplets. Un triplet est composé d'un champs {\em label}, {\em instr} et {\em args}. Le label est de type {\em string option} car il peut ne pas y avoir de label. L'instruction est de type {\em string}, juste pour contenir le nom de celui-ci. Et enfin, les arguments sont stockés dans une liste de string, une liste vide signifie qu'il n'y a pas d'argument dans l'instruction. Un programme est "parsé", puis stocké dans prog, on peut ensuite passer la passe dessus, qui a la possibilité de modifier des instructions, c'est pourquoi prog est une référence.\\
+
+Le registre stack est une référence sur une liste de mlvalue, la pile doit être modifiable. Il existe un module Stack en Ocaml, mais nous avons préféré utiliser le module List. Les deux modules présentent chacun ses avantages et inconvénients, mais les fonctions de List répondaient mieux à nos besoins, et le seul inconvénient qu'il présentait était le manque de la fonction pop. Nous l'avons donc implémenté nous même dans avec la fonction {\em depile n} qui dépile directement de la stack n éléments, et retourne ces n mlvalue dans une liste.\\
+
+Grâce à l'introduction du constructeur Env, le registre env est donc simplement une référence vers une mlvalue, ce qui nous facilite beaucoup de chose, mais cela induit une utilisation intense du motif de filtrage, pour récupérer la valeur d'un environnement.
+
+Le registre accu est une référence sur une valeur de type mlvalue, il est initialisé au début à Entier(0).\\
+Enfin, les registres restant : pc, extra\_args, et trap\_sp sont de simples références sur un entier.
+
+\subsection{Instructions}
+Au niveau de l'implémentation des instructions, nous n'avons eu spécialement de soucis. Comme vous pourrez le constater dans le code source, nous nous sommes beaucoup appuyés sur le motif de filtrage étant donné les différents constructeurs pour le type mlvalue.
+L'implémentation des instructions nous a permit de détecter nos erreurs concernant les choix pour le type de mlvalue et des registres.
+
+\section{Optimisation APPTERM : comparaison de la pile}
+Pour les fichiers contenant la suite d'instructions APPLY n; RETURN m-n, nous avons comparé la taille maximum de la pile sans et avec la passe qui remplace cette suite par l'instruction APPTERM n,m. On a notamment fait une version du test {\em fun\_appterm.txt} en remettant la suite APPLY et RETURN au lieu des APPTERM, le fichier se trouve dans le dossier jeu\_de\_test.
+Voici le tableau qui présente les différentes tailles maximales de la pile :\\
+\begin{center}
+\begin{tabular}{|c|c|c|}
+
+\hline
+\textbf{Fichier test} & \textbf{Taille de pile SANS passe} & \textbf{Taille de pile AVEC passe} \\
+\hline
+appterm/facto\_tailrec.txt & 112 & 8 \\
+\hline
+jeu\_de\_test/fun\_appterm.txt & 948 & 8 \\
+\hline
+block\_values/insertion\_sort.txt & 34 & 30  \\
+\hline
+block\_values/liste\_iter & 50 & 19  \\
+\hline
+n-ary\_funs/grab2.txt & 12 & 8 \\
+\hline
+n-ary\_funs/grab4.txt & 11 & 8 \\
+\hline
+unary\_funs/fun4-nooptim.txt & 13 & 7  \\
+\hline
+
+\end{tabular}
+\captionof{table}{Taille maximale de la pile sans et avec la passe appterm selon différents tests.}
+\end{center}
+
+\vspace{0.5cm}
+On remarque effectivement une différence, particulièrement pour les tests dans appterm, cette différence est flagrante. En fait, plus il y a d'appels récursives avec APPLY RETURN, plus la taille de la pile augmente si on n'utilise pas l'instruction APPTERM à la place.
+
+\section{Nouveaux jeux d'essai }
+Dans le dossier jeu\_de\_test, nous avons écrit 3 nouveaux tests (sans compter le fun\_appterm.txt) pour la mini-ZAM. Vous y trouvez un fichier {\em .ml} ainsi qu'un fichier {\em .txt} pour chaque test. \\
+Le test {\em op\_arithm} teste l'enchainement des différentes opérations arithmétiques.
+{\em exception} teste une exception non levée. Et enfin le dernier, {\em map} teste les blocs avec de la récursivité.
+
+\section{Conclusion}
+L'implémentation de la mini-ZAM nous a permit de comprendre le fonctionnement d'un interprète bytecode fonctionnel, notamment au niveau du fonctionnement interne de la machine. Les sessions de débuggage ont été enrichissantes, dans le sens où l'on devait simuler son évolution lorsque nous avions des erreurs. De plus, faire ce projet en Ocaml nous avons apprit à mieux connaître ce langage, tout le coté fonctionnel typé static a été très convaincant au niveau de l'efficacité.
+
+
+
+
+
+
+\end{document}
+
