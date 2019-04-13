@@ -472,10 +472,24 @@ public class SpaceRun extends Application{
 		parse_scores(server_input[2]);
 		//PARSE COORD
 		parse_target(server_input[3]);
+		Platform.runLater(new Runnable() {
+            @Override public void run() {
+            	Text t = new Text("Welcome "+name+" ! :)\n");
+            	t.setFill(Color.TOMATO);
+            	received.getChildren().add(t);
+            }
+        });
 	}
 	public void process_newplayer(String new_user){
 		System.out.println("newplayer : "+new_user);
 		player_list.put(new_user,new Player(new_user,0));
+		Platform.runLater(new Runnable() {
+            @Override public void run() {
+            	Text t = new Text(new_user+" has joined the party !\n");
+            	t.setFill(Color.TOMATO);
+            	received.getChildren().add(t);
+            }
+        });
 	}
 	public void process_denied(String error){
 		System.out.println("Error : DENIED/"+error);
@@ -483,6 +497,13 @@ public class SpaceRun extends Application{
 	public void process_playerleft(String name){
 		System.out.println("playerleft : "+name);
 		player_list.remove(name);
+		Platform.runLater(new Runnable() {
+            @Override public void run() {
+            	Text t = new Text(name+" has left the party !\n");
+            	t.setFill(Color.TOMATO);
+            	received.getChildren().add(t);
+            }
+        });
 	}
 	public void process_session(String coords,String coord){
 		parse_target(coord);
