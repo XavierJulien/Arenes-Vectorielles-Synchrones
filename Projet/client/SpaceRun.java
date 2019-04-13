@@ -540,10 +540,28 @@ public class SpaceRun extends Application{
 		System.out.println("Fin de Session -> RESULTATS :");
 		player_list.forEach((k,v) -> System.out.println("player "+(k+" -> "+v.getScore()+" points.")));
 		updateMyscore();
-		updateListPlayer();
+		Platform.runLater(new Runnable() {
+            @Override public void run() {
+            	updateListPlayer();
+            }
+        });
+		
 		isPlaying = false;
 		serverTickrateTask.cancel();
 		/**  AFFICHER LE WINNER DANS LE CHAT **/
+		Platform.runLater(new Runnable() {
+            @Override public void run() {
+            	Text t = new Text("\n\n"
+            			+ "--------------------WINNER--------------------\n"
+            			+ "|  	        			  |"
+            			+ "|     "+whoIsWinner()+"    |"
+            			+ "|  	        			  |"
+            			+ "----------------------------\n\n");
+            	t.setFill(Color.TOMATO);
+            	received.getChildren().add(t);
+            }
+        });
+		
 	}
 	public void process_tick(String vcoords){
 		parse_vcoords(vcoords);

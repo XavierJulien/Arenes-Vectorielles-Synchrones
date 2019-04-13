@@ -27,7 +27,7 @@
             <ListView prefHeight="239.0" prefWidth="300.0" />
             <ScrollPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="300.0">
    				<content>
-      				<TextFlow prefHeight="200.0" prefWidth="200.0" />
+      				<TextFlow prefHeight="200.0" prefWidth="300.0" />
    				</content>
 			</ScrollPane>
 			<HBox prefHeight="5.0" prefWidth="300.0">

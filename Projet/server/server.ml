@@ -16,7 +16,7 @@ let thrustit = 2.0
 let server_tickrate = 10 (* le serveur envoie server_tickrate fois par seconde *)
 let server_refresh_tickrate = 40.0
 let waiting_time = 10
-let obj_radius = 20.0
+let obj_radius = 30.0
 let demil = 450.0
 let demih = 350.0
 
