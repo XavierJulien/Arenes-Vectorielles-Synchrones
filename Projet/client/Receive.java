@@ -3,6 +3,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 
+
 public class Receive extends Thread {
 	private SpaceRun client;
 	private BufferedReader inchan;
@@ -22,7 +23,7 @@ public class Receive extends Thread {
 			try{
 				server_input = inchan.readLine();
 				if(server_input != null){
-					System.out.println(server_input);
+					//System.out.println(server_input);
 					String[] server_split = server_input.split("/");
 					switch(server_split[0]){
 					case "NEWPLAYER" : {client.process_newplayer(server_split[1]);break;}
@@ -31,6 +32,14 @@ public class Receive extends Thread {
 					case "WINNER" : client.process_winner(server_split[1]);break;
 					case "TICK" : client.process_tick(server_split[1]);break;
 					case "NEWOBJ" : client.process_newobj(server_split[1],server_split[2]);break;
+					case "RECEPTION" : 
+						if (server_split.length == 2) {
+							client.process_reception(server_split[1]);break;
+						}else{
+							client.process_reception(server_split[1], server_split[2]);break;
+						}
+						
+					case "PRECEPTION" : client.process_preception(server_split[1], server_split[2]);break;
 					case "DENIED" : client.process_denied(server_split[1]);break;
 					}
 				}else{/*System.out.println("on ne recoit rien");*/continue;}

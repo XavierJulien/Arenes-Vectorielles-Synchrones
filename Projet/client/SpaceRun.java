@@ -14,6 +14,7 @@ import java.util.Timer;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
@@ -24,6 +25,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
@@ -32,6 +34,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage; 
 
 public class SpaceRun extends Application{
@@ -58,12 +61,14 @@ public class SpaceRun extends Application{
 	private Player myself;
 	private Map<String,Player> player_list; // le client courant fait partie de la liste
 	private Point target;
+	@SuppressWarnings("unused")
 	private boolean isPlaying;
 	private ArrayList<Commands> cumulCmds;
 	
+	
 //------------------------------------------------------------------------//
 //																		  //
-//							JAVAFX VARIABLES							  //qqqq
+//							JAVAFX VARIABLES							  //
 //	  																	  //	
 //------------------------------------------------------------------------//
 
@@ -84,11 +89,10 @@ public class SpaceRun extends Application{
 	private VBox right;
 	//desc
 	private Text main_score;
-	private ListView<String> list_scores;
+	//private ListView<String> list_scores;
 	//listplayers
-
 	//chatbox
-
+	private TextFlow received;
 
 //------------------------------------------------------------------------//
 //	 																	  //
@@ -96,12 +100,12 @@ public class SpaceRun extends Application{
 //	  																	  //	
 //------------------------------------------------------------------------//
 
-	private Client c;
+	//private Client c;
 	private BufferedReader inchan;
 	private PrintStream outchan;
 	private Socket sock;
 	private Receive r;
-	private Image ship = new Image("images/ship.png");
+	//private Image ship = new Image("images/ship.png");
 	private Timer serverTickrateTimer;
 	private RefreshClientTask serverTickrateTask;
 
@@ -143,14 +147,13 @@ public class SpaceRun extends Application{
 	}
 
 	public void onUpdate() {//met à jour les positions des joueurs à chaque
-		//for(Player p : player_list.values()) p.getShip().refresh_pos();
 		updateListPlayer();
 		updateScore();
 		ctx.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
 		ctx.drawImage(new Image("images/space.png"), 0, 0, canvas.getWidth(),canvas.getHeight());
 		drawer.drawTarget();
 		drawer.drawPlayers();
-		//move(myself.getShip());
+		//updateChat();
 	}
 	
 	public boolean collisionTargetShip(Ship s,Point t){
@@ -238,6 +241,52 @@ public class SpaceRun extends Application{
 			} catch (IOException e1) {
 				System.out.println("Error : EXIT");
 			}});
+		//********CHAT************
+		
+		ScrollPane scrollpane = (ScrollPane)right.getChildren().get(2);
+		received = (TextFlow)scrollpane.getContent();
+		//received.setEditable(false);
+		HBox chatbox = (HBox)right.getChildren().get(3);
+		TextField to_send = (TextField)chatbox.getChildren().get(0);
+		to_send.setOnMouseClicked(e -> {
+			to_send.clear();
+			to_send.setStyle("-fx-text-inner-color: black;");
+		});
+		Button send = (Button)chatbox.getChildren().get(1);
+		send.setOnAction(e -> {
+			String mess_to_send = to_send.getText();
+			to_send.clear();
+			if(mess_to_send.length() > 0) {
+				String[] message = mess_to_send.split("\\/");
+				if(message[0].equals("dm")) {
+					if(player_list.containsKey(message[1])) {
+						if(message[1].equals(name)){
+							to_send.setStyle("-fx-text-inner-color: red;");
+							to_send.setText("Cannot send dm to yourself");
+						}else {
+							Text t = new Text("to:"+message[1]+">"+message[2]+"\n");
+							t.setFill(Color.DARKGREEN);
+							Platform.runLater(new Runnable() {
+					            @Override public void run() {
+					            	received.getChildren().add(t);
+					            }
+					        });
+							sendPEnvoi(message[1], message[2]);
+						}
+					}else {
+						to_send.setStyle("-fx-text-inner-color: red;");
+						to_send.setText(message[1]+" n'existe pas");
+					}
+				}else {
+					Platform.runLater(new Runnable() {
+			            @Override public void run() {
+			            	received.getChildren().add((new Text("you>"+message[0]+"\n")));
+			            }
+			        });
+					sendEnvoi(message[0],name);
+				}	
+			}});
+			
 		updateListPlayer();
 		
 
@@ -389,6 +438,30 @@ public class SpaceRun extends Application{
 		String[] pos_target = coord_string.split("[XY]");
 		target = new Point(Double.parseDouble(pos_target[1]),Double.parseDouble(pos_target[2]));
 	}
+	public void parse_message_public(String reception) {
+		Platform.runLater(new Runnable() {
+            @Override public void run() {
+            	received.getChildren().add(new Text(reception+"\n"));
+            }
+        });
+	}
+	public void parse_message_public(String reception,String from) {
+		Platform.runLater(new Runnable() {
+            @Override public void run() {
+            	received.getChildren().add(new Text(from+">"+reception+"\n"));
+            }
+        });
+	}
+	public void parse_message_prive(String reception,String user) {
+		Text t = new Text("DM:"+user+">"+reception+"\n");
+		t.setFill(Color.DARKORANGE);
+		Platform.runLater(new Runnable() {
+	            @Override public void run() {
+	            	received.getChildren().add(t);
+	            }
+	        });
+		
+	}
 
 //****************************PROCESS PROTOCOLES*********************
 	//RECEIVE
@@ -416,17 +489,16 @@ public class SpaceRun extends Application{
 		parse_coords(coords);
 		isPlaying = true;
 		serverTickrateTask = new RefreshClientTask(this);
-		serverTickrateTimer.scheduleAtFixedRate(new RefreshClientTask(this),new Date(),server_tickrate);
+		serverTickrateTimer.scheduleAtFixedRate(serverTickrateTask,new Date(),server_tickrate);
 	}
 	public void process_winner(String scores){
 		parse_scores(scores);
 		System.out.println("Fin de Session -> RESULTATS :");
 		player_list.forEach((k,v) -> System.out.println("player "+(k+" -> "+v.getScore()+" points.")));
 		isPlaying = false;
-		serverTickrateTimer.cancel();
+		serverTickrateTask.cancel();
 	}
 	public void process_tick(String vcoords){
-		System.out.println("tick : "+vcoords);
 		parse_vcoords(vcoords);
 		
 	}
@@ -435,7 +507,21 @@ public class SpaceRun extends Application{
 		parse_scores(scores);
 		System.out.println("new_obj : " + coord);
 	}
-	//SEND
+	public void process_reception(String message) {
+		System.out.println("reception : "+message);
+		parse_message_public(message);
+		
+	}
+	public void process_reception(String message,String from) {
+		System.out.println("reception : "+message+" from"+from);
+		parse_message_public(message,from);
+	}	
+	
+	public void process_preception(String message,String user) {
+		System.out.println("reception privee : "+user+"/"+message);
+		parse_message_prive(message,user);
+	}
+	
 	/**************************SEND FUNCTIONS**************************/
 	public void sendConnect (String username) {
 		outchan.println("CONNECT/"+name+"/");
@@ -449,6 +535,7 @@ public class SpaceRun extends Application{
 		outchan.println("NEWPOS/X"+x+"Y"+y+"/");
 		outchan.flush();
 	}
+	@SuppressWarnings("unchecked")
 	public void sendNewCom () {
 		double a = 0.;//angle en radian
 		int t = 0;//poussée
@@ -465,10 +552,16 @@ public class SpaceRun extends Application{
 				a = (a+myself.getShip().turnit)%360;
 			}
 		}
-		System.out.println("NEWCOM/A"+a+"T"+t+"/");
 		outchan.println("NEWCOM/A"+a+"T"+t+"/");
 		outchan.flush();
 	}
-
+	public void sendEnvoi(String message,String myself) {
+		outchan.println("ENVOI/"+message+"/"+myself+"/");
+		outchan.flush();
+	}
+	public void sendPEnvoi(String user,String message) {
+		outchan.println("PENVOI/"+user+"/"+message+"/");
+		outchan.flush();
+	}
 
 }

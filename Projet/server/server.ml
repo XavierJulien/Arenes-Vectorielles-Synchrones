@@ -15,7 +15,7 @@ let server_tickrate = 10 (* le serveur envoie server_tickrate fois par seconde *
 let server_refresh_tickrate = 40.0
 let waiting_time = 10
 let obj_radius = 0.05
-let demil = 450.0 
+let demil = 450.0
 let demih = 350.0
 
 
@@ -172,7 +172,7 @@ let send_newplayer user_name = (* donne seulement le nom du nouveau joueur, le c
 
 let send_playerleft user_name =
 	let send_fun p =
-		print_endline p.name;
+		(* print_endline p.name; *)
 		output_string p.outchan ("PLAYERLEFT/"^user_name^"/\n");
 		flush p.outchan
 	in
@@ -189,20 +189,18 @@ let send_winner () =
 	let f_scores = stringify_scores current_session.players_list in
 		List.iter (send_fun f_scores) current_session.players_list
 
-
 (* protégé par le mutex de l'appelant *)
 let send_tick () =
 	let send_fun to_send p =
 		output_string p.outchan ("TICK/"^to_send^"\n");
 		flush p.outchan
 	in
-	print_endline "Envoie à tous les joueurs, premier joueur dans la liste : %s\n";
-	print_endline (List.hd current_session.players_list).name;
+	(* print_endline "Envoie à tous les joueurs, premier joueur dans la liste : %s\n"; *)
+	(* print_endline (List.hd current_session.players_list).name; *)
 	let f_coords = stringify_tick current_session.players_list in
-		let s = "TICK/"^f_coords in
-		print_endline s;
+		(* let s = "TICK/"^f_coords in *)
+		(* print_endline s; *)
 		List.iter (send_fun f_coords) current_session.players_list
-
 
 (* protégé par le mutex de l'appelant *)
 let send_newobj () =
@@ -214,11 +212,35 @@ let send_newobj () =
 	and scores = stringify_scores current_session.players_list in
 		List.iter (send_fun coord scores) current_session.players_list
 
-
 (*let send_denied chan =
 	output_string chan "DENIED/";
 	flush chan *)
 
+let send_mess message =
+	let send_fun to_send p =
+		output_string p.outchan ("RECEPTION/"^to_send^"\n");
+		flush p.outchan
+	in
+	List.iter (send_fun message) current_session.players_list
+
+let send_mess_from message from=
+	let send_fun to_send p =
+		if p.name<>from then
+		begin
+		output_string p.outchan ("RECEPTION/"^to_send^"/"^from^"\n");
+		flush p.outchan
+		end
+		else ()
+	in
+	List.iter (send_fun message) current_session.players_list
+
+let send_pmess user_name message from_user=
+	let player = find_player user_name in
+		print_endline player.name;
+		print_endline from_user;
+		print_endline message;
+		output_string player.outchan ("PRECEPTION/"^message^"/"^from_user^"\n");
+		flush player.outchan
 
 let start_session () =
 	Mutex.lock mutex_players_list;
@@ -280,8 +302,6 @@ let compute_cmd player (angle,pousse) =
 		player.car.speed <- (checked_vx new_vx,checked_vy new_vy);
 		let new_x = (fst player.car.position) +. (fst player.car.speed)
 		and new_y = (snd player.car.position) +. (snd player.car.speed) in
-		print_endline (string_of_float new_x);
-		print_endline (string_of_float new_y);
 		player.car.position<-(new_x,new_y);
 		if new_x > demil then player.car.position <- ((-.demil)+.(mod_float (fst player.car.position) demil),
 																									snd player.car.position);
@@ -290,9 +310,7 @@ let compute_cmd player (angle,pousse) =
 		if new_x < -.demil then player.car.position <- (demil-.(mod_float (fst player.car.position) demil),
 																										snd player.car.position);
 		if new_y < -.demih then player.car.position <- (fst player.car.position,
-																										demih-.(mod_float (snd player.car.position) demih));
-		print_endline (string_of_float new_x);
-		print_endline (string_of_float new_y)
+																										demih-.(mod_float (snd player.car.position) demih))
 
 let process_exit user_name =
 	try
@@ -314,17 +332,12 @@ let process_exit user_name =
 		end
 	with Not_found -> print_endline "Le joueur n'est plus dans la liste"
 
-
 let process_newpos coord user_name =
 		Mutex.lock mutex_players_list;
-		print_endline "yo";
 		if (current_session.playing) then
 			let player = find_player user_name
 			and parsed_coord = parse_coord coord in
 			player.car.position <- parsed_coord;
-			let (x,y) = parsed_coord in
-			Printf.printf "(%f,%f)\n" x y;
-			print_endline "yop";
 			if (get_distance current_session.target parsed_coord <= obj_radius) then
 				(* le joueur a touché l'objectif *)
 				begin
@@ -352,10 +365,25 @@ let process_newpos coord user_name =
 (* acquerir mutex avant ? *)
 let process_newcom cmd_string user_name =
 	let player = find_player user_name in
-		print_endline cmd_string;
+		(* print_endline cmd_string; *)
 		compute_cmd player (parse_cmd cmd_string); (* met a jour les (vx,vy) du joueur user_name e et refresh les données du client  *)
 		send_tick ()
-			
+
+let process_envoi message =
+	Mutex.lock mutex_players_list;
+	send_mess message;
+	Mutex.unlock mutex_players_list
+
+let process_envoi_from message from =
+	Mutex.lock mutex_players_list;
+	send_mess_from message from;
+	Mutex.unlock mutex_players_list
+
+let process_penvoi user_name message from_user =
+	Mutex.lock mutex_players_list;
+	send_pmess user_name message from_user;
+	Mutex.unlock mutex_players_list
+
 (********************** thread's looping  ***********************)
 let receive_req user_name =
 	let player = find_player user_name in
@@ -369,9 +397,16 @@ let receive_req user_name =
 									 process_exit (List.nth parsed_req 1);
 									 raise Disconnection
 				|"NEWPOS" -> if List.length parsed_req <> 2 then raise BadRequest;
-										 process_newpos (List.nth parsed_req 1) user_name
+										 	process_newpos (List.nth parsed_req 1) user_name
 				|"NEWCOM" -> if List.length parsed_req <> 2 then raise BadRequest;
 											process_newcom (List.nth parsed_req 1) user_name
+				|"ENVOI" ->  if List.length parsed_req == 2 then
+											process_envoi (List.nth parsed_req 1)
+										 else
+										 	if List.length parsed_req <> 3 then raise BadRequest;
+										 	process_envoi_from (List.nth parsed_req 1) (List.nth parsed_req 2)
+				|"PENVOI" ->	if List.length parsed_req <> 3 then raise BadRequest;
+											process_penvoi (List.nth parsed_req 1) (List.nth parsed_req 2) user_name
 				|_ -> raise BadRequest
 			with BadRequest -> output_string player.outchan "DENIED/BadRequest\n";
 										 			flush player.outchan
@@ -389,7 +424,7 @@ let receive_req user_name =
 			send_tick ()
 			end;
 		Mutex.unlock mutex_players_list
-	done *)  
+	done *)
 
 
 
@@ -398,8 +433,9 @@ let server_refresh_tick_thread () =
 		while true do
 			Unix.sleepf (1.0/.server_refresh_tickrate);
 			Mutex.lock mutex_players_list;
-			if current_session.playing then	
-					(print_endline "maj players";
+			if current_session.playing then
+					(
+					(* print_endline "maj players"; *)
 					List.iter refresh current_session.players_list);
 			Mutex.unlock mutex_players_list
 		done
@@ -422,8 +458,8 @@ let process_connect user_name client_socket inchan outchan =
 		begin
 		let player = (create_player user_name client_socket inchan outchan) in
 		current_session.players_list<-player::current_session.players_list;
-		print_endline user_name;
-		print_endline "le joueur dont le nom est au dessus a été ajouté a la liste\n";
+		(* print_endline user_name; *)
+		(* print_endline "le joueur dont le nom est au dessus a été ajouté a la liste\n"; *)
 		Condition.signal cond_least1player
 		end;
 	Mutex.unlock mutex_players_list;
@@ -469,7 +505,7 @@ let start_server nb_c =
     Unix.listen server_socket nb_c;
 		ignore (Thread.create start_session ());
 		(* ignore (Thread.create tick_thread ());  *)
-		ignore (Thread.create server_refresh_tick_thread ()); 
+		ignore (Thread.create server_refresh_tick_thread ());
 		while true do
       let (client_socket, _) = Unix.accept server_socket in
       Unix.setsockopt client_socket Unix.SO_REUSEADDR true;

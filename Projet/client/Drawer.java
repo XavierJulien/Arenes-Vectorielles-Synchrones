@@ -24,7 +24,6 @@ public class Drawer {
 		double x4,y4;
 		for(Player p : s.getPlayer_list().values()) {
 			Ship ship = p.getShip();
-			System.out.println("x:"+ship.get_posX()+",y:"+ship.get_posY());
 			posx = ship.get_posX()+s.getDemil();
 			posy = s.getDemih()-ship.get_posY();
 			angle = Math.toRadians(ship.getAngle());
@@ -55,7 +54,7 @@ public class Drawer {
 	public void drawTarget() {
 		ctx.setFill(Color.GOLDENROD);
 		double x = s.getTarget().getX()+s.getDemil();
-		double y = s.getTarget().getY()+s.getDemih();
+		double y = s.getDemih()-s.getTarget().getY();
 		ctx.fillOval(x-ob_radius,y-ob_radius, ob_radius*2, ob_radius*2);
 		ctx.drawImage(coin, x-ob_radius,y-ob_radius, ob_radius*2, ob_radius*2);
 	}

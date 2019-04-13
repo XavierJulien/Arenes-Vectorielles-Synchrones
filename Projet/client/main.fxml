@@ -9,6 +9,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Text?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.text.TextFlow?>
 
 <HBox prefHeight="700.0" prefWidth="1200.0">
@@ -24,8 +25,12 @@
                </children>
             </Pane>
             <ListView prefHeight="239.0" prefWidth="300.0" />
-            <TextFlow prefHeight="270.0" prefWidth="300.0" />
-            <HBox prefHeight="5.0" prefWidth="300.0">
+            <ScrollPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="300.0">
+   				<content>
+      				<TextFlow prefHeight="200.0" prefWidth="200.0" />
+   				</content>
+			</ScrollPane>
+			<HBox prefHeight="5.0" prefWidth="300.0">
                <children>
                   <TextField prefHeight="27.0" prefWidth="246.0" />
                   <Button mnemonicParsing="false" text="SEND" />
