@@ -9,11 +9,11 @@ public class Drawer {
 	private double ve_radius = SpaceRun.ve_radius;
 	private double ob_radius = SpaceRun.ob_radius;
 	private Image coin = new Image("images/target.png");
-	
+
 	public Drawer(SpaceRun s) {
 		this.s = s;
 		ctx = s.getGraphicsContext();
-		
+
 	}
 
 	public void drawPlayers() {
@@ -50,7 +50,7 @@ public class Drawer {
 			}
 		}
 	}
-	
+
 	public void drawTarget() {
 		ctx.setFill(Color.GOLDENROD);
 		double x = s.getTarget().getX()+s.getDemil();

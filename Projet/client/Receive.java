@@ -32,13 +32,13 @@ public class Receive extends Thread {
 					case "WINNER" : client.process_winner(server_split[1]);break;
 					case "TICK" : client.process_tick(server_split[1]);break;
 					case "NEWOBJ" : client.process_newobj(server_split[1],server_split[2]);break;
-					case "RECEPTION" : 
+					case "RECEPTION" :
 						if (server_split.length == 2) {
 							client.process_reception(server_split[1]);break;
 						}else{
 							client.process_reception(server_split[1], server_split[2]);break;
 						}
-						
+
 					case "PRECEPTION" : client.process_preception(server_split[1], server_split[2]);break;
 					case "DENIED" : client.process_denied(server_split[1]);break;
 					}

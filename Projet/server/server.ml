@@ -3,6 +3,8 @@ exception BadRequest
 exception AlreadyExists
 exception Disconnection
 
+let _ = Random.self_init ()
+
 (* OK pour les mutables, pas besoin de les passer en paramètre *)
 
 let mutex_players_list = Mutex.create () (*sync for access to *)
@@ -14,9 +16,10 @@ let thrustit = 2.0
 let server_tickrate = 10 (* le serveur envoie server_tickrate fois par seconde *)
 let server_refresh_tickrate = 40.0
 let waiting_time = 10
-let obj_radius = 0.05
+let obj_radius = 20.0
 let demil = 450.0
 let demih = 350.0
+
 
 
 type vehicule = {
@@ -65,6 +68,7 @@ let current_session =
 		target = alea_pos();
 		win_cap = 3
   }
+
 
 let parse_cmd cmd_string =
 	let s = Str.split (Str.regexp "A\\|T") cmd_string in
@@ -127,7 +131,11 @@ let create_player user sock inc out =
 
 
 let initposplayers () =
-	let f p = p.car.position <- alea_pos() in
+	let f p =
+	    p.car.position <- alea_pos() ;
+	    p.car.speed <- (0.0,0.0);
+	    p.car.direction <- 0.0
+	in
 	List.iter f current_session.players_list
 
 
@@ -139,6 +147,8 @@ let send_session () =
 	in
 	let coords = stringify_coords current_session.players_list in
 		let coord_target = stringify_coord current_session.target in
+		    Printf.printf "Le target =====";
+		    print_endline coord_target;
 			List.iter (send_fun coords coord_target) current_session.players_list
 
 let send_welcome user_name =
@@ -172,7 +182,6 @@ let send_newplayer user_name = (* donne seulement le nom du nouveau joueur, le c
 
 let send_playerleft user_name =
 	let send_fun p =
-		(* print_endline p.name; *)
 		output_string p.outchan ("PLAYERLEFT/"^user_name^"/\n");
 		flush p.outchan
 	in
@@ -198,12 +207,11 @@ let send_tick () =
 	(* print_endline "Envoie à tous les joueurs, premier joueur dans la liste : %s\n"; *)
 	(* print_endline (List.hd current_session.players_list).name; *)
 	let f_coords = stringify_tick current_session.players_list in
-		(* let s = "TICK/"^f_coords in *)
-		(* print_endline s; *)
 		List.iter (send_fun f_coords) current_session.players_list
 
 (* protégé par le mutex de l'appelant *)
 let send_newobj () =
+    print_endline "dans send_newobj";
 	let send_fun coord scores p =
 		output_string p.outchan ("NEWOBJ/"^coord^"/"^scores^"/\n");
 		flush p.outchan
@@ -286,6 +294,42 @@ let restart_session () =
 
 
 (********************** PROCESSING FUNCTIONS ***********************)
+
+
+let maybe_target_reached player =
+    print_endline "dans le maybe reached target";
+    Mutex.lock mutex_players_list;
+    print_endline "Position x du ship :";
+    print_endline (string_of_float (fst player.car.position));
+    print_endline "Position y du ship :";
+    print_endline (string_of_float (snd player.car.position));
+    print_endline "distance entre le joeuur et l'objectif : ";
+    print_endline (string_of_float (get_distance current_session.target player.car.position));
+    if (get_distance current_session.target player.car.position <= obj_radius) then
+        (* le joueur a touché l'objectif *)
+
+        begin
+        Printf.printf "joueur qui touche target : %s \n" player.name;
+        print_endline "le joueur a touché le target";
+        player.score <- player.score+1;
+        if (player.score = current_session.win_cap) then
+            (* le joueur a atteint win_cap : send_winner & restart_session *)
+            begin
+            send_winner ();
+            Mutex.unlock mutex_players_list;
+            (* besoin d'exécuter restart hors SC car unix.sleep à l'intérieur *)
+            restart_session ()
+            end
+        else
+            (* nouvel objectif : send_newobj *)
+            begin
+            current_session.target <- alea_pos ();
+            send_newobj ();
+            Mutex.unlock mutex_players_list;
+            end
+        end
+    else Mutex.unlock mutex_players_list
+
 let checked_vx newvx =
     if newvx > maxspeed then maxspeed
     else if newvx < -.maxspeed then -.maxspeed else newvx
@@ -304,13 +348,13 @@ let compute_cmd player (angle,pousse) =
 		and new_y = (snd player.car.position) +. (snd player.car.speed) in
 		player.car.position<-(new_x,new_y);
 		if new_x > demil then player.car.position <- ((-.demil)+.(mod_float (fst player.car.position) demil),
-																									snd player.car.position);
+													    snd player.car.position);
 		if new_y > demih then player.car.position <- (fst player.car.position,
-																									(-.demih)+.((snd player.car.position)-.demih));
+													    (-.demih)+.((snd player.car.position)-.demih));
 		if new_x < -.demil then player.car.position <- (demil-.(mod_float (fst player.car.position) demil),
-																										snd player.car.position);
+														snd player.car.position);
 		if new_y < -.demih then player.car.position <- (fst player.car.position,
-																										demih-.(mod_float (snd player.car.position) demih))
+														demih-.(mod_float (snd player.car.position) demih))
 
 let process_exit user_name =
 	try
@@ -362,12 +406,16 @@ let process_newpos coord user_name =
 			else Mutex.unlock mutex_players_list
 		else Mutex.unlock mutex_players_list
 
-(* acquerir mutex avant ? *)
+
 let process_newcom cmd_string user_name =
 	let player = find_player user_name in
 		(* print_endline cmd_string; *)
+		Mutex.lock mutex_players_list;
 		compute_cmd player (parse_cmd cmd_string); (* met a jour les (vx,vy) du joueur user_name e et refresh les données du client  *)
-		send_tick ()
+		send_tick ();
+		Mutex.unlock mutex_players_list;
+		print_endline "avant vérification de reached target";
+		maybe_target_reached player
 
 let process_envoi message =
 	Mutex.lock mutex_players_list;
@@ -393,12 +441,12 @@ let receive_req user_name =
 			let parsed_req = parse_request request in
 			try
 				match List.hd parsed_req with
-				|"EXIT" -> if List.length parsed_req <> 2 then raise BadRequest;
+				|"EXIT" -> if List.length parsed_req < 2 then raise BadRequest;
 									 process_exit (List.nth parsed_req 1);
 									 raise Disconnection
-				|"NEWPOS" -> if List.length parsed_req <> 2 then raise BadRequest;
-										 	process_newpos (List.nth parsed_req 1) user_name
-				|"NEWCOM" -> if List.length parsed_req <> 2 then raise BadRequest;
+				|"NEWPOS" -> if List.length parsed_req < 2 then raise BadRequest;
+										 process_newpos (List.nth parsed_req 1) user_name
+				|"NEWCOM" -> if List.length parsed_req < 2 then raise BadRequest;
 											process_newcom (List.nth parsed_req 1) user_name
 				|"ENVOI" ->  if List.length parsed_req == 2 then
 											process_envoi (List.nth parsed_req 1)
@@ -429,15 +477,17 @@ let receive_req user_name =
 
 
 let server_refresh_tick_thread () =
-	let refresh p = p.car.position <- (fst p.car.position+.(fst p.car.speed),snd p.car.position+.(snd p.car.speed)) in
+	let refresh p =
+	    Mutex.lock mutex_players_list;
+	    p.car.position <- (fst p.car.position+.(fst p.car.speed),snd p.car.position+.(snd p.car.speed));
+	    Mutex.unlock mutex_players_list;
+	    print_endline "avant reached target dns le thread server refrzsh";
+      maybe_target_reached p
+	in
 		while true do
 			Unix.sleepf (1.0/.server_refresh_tickrate);
-			Mutex.lock mutex_players_list;
 			if current_session.playing then
-					(
-					(* print_endline "maj players"; *)
-					List.iter refresh current_session.players_list);
-			Mutex.unlock mutex_players_list
+					List.iter refresh current_session.players_list
 		done
 
 

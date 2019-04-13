@@ -1,4 +1,5 @@
 
+import java.awt.Font;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -33,15 +34,16 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
-import javafx.stage.Stage; 
+import javafx.stage.Stage;
 
 public class SpaceRun extends Application{
 //------------------------------------------------------------------------//
 //																		  //
 //								CONSTANTES								  //
-//	  																	  //	
+//	  																	  //
 //------------------------------------------------------------------------//
 	protected static final int PORT=2019;
 	protected static final int ve_radius = 30;
@@ -49,27 +51,25 @@ public class SpaceRun extends Application{
 	protected static final int server_tickrate = 100; // 100 ms = 0.1s -> frequence de 10
 	private static final double demih = 350;
 	private static final double demil = 450;
-	
+
 //------------------------------------------------------------------------//
 //																		  //
 //								DATA CLIENT								  //
-//																		  //	
+//																		  //
 //------------------------------------------------------------------------//
 
 	private String name;
-	private int score;
 	private Player myself;
-	private Map<String,Player> player_list; // le client courant fait partie de la liste
+	private Map<String,Player> player_list = new HashMap<>(); // le client courant fait partie de la liste
 	private Point target;
-	@SuppressWarnings("unused")
-	private boolean isPlaying;
-	private ArrayList<Commands> cumulCmds;
-	
-	
+	private boolean isPlaying = false;
+	private ArrayList<Commands> cumulCmds = new ArrayList<>();
+
+
 //------------------------------------------------------------------------//
 //																		  //
 //							JAVAFX VARIABLES							  //
-//	  																	  //	
+//	  																	  //
 //------------------------------------------------------------------------//
 
 
@@ -97,7 +97,7 @@ public class SpaceRun extends Application{
 //------------------------------------------------------------------------//
 //	 																	  //
 //						VARIABLES COMMUNICATION	C/S						  //
-//	  																	  //	
+//	  																	  //
 //------------------------------------------------------------------------//
 
 	//private Client c;
@@ -105,16 +105,16 @@ public class SpaceRun extends Application{
 	private PrintStream outchan;
 	private Socket sock;
 	private Receive r;
-	//private Image ship = new Image("images/ship.png");
-	private Timer serverTickrateTimer;
+	private Image ship = new Image("images/ship.png");
+	private Timer serverTickrateTimer = new Timer();
 	private RefreshClientTask serverTickrateTask;
 
 
-	
+
 //------------------------------------------------------------------------//
 //	 																	  //
 //							GETTERS/SETTERS								  //
-//	  																	  //	
+//	  																	  //
 //------------------------------------------------------------------------//
 	public GraphicsContext getGraphicsContext() {return ctx;}
 	public Map<String,Player> getPlayer_list() {return  player_list;}
@@ -122,23 +122,23 @@ public class SpaceRun extends Application{
 	public Point getTarget() {return target;}
 	public double getDemih() {return demih;}
 	public double getDemil() {return demil;}
-	
-	public void init() {
+
+	/*public void init() {
 		this.score = 0;
 		this.player_list = new HashMap<>();
 		this.target = null;
 		this.isPlaying = false;
 		this.cumulCmds = new ArrayList<>();
-	}
+	}*/
 
-	
-	
+
+
 //------------------------------------------------------------------------//
 //	 																   	  //
 //							MAJ PLAYERS									  //
-//	 																	  //	
+//	 																	  //
 //------------------------------------------------------------------------//
-	
+
 	public void move(Ship p){//simule le monde thorique, a revoir avec -demih et -demil
 		if(p.get_posX() > demil) p.set_posX(-demil+p.get_posX()%demil);
 		if(p.get_posY() > demih) p.set_posY(-demih+p.get_posY()%demih);
@@ -147,17 +147,24 @@ public class SpaceRun extends Application{
 	}
 
 	public void onUpdate() {//met à jour les positions des joueurs à chaque
+		//for(Player p : player_list.values()) p.getShip().refresh_pos();
+		if (isPlaying) {
 		updateListPlayer();
-		updateScore();
+		//updateScore();
 		ctx.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
 		ctx.drawImage(new Image("images/space.png"), 0, 0, canvas.getWidth(),canvas.getHeight());
 		drawer.drawTarget();
 		drawer.drawPlayers();
-		//updateChat();
+		//move(myself.getShip());
+		}else {
+			ctx.drawImage(new Image("images/space.png"), 0, 0, canvas.getWidth(),canvas.getHeight());
+			ctx.setStroke(Paint.valueOf("white"));
+			ctx.setFont(new javafx.scene.text.Font("Verdana", 50));
+			ctx.strokeText("Waiting for the session ... ", 150, 350);
+		}
 	}
-	
 	public boolean collisionTargetShip(Ship s,Point t){
-	   double dist = (s.get_posX()-t.getX())*(s.get_posX()-t.getX()) + 
+	   double dist = (s.get_posX()-t.getX())*(s.get_posX()-t.getX()) +
 			   				   (s.get_posY()-t.getY())*(s.get_posY()-t.getY());
 	   if (dist <= (SpaceRun.ve_radius+SpaceRun.ob_radius)*
 			   	  (SpaceRun.ve_radius+SpaceRun.ob_radius)) {
@@ -165,35 +172,50 @@ public class SpaceRun extends Application{
 	   }else {
 	      return false;}
 	}
-	
+
 	private void updateScore() {
 		for(Player p : player_list.values()) {
 			Ship s = p.getShip();
 			if(collisionTargetShip(s, target)) {
-				p.setScore(p.getScore()+1);	
+				p.setScore(p.getScore()+1);
 			}
 		}
-		
+
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private void updateListPlayer() {
 		ListView<String> aff_list_players = (ListView<String>)right.getChildren().get(1);
 		List<String> list = new ArrayList<>();
 		player_list.forEach((k,v) -> {
 			String player_desc = "Player : "+k+" | Score : "+v.getScore();
-			list.add(player_desc);	
+			System.out.println(v.getScore());
+			list.add(player_desc);
 		});
 		ObservableList<String> newItems = FXCollections.observableList(list);
 		aff_list_players.setItems(newItems);
 	}
-	
-	
-	
+
+	private void updateMyscore() {
+		main_score.setText("Score : "+ player_list.get(name).getScore());
+	}
+
+	private String whoIsWinner() {
+		String winner="";
+		int best_score = 0;
+		for (Map.Entry<String, Player> entry : player_list.entrySet()) {
+			if (entry.getValue().getScore()>best_score) {
+				best_score = entry.getValue().getScore();
+				winner = entry.getKey();
+			}
+		}
+		return winner;
+	}
+
 //------------------------------------------------------------------------//
 //																		  //
 //							AFFICHAGE JAVAFX							  //
-//	 																	  //	
+//	 																	  //
 //------------------------------------------------------------------------//
 	@Override
 	public void start(Stage primaryStage) throws Exception { //CE QUI EST LANCE PAR LAUNCH
@@ -218,8 +240,8 @@ public class SpaceRun extends Application{
 		canvas = (Canvas)mainPane.getChildren().get(0);
 		ctx = canvas.getGraphicsContext2D();
 		drawer = new Drawer(this);
-		drawer.drawPlayers();
-		drawer.drawTarget();
+		//drawer.drawPlayers();
+		//drawer.drawTarget();
 		//--------------RIGHTPANEL-----------------------------
 		//*******Description*********
 		right = (VBox)mainPane.getChildren().get(1);
@@ -227,7 +249,7 @@ public class SpaceRun extends Application{
 		Text main_username = (Text)descJoueur.getChildren().get(0);
 		main_username.setText("User : "+name);
 		main_score = (Text)descJoueur.getChildren().get(1);
-		main_score.setText("Score : "+String.valueOf(score));
+		main_score.setText("Score : "+ player_list.get(name).getScore());
 		Button exit = (Button)descJoueur.getChildren().get(2);
 		exit.setOnAction(e -> {
 			r.setRunning(false);
@@ -242,7 +264,7 @@ public class SpaceRun extends Application{
 				System.out.println("Error : EXIT");
 			}});
 		//********CHAT************
-		
+
 		ScrollPane scrollpane = (ScrollPane)right.getChildren().get(2);
 		received = (TextFlow)scrollpane.getContent();
 		//received.setEditable(false);
@@ -284,11 +306,10 @@ public class SpaceRun extends Application{
 			            }
 			        });
 					sendEnvoi(message[0],name);
-				}	
+				}
 			}});
-			
+
 		updateListPlayer();
-		
 
 		//------------------FIX POSITION---------------------------
 		new AnimationTimer(){//peut etre inutile si on peut directement appeler update dans la partie EVENT HANDLER
@@ -327,8 +348,8 @@ public class SpaceRun extends Application{
 				if(server_split != null) {
 					switch(server_split[0]){
 					case "WELCOME" :
-						init();
-						serverTickrateTimer = new Timer(); // les deux lignes peuvent être fait directement dans la définition des attributs au debut je crois non ?
+						//init();
+						//serverTickrateTimer = new Timer(); // les deux lignes peuvent être fait directement dans la définition des attributs au debut je crois non ?
 						//c = new Client(name);
 						process_welcome(server_split);
 						initializeMain();
@@ -336,7 +357,7 @@ public class SpaceRun extends Application{
 						r.start();
 						primaryStage.setScene(playScene);
 						break;
-					case "DENIED" : 
+					case "DENIED" :
 						Text t;
 						if (server_split.length > 1) {
 							t = new Text(server_split[1]);
@@ -348,7 +369,7 @@ public class SpaceRun extends Application{
 							lobbyPane.add(t, 1, 1);
 						}
 						break;
-					default : System.out.println("Unknown protocol");	
+					default : System.out.println("Unknown protocol");
 					}
 				}else {throw new IOException();}
 			}catch(IOException e2) {
@@ -377,10 +398,10 @@ public class SpaceRun extends Application{
 //------------------------------------------------------------------------//
 //																      	//
 //							COMMUNICATIONS								//
-//																		//	
+//																		//
 //------------------------------------------------------------------------//
 	//**************************AUX***************************************
-	
+
 	public void parse_status(String status) {
 		if (status == "jeu") {
 			isPlaying=true;
@@ -460,7 +481,7 @@ public class SpaceRun extends Application{
 	            	received.getChildren().add(t);
 	            }
 	        });
-		
+
 	}
 
 //****************************PROCESS PROTOCOLES*********************
@@ -508,6 +529,8 @@ public class SpaceRun extends Application{
 	public void process_session(String coords,String coord){
 		parse_target(coord);
 		parse_coords(coords);
+		System.out.println("target x : " + target.getX());
+		System.out.println("target y : " + target.getY());
 		isPlaying = true;
 		serverTickrateTask = new RefreshClientTask(this);
 		serverTickrateTimer.scheduleAtFixedRate(serverTickrateTask,new Date(),server_tickrate);
@@ -516,33 +539,38 @@ public class SpaceRun extends Application{
 		parse_scores(scores);
 		System.out.println("Fin de Session -> RESULTATS :");
 		player_list.forEach((k,v) -> System.out.println("player "+(k+" -> "+v.getScore()+" points.")));
+		updateMyscore();
+		updateListPlayer();
 		isPlaying = false;
 		serverTickrateTask.cancel();
+		/**  AFFICHER LE WINNER DANS LE CHAT **/
 	}
 	public void process_tick(String vcoords){
 		parse_vcoords(vcoords);
-		
+
 	}
 	public void process_newobj(String coord,String scores){
 		parse_target(coord);
 		parse_scores(scores);
+		updateMyscore();
+		System.out.println("mon score au player : "+ myself.getScore());
 		System.out.println("new_obj : " + coord);
 	}
 	public void process_reception(String message) {
 		System.out.println("reception : "+message);
 		parse_message_public(message);
-		
+
 	}
 	public void process_reception(String message,String from) {
 		System.out.println("reception : "+message+" from"+from);
 		parse_message_public(message,from);
-	}	
-	
+	}
+
 	public void process_preception(String message,String user) {
 		System.out.println("reception privee : "+user+"/"+message);
 		parse_message_prive(message,user);
 	}
-	
+
 	/**************************SEND FUNCTIONS**************************/
 	public void sendConnect (String username) {
 		outchan.println("CONNECT/"+name+"/");
