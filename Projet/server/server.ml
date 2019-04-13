@@ -16,7 +16,8 @@ let thrustit = 2.0
 let server_tickrate = 10 (* le serveur envoie server_tickrate fois par seconde *)
 let server_refresh_tickrate = 40.0
 let waiting_time = 10
-let obj_radius = 30.0
+let obj_radius = 20.0
+let ve_radius = 30.0
 let demil = 450.0
 let demih = 350.0
 
@@ -41,7 +42,8 @@ type session = {
 	mutable players_list : player list;
     mutable playing : bool;
     mutable target: float * float;
-	win_cap : int
+	win_cap : int;
+	mutable obstacle_list : (float * float) list
 }
 
 
@@ -66,7 +68,8 @@ let current_session =
 	{ players_list = [];
 		playing = false;
 		target = alea_pos();
-		win_cap = 3
+		win_cap = 3;
+		obstacle_list = []
   }
 
 
@@ -130,14 +133,22 @@ let create_player user sock inc out =
 	}
 
 
-let initposplayers () =
+let init_players () =
 	let f p =
 	    p.car.position <- alea_pos() ;
 	    p.car.speed <- (0.0,0.0);
-	    p.car.direction <- 0.0
+	    p.car.direction <- 0.0;
+	    p.score <- 0
 	in
 	List.iter f current_session.players_list
 
+
+let get_new_obstacles n =
+    let aux_get nb =
+        match nb with
+        |0 -> []
+        |x -> new_pos()::(aux_get x-1)
+     in aux_get n
 
 (********************** SENDING FUNCTIONS ***********************)
 let send_session () =
@@ -265,6 +276,7 @@ let start_session () =
 	if (List.length current_session.players_list) > 0 then
 	begin
 	current_session.playing <- true;
+	current_session.obstacle_list <- get_new_obstacles 5;
 	send_session ()
 	end
 	else ();
@@ -281,7 +293,7 @@ let restart_session () =
 		(* peut être pas besoin de boucle *)
 		Condition.wait cond_least1player mutex_players_list
 	done;
-	initposplayers ();
+	init_players ();
 	current_session.target <- alea_pos ();
 	Mutex.unlock mutex_players_list;
 	(* le mutex est rendu pour que d'autres clients puissent se connecter entre-temps *)
@@ -448,11 +460,11 @@ let receive_req user_name =
 										 process_newpos (List.nth parsed_req 1) user_name
 				|"NEWCOM" -> if List.length parsed_req < 2 then raise BadRequest;
 											process_newcom (List.nth parsed_req 1) user_name
-				|"ENVOI" ->  if List.length parsed_req == 2 then
-											process_envoi (List.nth parsed_req 1)
-										 else
-										 	if List.length parsed_req <> 3 then raise BadRequest;
-										 	process_envoi_from (List.nth parsed_req 1) (List.nth parsed_req 2)
+				|"ENVOI" -> if List.length parsed_req < 2 then raise BadRequest;
+                            if List.length parsed_req == 2 then (* envoi générique avec seulement le message *)
+								process_envoi (List.nth parsed_req 1)
+							else
+							    process_envoi_from (List.nth parsed_req 1) (List.nth parsed_req 2) (* envoie spécifique, notre version avec le nom *)
 				|"PENVOI" ->	if List.length parsed_req <> 3 then raise BadRequest;
 											process_penvoi (List.nth parsed_req 1) (List.nth parsed_req 2) user_name
 				|_ -> raise BadRequest
@@ -530,7 +542,8 @@ let start_new_client client_socket =
 			let parsed_req = parse_request request in
 					try
 						match List.hd parsed_req with
-							| "CONNECT" -> process_connect (List.nth parsed_req 1) client_socket inchan outchan;
+							| "CONNECT" -> if (List.length parsed_req) < 2 then raise BadRequest;
+							               process_connect (List.nth parsed_req 1) client_socket inchan outchan
 							| _ -> raise BadRequest
 					with
 						|BadRequest -> output_string outchan "DENIED/BadRequest\n";

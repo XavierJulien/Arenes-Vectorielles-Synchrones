@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3dfbb53d-c358-4ba9-96c3-aa9103eb5874" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/Drawer.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/Drawer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/Receive.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/Receive.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/SpaceRun.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/SpaceRun.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/server" beforeDir="false" afterPath="$PROJECT_DIR$/server/server" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/server.cmi" beforeDir="false" afterPath="$PROJECT_DIR$/server/server.cmi" afterDir="false" />
@@ -24,8 +24,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/server/server.ml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="347">
-              <caret line="136" column="26" selection-start-line="136" selection-start-column="26" selection-end-line="136" selection-end-column="26" />
+            <state relative-caret-position="225">
+              <caret line="278" column="57" selection-start-line="278" selection-start-column="57" selection-end-line="278" selection-end-column="57" />
             </state>
           </provider>
         </entry>
@@ -42,6 +42,9 @@
       <find>target</find>
       <find>alea_pos</find>
       <find>initposplayers</find>
+      <find>resta</find>
+      <find>session</find>
+      <find>current_session</find>
     </findStrings>
     <replaceStrings>
       <replace>maxspeed</replace>
@@ -116,12 +119,12 @@
       <updated>1555002635114</updated>
       <workItem from="1555002636716" duration="155000" />
       <workItem from="1555002825540" duration="6035000" />
-      <workItem from="1555090912998" duration="8406000" />
+      <workItem from="1555090912998" duration="13090000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="14596000" />
+    <option name="totallyTimeSpent" value="19280000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
@@ -201,8 +204,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/server/server.ml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="347">
-          <caret line="136" column="26" selection-start-line="136" selection-start-column="26" selection-end-line="136" selection-end-column="26" />
+        <state relative-caret-position="225">
+          <caret line="278" column="57" selection-start-line="278" selection-start-column="57" selection-end-line="278" selection-end-column="57" />
         </state>
       </provider>
     </entry>

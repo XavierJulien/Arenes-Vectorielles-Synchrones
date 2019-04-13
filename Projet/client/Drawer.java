@@ -1,4 +1,4 @@
-import javafx.scene.canvas.GraphicsContext;
+ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
@@ -8,7 +8,7 @@ public class Drawer {
 	private SpaceRun s;
 	private double ve_radius = SpaceRun.ve_radius;
 	private double ob_radius = SpaceRun.ob_radius;
-	private Image coin = new Image("images/target.png");
+	private Image coin = new Image("images/star.png");
 
 	public Drawer(SpaceRun s) {
 		this.s = s;

@@ -1,5 +1,5 @@
 
-import java.awt.Font;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -212,6 +212,11 @@ public class SpaceRun extends Application{
 		return winner;
 	}
 
+	private void resetScore() {
+		player_list.forEach((k,v) -> {
+			v.setScore(0);
+		});
+	}
 //------------------------------------------------------------------------//
 //																		  //
 //							AFFICHAGE JAVAFX							  //
@@ -476,11 +481,7 @@ public class SpaceRun extends Application{
 	public void parse_message_prive(String reception,String user) {
 		Text t = new Text("DM:"+user+">"+reception+"\n");
 		t.setFill(Color.DARKORANGE);
-		Platform.runLater(new Runnable() {
-	            @Override public void run() {
-	            	received.getChildren().add(t);
-	            }
-	        });
+		Platform.runLater(()->received.getChildren().add(t));
 
 	}
 
@@ -527,6 +528,8 @@ public class SpaceRun extends Application{
         });
 	}
 	public void process_session(String coords,String coord){
+		resetScore();
+		updateMyscore();
 		parse_target(coord);
 		parse_coords(coords);
 		System.out.println("target x : " + target.getX());
