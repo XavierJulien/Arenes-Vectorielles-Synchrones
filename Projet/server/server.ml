@@ -14,9 +14,9 @@ let maxspeed = 5.0
 let turnit = 45.0
 let thrustit = 2.0
 let server_tickrate = 10 (* le serveur envoie server_tickrate fois par seconde *)
-let server_refresh_tickrate = 40.0
+let server_refresh_tickrate = 30.0
 let waiting_time = 10
-let obj_radius = 20.0
+let obj_radius = 30.0
 let ve_radius = 30.0
 let ob_radius = 50.0
 let pi_radius = 20.0
@@ -36,7 +36,9 @@ type player = {
     inchan: in_channel;
     outchan: out_channel;
     mutable score: int;
-    car : vehicule;
+    car: vehicule;
+    mutable is_colliding: bool;
+    mutable is_colliding_ve: bool
 	}
 
 type session = {
@@ -64,13 +66,13 @@ let alea_y () =
 
 let alea_pos () =
 	(alea_x (),alea_y ())
-let alea_angle () = 
-	(Random.float Float.pi)
-let alea_vxy () = 
+let alea_angle () =
+	(Random.float (Float.pi *. 2.0))
+let alea_vxy () =
 	let random_chooser = (Random.int 2) in
-	if random_chooser == 1 then 5.0 else -.5.0
+	if random_chooser == 1 then maxspeed else -.maxspeed
 
-let alea_speed () = 
+let alea_speed () =
 	(alea_vxy (),alea_vxy ())
 
 let current_session =
@@ -82,9 +84,9 @@ let current_session =
 		pieges_list = []
   	}
 
-let remove_piege p = 
-	let rec remove l = 
-		match l with 
+let remove_piege p =
+	let rec remove l =
+		match l with
 		| hd::[] -> if (hd==p) then [] else hd::[]
 		| hd::tl ->	if (hd==p) then tl else hd::(remove tl)
 		| [] -> []
@@ -149,14 +151,15 @@ let find_player user_name =
 let exists_player user_name =
 	List.exists (fun p -> if p.name=user_name then true else false) current_session.players_list
 
-let is_colliding_obs player_pos obs =
-    if (get_distance player_pos obs) < (ve_radius+.ob_radius) then true else false
+let not_colliding_obs position obs =
+    if (get_distance position obs) > (ve_radius+.ob_radius) then true else false
 
 let rec get_valid_pos () =
-    let player_pos = alea_pos() in
-    if List.exists (is_colliding_obs player_pos) current_session.obstacles_list
-    then get_valid_pos ()
-    else player_pos
+    let position = alea_pos() in
+    if List.for_all (not_colliding_obs position) current_session.obstacles_list
+    then position
+    else get_valid_pos () (*la position n'est pas valide*)
+
 
 (*permet de créer un joueur*)
 let create_player user sock inc out =
@@ -166,15 +169,19 @@ let create_player user sock inc out =
     outchan = out;
     score = 0;
     car = {position=get_valid_pos();direction=0.0;speed=(0.0,0.0)};
+    is_colliding = false;
+    is_colliding_ve = false
 	}
 
 
 let init_players () =
 	let f p =
-	    p.car.position <- alea_pos() ;
+	    p.car.position <- get_valid_pos() ;
 	    p.car.speed <- (0.0,0.0);
 	    p.car.direction <- 0.0;
-	    p.score <- 0
+	    p.score <- 0;
+	    p.is_colliding <- false;
+	    p.is_colliding_ve <- false
 	in
 	List.iter f current_session.players_list
 
@@ -189,7 +196,7 @@ let get_new_obstacles n =
 let get_val_target () =
     match current_session.target with
     |Some(x,y) -> (x,y)
-    |None -> failwith "No target to compare"
+    |None -> failwith "No target"
 
 (********************** SENDING FUNCTIONS ***********************)
 let send_session () =
@@ -210,10 +217,6 @@ let send_welcome user_name =
 	and coords_obs = stringify_coordsXY current_session.obstacles_list
 	and player = find_player user_name
 	in
-	print_endline phase;
-	print_endline scores;
-	print_endline coord_target;
-	print_endline coords_obs;
 	output_string player.outchan ("WELCOME/"^phase^scores^coord_target^"/"^coords_obs^"\n");
 	flush player.outchan;
 	if current_session.playing then
@@ -254,16 +257,11 @@ let send_winner () =
 		List.iter (send_fun f_scores) current_session.players_list
 
 (* protégé par le mutex de l'appelant *)
-let send_tick () =
-	let send_fun to_send p =
-		output_string p.outchan ("TICK/"^to_send^"\n");
-		flush p.outchan
-	in
-	(* print_endline "Envoie à tous les joueurs, premier joueur dans la liste : %s\n"; *)
-	(* print_endline (List.hd current_session.players_list).name; *)
-
+let send_tick p =
 	let f_coords = stringify_tick current_session.players_list in
-		List.iter (send_fun f_coords) current_session.players_list
+        output_string p.outchan ("TICK/"^f_coords^"\n");
+        flush p.outchan
+
 
 let send_tick_newpieges () =
 	let send_fun ticks pieges p =
@@ -272,7 +270,7 @@ let send_tick_newpieges () =
 		output_string p.outchan ("TICK/"^ticks^pieges^"\n");
 		flush p.outchan
 	in
-		let p_coords = stringify_coordsXY current_session.pieges_list 
+		let p_coords = stringify_coordsXY current_session.pieges_list
 		and f_coords = stringify_tick current_session.players_list in
 			List.iter (send_fun f_coords p_coords) current_session.players_list
 
@@ -346,9 +344,9 @@ let restart_session () =
 		(* peut être pas besoin de boucle *)
 		Condition.wait cond_least1player mutex_players_list
 	done;
+	current_session.obstacles_list <- get_new_obstacles 5; (*l'initialisation des obstacles doit se faire en 1er car le reste en depend,*)
 	init_players ();
 	current_session.target <- Some(get_valid_pos());
-	current_session.obstacles_list <- get_new_obstacles 5;
 	Mutex.unlock mutex_players_list;
 	(* le mutex est rendu pour que d'autres clients puissent se connecter entre-temps *)
 	Unix.sleep waiting_time;
@@ -368,8 +366,6 @@ let maybe_target_reached player =
     if (get_distance target_coord player.car.position <= obj_radius) then
         (* le joueur a touché l'objectif *)
         begin
-        Printf.printf "joueur qui touche target : %s \n" player.name;
-        print_endline "le joueur a touché le target";
         player.score <- player.score+1;
         if (player.score = current_session.win_cap) then
             (* le joueur a atteint win_cap : send_winner & restart_session *)
@@ -417,25 +413,51 @@ let compute_cmd player (angle,pousse) =
 
 let check_collisions player =
     let check_collision_obstacle o =
-        if (get_distance player.car.position o)<(ob_radius+.ve_radius)
-        then player.car.speed <- (-.(fst player.car.speed),-.(snd player.car.speed))  (* probleme : si je "touche" 2 obstacles, il ne se passe rien, tout continu normalement puisque les signges se seront inversé 2 fois *);
+        let distance = get_distance player.car.position o in
+        if (not player.is_colliding) && distance <= (ob_radius+.ve_radius) then
+            (* n'était pas en collision, et la nouvelle distance donne une collision *)
+            begin
+            print_endline "collision, inversion des vitesses";
+            player.is_colliding <- true;
+            player.car.speed <- (-.(fst player.car.speed),-.(snd player.car.speed))
+            end
+        else
+            begin
+            (* était en collision, mais s'est assez éloigné de l'obstacle *)
+            print_endline " dans le else ";
+            if player.is_colliding && distance > (ob_radius+.ve_radius+.100.0) then
+            print_endline "dans le else, puis dans le if";
+            player.is_colliding <- false
+            end (* probleme : si je "touche" 2 obstacles, il ne se passe rien, tout continu normalement puisque les signges se seront inversé 2 fois *);
      and check_collision_players other_player =
         if (player.name <> other_player.name)
         then
-            if (get_distance player.car.position other_player.car.position)<(ve_radius*.2.0)
+            let distance = get_distance player.car.position other_player.car.position in
+            if player.is_colliding_ve = false && other_player.is_colliding_ve = false && distance <= (ve_radius*.2.0)
             then
-                (player.car.position <- (-.(fst player.car.speed),-.(snd player.car.speed));
-                other_player.car.position <- (-.(fst other_player.car.speed),-.(snd other_player.car.speed)))
-	and check_collision_pieges p = 
-		if (get_distance player.car.position p)<(ve_radius+.pi_radius)
-        then 
-		   (player.car.speed <- alea_speed();(* probleme : si je "touche" 2 obstacles, il ne se passe rien, tout continu normalement puisque les signges se seront inversé 2 fois *)
-			player.car.direction <- alea_angle ();
-			remove_piege p)
+                begin
+                player.is_colliding_ve <- true;
+                other_player.is_colliding_ve <- true;
+                (player.car.speed <- (-.(fst player.car.speed),-.(snd player.car.speed));
+                other_player.car.speed <- (-.(fst other_player.car.speed),-.(snd other_player.car.speed)))
+                end
+            else
+                begin
+                if player.is_colliding_ve = true && other_player.is_colliding_ve = true && distance > (ve_radius*.2.0) && distance < (ve_radius*.2.0+.15.0)
+                then
+                    (player.is_colliding_ve <- false;
+                    other_player.is_colliding_ve <- false)
+                end
+		and check_collision_pieges p =
+			if (get_distance player.car.position p)<(ve_radius+.pi_radius)
+	    then
+			  (player.car.speed <- alea_speed();(* probleme : si je "touche" 2 obstacles, il ne se passe rien, tout continu normalement puisque les signges se seront inversé 2 fois *)
+				player.car.direction <- alea_angle ();
+				remove_piege p)
     in
     List.iter check_collision_obstacle current_session.obstacles_list;
     List.iter check_collision_players current_session.players_list;
-	List.iter check_collision_pieges current_session.pieges_list
+		List.iter check_collision_pieges current_session.pieges_list
 
 
 let process_exit user_name =
@@ -468,7 +490,6 @@ let process_newpos coord user_name =
 			if (get_distance coord_target parsed_coord <= obj_radius) then
 				(* le joueur a touché l'objectif *)
 				begin
-				print_endline "le joueur a touché le target";
 				player.score <- player.score+1;
 				if (player.score = current_session.win_cap) then
 					(* le joueur a atteint win_cap : send_winner & restart_session *)
@@ -496,7 +517,7 @@ let process_newcom cmd_string user_name =
 		Mutex.lock mutex_players_list;
 		compute_cmd player (parse_cmd cmd_string); (* met a jour les (vx,vy) du joueur user_name e et refresh les données du client  *)
 		check_collisions player;
-		send_tick_newpieges ();
+		send_tick_newpieges(); 		(*send_tick player *)
 		Mutex.unlock mutex_players_list;
 		maybe_target_reached player
 
@@ -515,7 +536,7 @@ let process_penvoi user_name message from_user =
 	send_pmess user_name message from_user;
 	Mutex.unlock mutex_players_list
 
-let process_newpiege coord = 
+let process_newpiege coord =
 	Mutex.lock mutex_players_list;
 	current_session.pieges_list <- (parse_coord coord)::current_session.pieges_list;
 	send_tick_newpieges ();
@@ -541,10 +562,10 @@ let receive_req user_name =
 								process_envoi (List.nth parsed_req 1)
 							else
 							    process_envoi_from (List.nth parsed_req 1) (List.nth parsed_req 2) (* envoie spécifique, notre version avec le nom *)
-				|"PENVOI" ->	if List.length parsed_req <> 3 then raise BadRequest;
+				|"PENVOI" ->	if List.length parsed_req < 3 then raise BadRequest;
 											process_penvoi (List.nth parsed_req 1) (List.nth parsed_req 2) user_name
 				|"NEWPIEGE" ->	if List.length parsed_req <> 2 then raise BadRequest;
-											process_newpiege (List.nth parsed_req 1) 
+											process_newpiege (List.nth parsed_req 1)
 				|_ -> raise BadRequest
 			with BadRequest -> output_string player.outchan "DENIED/BadRequest\n";
 										 			flush player.outchan
@@ -603,7 +624,7 @@ let process_connect user_name client_socket inchan outchan =
 		Condition.signal cond_least1player
 		end;
 	Mutex.unlock mutex_players_list;
-	if current_session.target = None then current_session.target <- Some(get_valid_pos());
+	if current_session.target = None then current_session.target <- Some(get_valid_pos()); (* la première connection initialise le target *)
 	send_welcome user_name;
 	send_newplayer user_name;
 	receive_req user_name

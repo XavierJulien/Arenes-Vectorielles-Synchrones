@@ -30,7 +30,7 @@ public class Receive extends Thread {
 					case "PLAYERLEFT" : client.process_playerleft(server_split[1]);break;
 					case "SESSION" : client.process_session(server_split[1],server_split[2],server_split[3]);break;
 					case "WINNER" : client.process_winner(server_split[1]);break;
-					case "TICK" : 
+					case "TICK" :
 						if (server_split.length == 2) {
 							client.process_tick(server_split[1]);break;
 						}else{
@@ -46,10 +46,11 @@ public class Receive extends Thread {
 
 					case "PRECEPTION" : client.process_preception(server_split[1], server_split[2]);break;
 					case "DENIED" : client.process_denied(server_split[1]);break;
+					default : System.out.println("Le client ne connait la commande "+server_split[0]+" dans son protocole");
 					}
 				}else{/*System.out.println("on ne recoit rien");*/continue;}
 			}catch(IOException e){
-				System.out.println("Le serveur a envoyé une commande erronée");
+				System.out.println(e.getMessage());
 			}
 		}
 	}

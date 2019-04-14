@@ -14,7 +14,7 @@ public class Drawer {
 	private double objectif_radius = 20.0;
 	private Image coin = new Image("images/star.png");
 	private Image asteroid = new Image("images/asteroidbis.png");
-	private Image piege = new Image("images/piege.png");
+	private Image piege = new Image("images/banana.png");
 
 	public Drawer(SpaceRun s) {
 		this.s = s;
@@ -72,7 +72,7 @@ public class Drawer {
 			ctx.drawImage(asteroid,x-ob_radius,y-ob_radius, ob_radius*2, ob_radius*2);
 		}
 	}
-	
+
 	public void drawPieges() {
 		for (Point p : s.getPieges_list()) {
 			double x = p.getX()+s.getDemil();

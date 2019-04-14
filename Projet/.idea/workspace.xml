@@ -2,17 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3dfbb53d-c358-4ba9-96c3-aa9103eb5874" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/Client.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/Commands.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/Commands.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/Drawer.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/Drawer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/Player.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/Player.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/Point.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/Point.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/Receive.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/Receive.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/RefreshClientTask.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/SendNewComTask.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/Ship.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/Ship.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/SpaceRun.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/SpaceRun.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/main.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/main.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/packageClient/Receive.class" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/Receive.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/packageClient/Receive.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/Receive.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/packageClient/SpaceRun.class" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/SpaceRun.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/packageClient/SpaceRun.java" beforeDir="false" afterPath="$PROJECT_DIR$/client/packageClient/SpaceRun.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/server" beforeDir="false" afterPath="$PROJECT_DIR$/server/server" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/server.cmi" beforeDir="false" afterPath="$PROJECT_DIR$/server/server.cmi" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/server.cmo" beforeDir="false" afterPath="$PROJECT_DIR$/server/server.cmo" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/server.ml" beforeDir="false" afterPath="$PROJECT_DIR$/server/server.ml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -29,8 +25,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/server/server.ml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="311">
-              <caret line="577" column="53" lean-forward="true" selection-start-line="577" selection-start-column="53" selection-end-line="577" selection-end-column="53" />
+            <state relative-caret-position="198">
+              <caret line="399" column="75" selection-start-line="399" selection-start-column="75" selection-end-line="399" selection-end-column="75" />
             </state>
           </provider>
         </entry>
@@ -43,8 +39,6 @@
       <find>l</find>
       <find>sleep</find>
       <find>send_newobj</find>
-      <find>print_endline</find>
-      <find>alea_pos</find>
       <find>initposplayers</find>
       <find>resta</find>
       <find>session</find>
@@ -60,14 +54,17 @@
       <find>WELCOME</find>
       <find>create_player</find>
       <find>get_distance</find>
-      <find>target</find>
       <find>current_session.target &lt;-</find>
       <find>get_valid_pos</find>
-      <find>get_valid_pos</find>
       <find>get_valid_pos()</find>
-      <find>target &lt;-</find>
       <find>current_session.target</find>
       <find>get_val_target</find>
+      <find>print_endline</find>
+      <find>alea_pos</find>
+      <find>target &lt;-</find>
+      <find>target</find>
+      <find>check_collisions</find>
+      <find>send_tick</find>
     </findStrings>
     <replaceStrings>
       <replace>maxspeed</replace>
@@ -117,7 +114,7 @@
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
-    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+    <property name="settings.editor.selected.configurable" value="editor.preferences.fonts.default" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -145,17 +142,17 @@
       <workItem from="1555002825540" duration="6035000" />
       <workItem from="1555090912998" duration="23131000" />
       <workItem from="1555231218473" duration="2645000" />
+      <workItem from="1555239164983" duration="12961000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="31966000" />
+    <option name="totallyTimeSpent" value="44927000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
-    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.16397415" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.16639742" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Image Layers" order="3" />
@@ -173,7 +170,7 @@
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" weight="0.32861635" />
       <window_info anchor="bottom" id="Database Changes" order="9" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="10" visible="true" weight="0.32876712" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="10" visible="true" weight="0.27671233" />
       <window_info anchor="bottom" id="Event Log" order="11" side_tool="true" weight="0.32876712" />
       <window_info anchor="bottom" id="Bucklescript" order="12" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
@@ -199,8 +196,8 @@
     <entry file="file://$PROJECT_DIR$/client/Client.java" />
     <entry file="file://$PROJECT_DIR$/server/server.ml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="311">
-          <caret line="577" column="53" lean-forward="true" selection-start-line="577" selection-start-column="53" selection-end-line="577" selection-end-column="53" />
+        <state relative-caret-position="198">
+          <caret line="399" column="75" selection-start-line="399" selection-start-column="75" selection-end-line="399" selection-end-column="75" />
         </state>
       </provider>
     </entry>

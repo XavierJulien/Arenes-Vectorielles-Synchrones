@@ -158,6 +158,7 @@ public class SpaceRun extends Application{
 		drawer.drawPieges();
 		}else {
 			ctx.drawImage(new Image("images/space.png"), 0, 0, canvas.getWidth(),canvas.getHeight());
+			updateListPlayer();
 			drawer.drawObstacles();
 			ctx.setStroke(Paint.valueOf("white"));
 			ctx.setFont(new javafx.scene.text.Font("Verdana", 50));
@@ -521,7 +522,6 @@ public class SpaceRun extends Application{
 	}
 	public void process_playerleft(String name){
 		System.out.println("playerleft : "+name);
-		System.out.println("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
 		player_list.remove(name);
 		Platform.runLater(new Runnable() {
             @Override public void run() {
