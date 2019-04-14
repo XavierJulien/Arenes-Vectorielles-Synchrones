@@ -30,7 +30,12 @@ public class Receive extends Thread {
 					case "PLAYERLEFT" : client.process_playerleft(server_split[1]);break;
 					case "SESSION" : client.process_session(server_split[1],server_split[2],server_split[3]);break;
 					case "WINNER" : client.process_winner(server_split[1]);break;
-					case "TICK" : client.process_tick(server_split[1]);break;
+					case "TICK" : 
+						if (server_split.length == 2) {
+							client.process_tick(server_split[1]);break;
+						}else{
+							client.process_tick(server_split[1], server_split[2]);break;
+						}
 					case "NEWOBJ" : client.process_newobj(server_split[1],server_split[2]);break;
 					case "RECEPTION" :
 						if (server_split.length == 2) {

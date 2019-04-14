@@ -47,6 +47,7 @@ public class SpaceRun extends Application{
 	protected static final int PORT=2019;
 	protected static final int ve_radius = 30;
 	protected static final int ob_radius = 50;
+	protected static final int pi_radius = 20;
 	protected static final int server_tickrate = 100; // 100 ms = 0.1s -> frequence de 10
 	private static final double demih = 350;
 	private static final double demil = 450;
@@ -64,6 +65,7 @@ public class SpaceRun extends Application{
 	private boolean isPlaying = false;
 	private ArrayList<Commands> cumulCmds = new ArrayList<>();
 	private ArrayList<Point> obstacles_list = new ArrayList<>();
+	private ArrayList<Point> pieges_list = new ArrayList<>();
 
 //------------------------------------------------------------------------//
 //																		  //
@@ -88,7 +90,7 @@ public class SpaceRun extends Application{
 	private VBox right;
 	//desc
 	private Text main_score;
-	//private ListView<String> list_scores;
+	private Text main_pieges;
 	//listplayers
 	//chatbox
 	private TextFlow received;
@@ -104,7 +106,6 @@ public class SpaceRun extends Application{
 	private PrintStream outchan;
 	private Socket sock;
 	private Receive r;
-	//private Image ship = new Image("images/ship.png");
 	private Timer serverTickrateTimer = new Timer();
 	private SendNewComTask serverTickrateTask;
 
@@ -122,6 +123,7 @@ public class SpaceRun extends Application{
 	public double getDemih() {return demih;}
 	public double getDemil() {return demil;}
 	public ArrayList<Point> getObstacles_list() {return obstacles_list;}
+	public ArrayList<Point> getPieges_list() {return pieges_list;}
 
 	/*public void init() {
 		this.score = 0;
@@ -145,18 +147,15 @@ public class SpaceRun extends Application{
 		if(p.get_posX() < -demil) p.set_posX(demil-p.get_posX()%demil);
 		if(p.get_posY() < -demih) p.set_posY(demih-p.get_posY()%demih);
 	}
-
 	public void onUpdate() {//met à jour les positions des joueurs à chaque
-		//for(Player p : player_list.values()) p.getShip().refresh_pos();
 		if (isPlaying) {
 		updateListPlayer();
-		//updateScore();
 		ctx.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
 		ctx.drawImage(new Image("images/space.png"), 0, 0, canvas.getWidth(),canvas.getHeight());
 		drawer.drawTarget();
 		drawer.drawPlayers();
 		drawer.drawObstacles();
-		//move(myself.getShip());
+		drawer.drawPieges();
 		}else {
 			ctx.drawImage(new Image("images/space.png"), 0, 0, canvas.getWidth(),canvas.getHeight());
 			drawer.drawObstacles();
@@ -165,26 +164,6 @@ public class SpaceRun extends Application{
 			ctx.strokeText("Waiting for the session ... ", 150, 350);
 		}
 	}
-	/*public boolean collisionTargetShip(Ship s,Point t){
-	   double dist = (s.get_posX()-t.getX())*(s.get_posX()-t.getX()) +
-			   				   (s.get_posY()-t.getY())*(s.get_posY()-t.getY());
-	   if (dist <= (SpaceRun.ve_radius+SpaceRun.ob_radius)*
-			   	  (SpaceRun.ve_radius+SpaceRun.ob_radius)) {
-	      return true;
-	   }else {
-	      return false;}
-	}*/
-
-	/*private void updateScore() {
-		for(Player p : player_list.values()) {
-			Ship s = p.getShip();
-			if(collisionTargetShip(s, target)) {
-				p.setScore(p.getScore()+1);
-			}
-		}
-
-	}*/
-
 	@SuppressWarnings("unchecked")
 	private void updateListPlayer() {
 		ListView<String> aff_list_players = (ListView<String>)right.getChildren().get(1);
@@ -195,12 +174,11 @@ public class SpaceRun extends Application{
 		});
 		ObservableList<String> newItems = FXCollections.observableList(list);
 		aff_list_players.setItems(newItems);
+		main_pieges.setText("Pièges restants : "+myself.getNb_pieges());
 	}
-
 	private void updateMyscore() {
 		main_score.setText("Score : "+ player_list.get(name).getScore());
 	}
-
 	private String whoIsWinner() {
 		String winner="";
 		int best_score = 0;
@@ -212,7 +190,6 @@ public class SpaceRun extends Application{
 		}
 		return winner;
 	}
-
 	private void resetScores() {
 		player_list.forEach((k,v) -> {
 			v.setScore(0);
@@ -246,8 +223,6 @@ public class SpaceRun extends Application{
 		canvas = (Canvas)mainPane.getChildren().get(0);
 		ctx = canvas.getGraphicsContext2D();
 		drawer = new Drawer(this);
-		//drawer.drawPlayers();
-		//drawer.drawTarget();
 		//--------------RIGHTPANEL-----------------------------
 		//*******Description*********
 		right = (VBox)mainPane.getChildren().get(1);
@@ -255,8 +230,10 @@ public class SpaceRun extends Application{
 		Text main_username = (Text)descJoueur.getChildren().get(0);
 		main_username.setText("User : "+name);
 		main_score = (Text)descJoueur.getChildren().get(1);
-		main_score.setText("Score : "+ player_list.get(name).getScore());
-		Button exit = (Button)descJoueur.getChildren().get(2);
+		main_score.setText("Score : "+ myself.getScore());
+		main_pieges = (Text)descJoueur.getChildren().get(2);
+		main_pieges.setText("Pièges restants : "+myself.getNb_pieges());
+		Button exit = (Button)descJoueur.getChildren().get(3);
 		exit.setOnAction(e -> {
 			r.setRunning(false);
 			sendExit(name);
@@ -269,11 +246,11 @@ public class SpaceRun extends Application{
 			} catch (IOException e1) {
 				System.out.println("Error : EXIT");
 			}});
+		
 		//********CHAT************
 
 		ScrollPane scrollpane = (ScrollPane)right.getChildren().get(2);
 		received = (TextFlow)scrollpane.getContent();
-		//received.setEditable(false);
 		HBox chatbox = (HBox)right.getChildren().get(3);
 		TextField to_send = (TextField)chatbox.getChildren().get(0);
 		to_send.setOnMouseClicked(e -> {
@@ -314,26 +291,32 @@ public class SpaceRun extends Application{
 					sendEnvoi(message[0],name);
 				}
 			}});
-
 		updateListPlayer();
-
+		
 		//------------------FIX POSITION---------------------------
-		new AnimationTimer(){//peut etre inutile si on peut directement appeler update dans la partie EVENT HANDLER
+		new AnimationTimer(){
 			public void handle(long currentNanoTime){onUpdate();}
 		}.start();
 		//*************EVENT HANDLER*************
 		playScene.setOnKeyPressed(e -> {
 			if (e.getText().equals("z")) {
 				cumulCmds.add(Commands.thrust);
-				//player_list.get(name).getShip().thrust();
 			}
 			if (e.getText().equals("d")) {
 				cumulCmds.add(Commands.clock);
-				//player_list.get(name).getShip().clock();
 			}
 			if (e.getText().equals("q")) {
 				cumulCmds.add(Commands.anticlock);
-				//player_list.get(name).getShip().anticlock();
+			}
+			if (e.getText().equals("x")) {
+				if(myself.getNb_pieges() > 0) {
+					myself.setNb_pieges(myself.getNb_pieges()-1);
+					double x = myself.getShip().get_posX();
+					double y = myself.getShip().get_posY();
+					x = x + ve_radius*2 * Math.cos((Math.toRadians(myself.getShip().getAngle()) - Math.PI));
+					y = y + ve_radius*2 * Math.sin((Math.toRadians(myself.getShip().getAngle()) - Math.PI));
+					sendPiege(new Point(x,y));
+				}else {System.out.println("No more bananas :) ");}
 			}
 		});
 
@@ -355,9 +338,6 @@ public class SpaceRun extends Application{
 				if(server_split != null) {
 					switch(server_split[0]){
 					case "WELCOME" :
-						//init();
-						//serverTickrateTimer = new Timer(); // les deux lignes peuvent être fait directement dans la définition des attributs au debut je crois non ?
-						//c = new Client(name);
 						process_welcome(server_split);
 						initializeMain();
 						r = new Receive(this,inchan);
@@ -399,7 +379,6 @@ public class SpaceRun extends Application{
 		primaryStage.setTitle("SpaceRun");
 		primaryStage.setScene(lobbyScene);
 	}
-	//Run
 	public static void main(String[] args) {launch(args);}
 
 //------------------------------------------------------------------------//
@@ -431,7 +410,10 @@ public class SpaceRun extends Application{
 		}else{ // mise à jour des scores
 			for (int i = 0; i<player_score_string_split.length; i++) {
 				String[] player_score = player_score_string_split[i].split("[:]");
-				player_list.get(player_score[0]).setScore(Integer.parseInt(player_score[1]));
+				int last_score = player_list.get(player_score[0]).getScore();
+				int new_score = Integer.parseInt(player_score[1]);
+				if (last_score < new_score) player_list.get(player_score[0]).setNb_pieges(player_list.get(player_score[0]).getNb_pieges()+1);
+				player_list.get(player_score[0]).setScore(new_score);
 			}
 		}
 	}
@@ -496,6 +478,16 @@ public class SpaceRun extends Application{
 			tmp.add(new Point(x, y));
 		}
 		obstacles_list = tmp;
+	}
+	public void parse_pieges(String pieges) {
+		String[] stringListPieges = pieges.split("\\|");
+		pieges_list.clear();
+		for(String s : stringListPieges) {
+			String[] xy = s.split("[XY]");
+			double x = Double.parseDouble(xy[1]);
+			double y = Double.parseDouble(xy[2]);
+			pieges_list.add(new Point(x, y));
+		}
 	}
 
 //****************************PROCESS PROTOCOLES*********************
@@ -566,11 +558,11 @@ public class SpaceRun extends Application{
 		Platform.runLater(new Runnable() {
             @Override public void run() {
             	Text t = new Text("\n\n"
-            			+ "--------------------WINNER--------------------\n"
-            			+ "|  	        			  |"
-            			+ "|     "+whoIsWinner()+"    |"
-            			+ "|  	        			  |"
-            			+ "----------------------------\n\n");
+            			+ "--------------------WINNER----------------\n"
+            			+ "|  	        			  				|\n"
+            			+ "|    	 	  "+whoIsWinner()+"   	    |\n"
+            			+ "|  	   					       			|\n"
+            			+ "------------------------------------------\n\n");
             	t.setFill(Color.TOMATO);
             	received.getChildren().add(t);
             }
@@ -579,6 +571,11 @@ public class SpaceRun extends Application{
 	}
 	public void process_tick(String vcoords){
 		parse_vcoords(vcoords);
+		pieges_list.clear();
+	}
+	public void process_tick(String vcoords,String pieges){
+		parse_vcoords(vcoords);
+		parse_pieges(pieges);
 	}
 	public void process_newobj(String coord,String scores){
 		parse_target(coord);
@@ -595,7 +592,6 @@ public class SpaceRun extends Application{
 		System.out.println("reception : "+message+" from"+from);
 		parse_message_public(message,from);
 	}
-
 	public void process_preception(String message,String user) {
 		System.out.println("reception privee : "+user+"/"+message);
 		parse_message_prive(message,user);
@@ -642,5 +638,8 @@ public class SpaceRun extends Application{
 		outchan.println("PENVOI/"+user+"/"+message+"/");
 		outchan.flush();
 	}
-
+	public void sendPiege(Point pos) {
+		outchan.println("NEWPIEGE/X"+pos.getX()+"Y"+pos.getY()+"/");
+		outchan.flush();
+	}
 }

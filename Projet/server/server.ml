@@ -19,6 +19,7 @@ let waiting_time = 10
 let obj_radius = 20.0
 let ve_radius = 30.0
 let ob_radius = 50.0
+let pi_radius = 20.0
 let demil = 450.0
 let demih = 350.0
 
@@ -28,8 +29,7 @@ type vehicule = {
 	mutable position: float * float;
 	mutable direction: float;
 	mutable speed: float * float
-}
-
+	}
 type player = {
     name: string;
     socket: Unix.file_descr;
@@ -44,14 +44,14 @@ type session = {
     mutable playing : bool;
     mutable target: (float * float) option;
 	win_cap : int;
-	mutable obstacles_list : (float * float) list
+	mutable obstacles_list : (float * float) list;
+	mutable pieges_list : (float * float ) list
 }
 
 
 (* modifier dans le serveur : ajouter la vérif de radius_obj à chaque calcul de nouvelle position : si ok touché -> incre score et envoyer newobj  *)
 
 (**************************** ADDITIONNAL FUNCTIONS *****************************)
-
 
 
 let get_distance (x1,y1) (x2,y2) =
@@ -64,15 +64,32 @@ let alea_y () =
 
 let alea_pos () =
 	(alea_x (),alea_y ())
+let alea_angle () = 
+	(Random.float Float.pi)
+let alea_vxy () = 
+	let random_chooser = (Random.int 2) in
+	if random_chooser == 1 then 5.0 else -.5.0
+
+let alea_speed () = 
+	(alea_vxy (),alea_vxy ())
 
 let current_session =
 	{ players_list = [];
 		playing = false;
 		target = None;
 		win_cap = 3;
-		obstacles_list = []
-  }
+		obstacles_list = [];
+		pieges_list = []
+  	}
 
+let remove_piege p = 
+	let rec remove l = 
+		match l with 
+		| hd::[] -> if (hd==p) then [] else hd::[]
+		| hd::tl ->	if (hd==p) then tl else hd::(remove tl)
+		| [] -> []
+	in
+		current_session.pieges_list <- remove current_session.pieges_list
 
 let parse_cmd cmd_string =
 	let s = Str.split (Str.regexp "A\\|T") cmd_string in
@@ -244,8 +261,20 @@ let send_tick () =
 	in
 	(* print_endline "Envoie à tous les joueurs, premier joueur dans la liste : %s\n"; *)
 	(* print_endline (List.hd current_session.players_list).name; *)
+
 	let f_coords = stringify_tick current_session.players_list in
 		List.iter (send_fun f_coords) current_session.players_list
+
+let send_tick_newpieges () =
+	let send_fun ticks pieges p =
+		let s = "TICK/"^ticks^pieges^"\n" in
+		print_endline s;
+		output_string p.outchan ("TICK/"^ticks^pieges^"\n");
+		flush p.outchan
+	in
+		let p_coords = stringify_coordsXY current_session.pieges_list 
+		and f_coords = stringify_tick current_session.players_list in
+			List.iter (send_fun f_coords p_coords) current_session.players_list
 
 (* protégé par le mutex de l'appelant *)
 let send_newobj () =
@@ -397,9 +426,16 @@ let check_collisions player =
             then
                 (player.car.position <- (-.(fst player.car.speed),-.(snd player.car.speed));
                 other_player.car.position <- (-.(fst other_player.car.speed),-.(snd other_player.car.speed)))
+	and check_collision_pieges p = 
+		if (get_distance player.car.position p)<(ve_radius+.pi_radius)
+        then 
+		   (player.car.speed <- alea_speed();(* probleme : si je "touche" 2 obstacles, il ne se passe rien, tout continu normalement puisque les signges se seront inversé 2 fois *)
+			player.car.direction <- alea_angle ();
+			remove_piege p)
     in
     List.iter check_collision_obstacle current_session.obstacles_list;
-    List.iter check_collision_players current_session.players_list
+    List.iter check_collision_players current_session.players_list;
+	List.iter check_collision_pieges current_session.pieges_list
 
 
 let process_exit user_name =
@@ -460,7 +496,7 @@ let process_newcom cmd_string user_name =
 		Mutex.lock mutex_players_list;
 		compute_cmd player (parse_cmd cmd_string); (* met a jour les (vx,vy) du joueur user_name e et refresh les données du client  *)
 		check_collisions player;
-		send_tick ();
+		send_tick_newpieges ();
 		Mutex.unlock mutex_players_list;
 		maybe_target_reached player
 
@@ -479,6 +515,11 @@ let process_penvoi user_name message from_user =
 	send_pmess user_name message from_user;
 	Mutex.unlock mutex_players_list
 
+let process_newpiege coord = 
+	Mutex.lock mutex_players_list;
+	current_session.pieges_list <- (parse_coord coord)::current_session.pieges_list;
+	send_tick_newpieges ();
+	Mutex.unlock mutex_players_list
 (********************** thread's looping  ***********************)
 let receive_req user_name =
 	let player = find_player user_name in
@@ -502,6 +543,8 @@ let receive_req user_name =
 							    process_envoi_from (List.nth parsed_req 1) (List.nth parsed_req 2) (* envoie spécifique, notre version avec le nom *)
 				|"PENVOI" ->	if List.length parsed_req <> 3 then raise BadRequest;
 											process_penvoi (List.nth parsed_req 1) (List.nth parsed_req 2) user_name
+				|"NEWPIEGE" ->	if List.length parsed_req <> 2 then raise BadRequest;
+											process_newpiege (List.nth parsed_req 1) 
 				|_ -> raise BadRequest
 			with BadRequest -> output_string player.outchan "DENIED/BadRequest\n";
 										 			flush player.outchan

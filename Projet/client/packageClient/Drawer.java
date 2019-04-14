@@ -10,9 +10,11 @@ public class Drawer {
 	private SpaceRun s;
 	private double ve_radius = SpaceRun.ve_radius;
 	private double ob_radius = SpaceRun.ob_radius;
+	private double pi_radius = SpaceRun.pi_radius;
 	private double objectif_radius = 20.0;
 	private Image coin = new Image("images/star.png");
 	private Image asteroid = new Image("images/asteroidbis.png");
+	private Image piege = new Image("images/piege.png");
 
 	public Drawer(SpaceRun s) {
 		this.s = s;
@@ -62,12 +64,20 @@ public class Drawer {
 		ctx.fillOval(x-objectif_radius,y-objectif_radius, objectif_radius*2, objectif_radius*2);
 		ctx.drawImage(coin, x-objectif_radius,y-objectif_radius, objectif_radius*2, objectif_radius*2);
 	}
-	
+
 	public void drawObstacles() {
 		for (Point p : s.getObstacles_list()) {
 			double x = p.getX()+s.getDemil();
 			double y = s.getDemih()-p.getY();
 			ctx.drawImage(asteroid,x-ob_radius,y-ob_radius, ob_radius*2, ob_radius*2);
+		}
+	}
+	
+	public void drawPieges() {
+		for (Point p : s.getPieges_list()) {
+			double x = p.getX()+s.getDemil();
+			double y = s.getDemih()-p.getY();
+			ctx.drawImage(piege,x-pi_radius*2,y-pi_radius*2, pi_radius*4, pi_radius*4);
 		}
 	}
 }
