@@ -18,6 +18,7 @@ let server_refresh_tickrate = 40.0
 let waiting_time = 10
 let obj_radius = 20.0
 let ve_radius = 30.0
+let ob_radius = 50.0
 let demil = 450.0
 let demih = 350.0
 
@@ -41,9 +42,9 @@ type player = {
 type session = {
 	mutable players_list : player list;
     mutable playing : bool;
-    mutable target: float * float;
+    mutable target: (float * float) option;
 	win_cap : int;
-	mutable obstacle_list : (float * float) list
+	mutable obstacles_list : (float * float) list
 }
 
 
@@ -67,9 +68,9 @@ let alea_pos () =
 let current_session =
 	{ players_list = [];
 		playing = false;
-		target = alea_pos();
+		target = None;
 		win_cap = 3;
-		obstacle_list = []
+		obstacles_list = []
   }
 
 
@@ -92,6 +93,11 @@ let rec stringify_scores p_list =
 		|[] -> "" (* n'arrivera jamais juste pour la complétude du pattern matching*)
 
 
+let stringify_coord_opt target =
+    match target with
+    |Some(x,y) -> "X"^(string_of_float x)^"Y"^(string_of_float y)
+    |None -> "XY"
+
 let stringify_coord (x,y) =
 	"X"^(string_of_float x)^"Y"^(string_of_float y)
 
@@ -106,14 +112,19 @@ let rec stringify_coords p_list = (* string du TICK pour la partie A : seulement
 	match p_list with
 	|hd::[] -> hd.name^":"^(stringify_coord hd.car.position)^"/"
 	|hd::tl -> hd.name^":"^(stringify_coord hd.car.position)^"|"^(stringify_coords tl)
-	|[] -> "" (* n'arrivera jamais juste pour la complétude du pattern matching*)
+	|[] -> ""
 
 let rec stringify_tick p_list = (* string du TICK pour la partie B : avec les vitesses et l'angle *)
 	match p_list with
 	|hd::[] -> hd.name^":"^(stringify_coord hd.car.position)^(stringify_speed hd.car.speed)^(stringify_angle hd.car.direction)^"/"
 	|hd::tl -> hd.name^":"^(stringify_coord hd.car.position)^(stringify_speed hd.car.speed)^(stringify_angle hd.car.direction)^"|"^(stringify_tick tl)
-	|[] -> "" (* n'arrivera jamais juste pour la complétude du pattern matching*)
+	|[] -> ""
 
+let rec stringify_coordsXY o_list = (* nouveau strindigy pour les obstacles car ne peut réutiliser le stringify_coords qui s'appliquent aux joueurs *)
+    match o_list with
+    |hd::[] -> (stringify_coord hd)^"/"
+    |hd::tl -> (stringify_coord hd)^"|"^(stringify_coordsXY tl)
+    |[] -> ""
 
 let find_player user_name =
 	List.find (fun p -> if p.name=user_name then true else false) current_session.players_list
@@ -121,15 +132,23 @@ let find_player user_name =
 let exists_player user_name =
 	List.exists (fun p -> if p.name=user_name then true else false) current_session.players_list
 
+let is_colliding_obs player_pos obs =
+    if (get_distance player_pos obs) < (ve_radius+.ob_radius) then true else false
+
+let rec get_valid_pos () =
+    let player_pos = alea_pos() in
+    if List.exists (is_colliding_obs player_pos) current_session.obstacles_list
+    then get_valid_pos ()
+    else player_pos
+
 (*permet de créer un joueur*)
 let create_player user sock inc out =
-	(* ajouter le comportement random de la position *)
 	{ name = user;
   	socket = sock;
     inchan = inc;
     outchan = out;
     score = 0;
-    car = {position=alea_pos();direction=0.0;speed=(0.0,0.0)};
+    car = {position=get_valid_pos();direction=0.0;speed=(0.0,0.0)};
 	}
 
 
@@ -144,39 +163,47 @@ let init_players () =
 
 
 let get_new_obstacles n =
-    let aux_get nb =
+    let rec aux_get nb =
         match nb with
         |0 -> []
-        |x -> new_pos()::(aux_get x-1)
+        |x -> alea_pos()::aux_get (x-1)
      in aux_get n
+
+let get_val_target () =
+    match current_session.target with
+    |Some(x,y) -> (x,y)
+    |None -> failwith "No target to compare"
 
 (********************** SENDING FUNCTIONS ***********************)
 let send_session () =
-	let send_fun coords c_target p =
-		output_string p.outchan ("SESSION/"^coords^c_target^"/\n");
+	let send_fun coords c_target c_obstacles p =
+		output_string p.outchan ("SESSION/"^coords^c_target^"/"^c_obstacles^"\n");
 		flush p.outchan
 	in
-	let coords = stringify_coords current_session.players_list in
-		let coord_target = stringify_coord current_session.target in
-		    Printf.printf "Le target =====";
-		    print_endline coord_target;
-			List.iter (send_fun coords coord_target) current_session.players_list
+	let coords = stringify_coords current_session.players_list
+    and co_target = stringify_coord_opt current_session.target
+	and coords_obs = stringify_coordsXY current_session.obstacles_list in
+		List.iter (send_fun coords co_target coords_obs) current_session.players_list
 
 let send_welcome user_name =
 	Mutex.lock mutex_players_list;
 	let phase = if current_session.playing then "jeu/" else "attente/"
 	and scores = stringify_scores current_session.players_list
-	and coord = stringify_coord current_session.target
+	and coord_target = stringify_coord_opt current_session.target
+	and coords_obs = stringify_coordsXY current_session.obstacles_list
 	and player = find_player user_name
 	in
-	output_string player.outchan ("WELCOME/"^phase^scores^coord^"/\n");
+	print_endline phase;
+	print_endline scores;
+	print_endline coord_target;
+	print_endline coords_obs;
+	output_string player.outchan ("WELCOME/"^phase^scores^coord_target^"/"^coords_obs^"\n");
 	flush player.outchan;
 	if current_session.playing then
 	begin
 		let coords = stringify_coords current_session.players_list in
-			let coord_target = stringify_coord current_session.target in
-			output_string player.outchan ("SESSION/"^coords^coord_target^"/\n");
-			flush player.outchan
+			output_string player.outchan ("SESSION/"^coords^coord_target^"/"^coords_obs^"\n");
+            flush player.outchan
 	end;
 	Mutex.unlock mutex_players_list
 
@@ -227,7 +254,7 @@ let send_newobj () =
 		output_string p.outchan ("NEWOBJ/"^coord^"/"^scores^"/\n");
 		flush p.outchan
 	in
-	let coord = stringify_coord current_session.target
+	let coord = stringify_coord_opt current_session.target
 	and scores = stringify_scores current_session.players_list in
 		List.iter (send_fun coord scores) current_session.players_list
 
@@ -263,6 +290,7 @@ let send_pmess user_name message from_user=
 
 let start_session () =
 	Mutex.lock mutex_players_list;
+	current_session.obstacles_list <- get_new_obstacles 5;
 	while (List.length current_session.players_list = 0) do
 		(* peut être pas besoin de boucle *)
 		Condition.wait cond_least1player mutex_players_list
@@ -270,13 +298,9 @@ let start_session () =
 	Mutex.unlock mutex_players_list;
 	Unix.sleep waiting_time;
 	Mutex.lock mutex_players_list;
-	(* il se peut que l'unique joueur connecté ait quitté
-	la session au cours de l'attente, affecter la valeur de playing en fonction
-	de la longueur de la liste de joueurs *)
 	if (List.length current_session.players_list) > 0 then
 	begin
 	current_session.playing <- true;
-	current_session.obstacle_list <- get_new_obstacles 5;
 	send_session ()
 	end
 	else ();
@@ -294,7 +318,8 @@ let restart_session () =
 		Condition.wait cond_least1player mutex_players_list
 	done;
 	init_players ();
-	current_session.target <- alea_pos ();
+	current_session.target <- Some(get_valid_pos());
+	current_session.obstacles_list <- get_new_obstacles 5;
 	Mutex.unlock mutex_players_list;
 	(* le mutex est rendu pour que d'autres clients puissent se connecter entre-temps *)
 	Unix.sleep waiting_time;
@@ -309,17 +334,10 @@ let restart_session () =
 
 
 let maybe_target_reached player =
-    print_endline "dans le maybe reached target";
     Mutex.lock mutex_players_list;
-    print_endline "Position x du ship :";
-    print_endline (string_of_float (fst player.car.position));
-    print_endline "Position y du ship :";
-    print_endline (string_of_float (snd player.car.position));
-    print_endline "distance entre le joeuur et l'objectif : ";
-    print_endline (string_of_float (get_distance current_session.target player.car.position));
-    if (get_distance current_session.target player.car.position <= obj_radius) then
+    let target_coord = get_val_target() in
+    if (get_distance target_coord player.car.position <= obj_radius) then
         (* le joueur a touché l'objectif *)
-
         begin
         Printf.printf "joueur qui touche target : %s \n" player.name;
         print_endline "le joueur a touché le target";
@@ -335,7 +353,7 @@ let maybe_target_reached player =
         else
             (* nouvel objectif : send_newobj *)
             begin
-            current_session.target <- alea_pos ();
+            current_session.target <- Some(get_valid_pos());
             send_newobj ();
             Mutex.unlock mutex_players_list;
             end
@@ -368,6 +386,22 @@ let compute_cmd player (angle,pousse) =
 		if new_y < -.demih then player.car.position <- (fst player.car.position,
 														demih-.(mod_float (snd player.car.position) demih))
 
+let check_collisions player =
+    let check_collision_obstacle o =
+        if (get_distance player.car.position o)<(ob_radius+.ve_radius)
+        then player.car.speed <- (-.(fst player.car.speed),-.(snd player.car.speed))  (* probleme : si je "touche" 2 obstacles, il ne se passe rien, tout continu normalement puisque les signges se seront inversé 2 fois *);
+     and check_collision_players other_player =
+        if (player.name <> other_player.name)
+        then
+            if (get_distance player.car.position other_player.car.position)<(ve_radius*.2.0)
+            then
+                (player.car.position <- (-.(fst player.car.speed),-.(snd player.car.speed));
+                other_player.car.position <- (-.(fst other_player.car.speed),-.(snd other_player.car.speed)))
+    in
+    List.iter check_collision_obstacle current_session.obstacles_list;
+    List.iter check_collision_players current_session.players_list
+
+
 let process_exit user_name =
 	try
 		begin
@@ -394,7 +428,8 @@ let process_newpos coord user_name =
 			let player = find_player user_name
 			and parsed_coord = parse_coord coord in
 			player.car.position <- parsed_coord;
-			if (get_distance current_session.target parsed_coord <= obj_radius) then
+			let coord_target = get_val_target() in
+			if (get_distance coord_target parsed_coord <= obj_radius) then
 				(* le joueur a touché l'objectif *)
 				begin
 				print_endline "le joueur a touché le target";
@@ -410,7 +445,7 @@ let process_newpos coord user_name =
 				else
 					(* nouvel objectif : send_newobj *)
 					begin
-					current_session.target <- alea_pos ();
+					current_session.target <- Some(get_valid_pos());
 					send_newobj ();
 					Mutex.unlock mutex_players_list
 					end
@@ -424,9 +459,9 @@ let process_newcom cmd_string user_name =
 		(* print_endline cmd_string; *)
 		Mutex.lock mutex_players_list;
 		compute_cmd player (parse_cmd cmd_string); (* met a jour les (vx,vy) du joueur user_name e et refresh les données du client  *)
+		check_collisions player;
 		send_tick ();
 		Mutex.unlock mutex_players_list;
-		print_endline "avant vérification de reached target";
 		maybe_target_reached player
 
 let process_envoi message =
@@ -493,13 +528,13 @@ let server_refresh_tick_thread () =
 	    Mutex.lock mutex_players_list;
 	    p.car.position <- (fst p.car.position+.(fst p.car.speed),snd p.car.position+.(snd p.car.speed));
 	    Mutex.unlock mutex_players_list;
-	    print_endline "avant reached target dns le thread server refrzsh";
-      maybe_target_reached p
+        maybe_target_reached p;
 	in
 		while true do
 			Unix.sleepf (1.0/.server_refresh_tickrate);
 			if current_session.playing then
-					List.iter refresh current_session.players_list
+				List.iter refresh current_session.players_list;
+				List.iter check_collisions current_session.players_list
 		done
 
 
@@ -525,6 +560,7 @@ let process_connect user_name client_socket inchan outchan =
 		Condition.signal cond_least1player
 		end;
 	Mutex.unlock mutex_players_list;
+	if current_session.target = None then current_session.target <- Some(get_valid_pos());
 	send_welcome user_name;
 	send_newplayer user_name;
 	receive_req user_name

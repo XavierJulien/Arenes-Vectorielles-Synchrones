@@ -1,3 +1,4 @@
+package packageClient;
 
 public class Ship{
 	//constant(modifier selon la latence)

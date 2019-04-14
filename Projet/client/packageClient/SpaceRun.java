@@ -1,4 +1,4 @@
-
+package packageClient;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
-
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -47,7 +46,7 @@ public class SpaceRun extends Application{
 //------------------------------------------------------------------------//
 	protected static final int PORT=2019;
 	protected static final int ve_radius = 30;
-	protected static final int ob_radius = 20;
+	protected static final int ob_radius = 50;
 	protected static final int server_tickrate = 100; // 100 ms = 0.1s -> frequence de 10
 	private static final double demih = 350;
 	private static final double demil = 450;
@@ -64,7 +63,7 @@ public class SpaceRun extends Application{
 	private Point target;
 	private boolean isPlaying = false;
 	private ArrayList<Commands> cumulCmds = new ArrayList<>();
-
+	private ArrayList<Point> obstacles_list = new ArrayList<>();
 
 //------------------------------------------------------------------------//
 //																		  //
@@ -105,9 +104,9 @@ public class SpaceRun extends Application{
 	private PrintStream outchan;
 	private Socket sock;
 	private Receive r;
-	private Image ship = new Image("images/ship.png");
+	//private Image ship = new Image("images/ship.png");
 	private Timer serverTickrateTimer = new Timer();
-	private RefreshClientTask serverTickrateTask;
+	private SendNewComTask serverTickrateTask;
 
 
 
@@ -122,6 +121,7 @@ public class SpaceRun extends Application{
 	public Point getTarget() {return target;}
 	public double getDemih() {return demih;}
 	public double getDemil() {return demil;}
+	public ArrayList<Point> getObstacles_list() {return obstacles_list;}
 
 	/*public void init() {
 		this.score = 0;
@@ -155,15 +155,17 @@ public class SpaceRun extends Application{
 		ctx.drawImage(new Image("images/space.png"), 0, 0, canvas.getWidth(),canvas.getHeight());
 		drawer.drawTarget();
 		drawer.drawPlayers();
+		drawer.drawObstacles();
 		//move(myself.getShip());
 		}else {
 			ctx.drawImage(new Image("images/space.png"), 0, 0, canvas.getWidth(),canvas.getHeight());
+			drawer.drawObstacles();
 			ctx.setStroke(Paint.valueOf("white"));
 			ctx.setFont(new javafx.scene.text.Font("Verdana", 50));
 			ctx.strokeText("Waiting for the session ... ", 150, 350);
 		}
 	}
-	public boolean collisionTargetShip(Ship s,Point t){
+	/*public boolean collisionTargetShip(Ship s,Point t){
 	   double dist = (s.get_posX()-t.getX())*(s.get_posX()-t.getX()) +
 			   				   (s.get_posY()-t.getY())*(s.get_posY()-t.getY());
 	   if (dist <= (SpaceRun.ve_radius+SpaceRun.ob_radius)*
@@ -171,9 +173,9 @@ public class SpaceRun extends Application{
 	      return true;
 	   }else {
 	      return false;}
-	}
+	}*/
 
-	private void updateScore() {
+	/*private void updateScore() {
 		for(Player p : player_list.values()) {
 			Ship s = p.getShip();
 			if(collisionTargetShip(s, target)) {
@@ -181,7 +183,7 @@ public class SpaceRun extends Application{
 			}
 		}
 
-	}
+	}*/
 
 	@SuppressWarnings("unchecked")
 	private void updateListPlayer() {
@@ -189,7 +191,6 @@ public class SpaceRun extends Application{
 		List<String> list = new ArrayList<>();
 		player_list.forEach((k,v) -> {
 			String player_desc = "Player : "+k+" | Score : "+v.getScore();
-			System.out.println(v.getScore());
 			list.add(player_desc);
 		});
 		ObservableList<String> newItems = FXCollections.observableList(list);
@@ -212,7 +213,7 @@ public class SpaceRun extends Application{
 		return winner;
 	}
 
-	private void resetScore() {
+	private void resetScores() {
 		player_list.forEach((k,v) -> {
 			v.setScore(0);
 		});
@@ -260,7 +261,7 @@ public class SpaceRun extends Application{
 			r.setRunning(false);
 			sendExit(name);
 			try {
-				if(serverTickrateTimer != null) serverTickrateTimer.cancel();
+				serverTickrateTask.cancel();
 				inchan.close();
 				outchan.close();
 				sock.close();
@@ -349,6 +350,7 @@ public class SpaceRun extends Application{
 			sendConnect(name);
 			try {
 				String server_input = inchan.readLine();
+				System.out.println("repnse à la demande de connexion : "+server_input);
 				String[] server_split = server_input.split("/");
 				if(server_split != null) {
 					switch(server_split[0]){
@@ -484,16 +486,25 @@ public class SpaceRun extends Application{
 		Platform.runLater(()->received.getChildren().add(t));
 
 	}
+	public void parse_obstacles(String obstacles) {
+		String[] stringListObs = obstacles.split("\\|");
+		ArrayList<Point> tmp = new ArrayList<>();
+		for (String s : stringListObs) {
+			String[] xy = s.split("[XY]");
+			double x = Double.parseDouble(xy[1]);
+			double y = Double.parseDouble(xy[2]);
+			tmp.add(new Point(x, y));
+		}
+		obstacles_list = tmp;
+	}
 
 //****************************PROCESS PROTOCOLES*********************
 	//RECEIVE
 	public void process_welcome(String[] server_input){
-		//PARSE PHASE
 		parse_status(server_input[1]);
-		//PARSE PLAYER_SCORE met directement les valeurs dans la structure au lieu de retourner
 		parse_scores(server_input[2]);
-		//PARSE COORD
 		parse_target(server_input[3]);
+		parse_obstacles(server_input[4]);
 		Platform.runLater(new Runnable() {
             @Override public void run() {
             	Text t = new Text("Welcome "+name+" ! :)\n");
@@ -518,6 +529,7 @@ public class SpaceRun extends Application{
 	}
 	public void process_playerleft(String name){
 		System.out.println("playerleft : "+name);
+		System.out.println("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
 		player_list.remove(name);
 		Platform.runLater(new Runnable() {
             @Override public void run() {
@@ -527,15 +539,14 @@ public class SpaceRun extends Application{
             }
         });
 	}
-	public void process_session(String coords,String coord){
-		resetScore();
+	public void process_session(String coords,String coord,String coords_obs){
+		resetScores();
 		updateMyscore();
 		parse_target(coord);
 		parse_coords(coords);
-		System.out.println("target x : " + target.getX());
-		System.out.println("target y : " + target.getY());
+		parse_obstacles(coords_obs);
 		isPlaying = true;
-		serverTickrateTask = new RefreshClientTask(this);
+		serverTickrateTask = new SendNewComTask(this);
 		serverTickrateTimer.scheduleAtFixedRate(serverTickrateTask,new Date(),server_tickrate);
 	}
 	public void process_winner(String scores){
@@ -568,13 +579,11 @@ public class SpaceRun extends Application{
 	}
 	public void process_tick(String vcoords){
 		parse_vcoords(vcoords);
-
 	}
 	public void process_newobj(String coord,String scores){
 		parse_target(coord);
 		parse_scores(scores);
 		updateMyscore();
-		System.out.println("mon score au player : "+ myself.getScore());
 		System.out.println("new_obj : " + coord);
 	}
 	public void process_reception(String message) {

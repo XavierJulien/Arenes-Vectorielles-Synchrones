@@ -1,4 +1,6 @@
- import javafx.scene.canvas.GraphicsContext;
+package packageClient;
+
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
@@ -8,7 +10,9 @@ public class Drawer {
 	private SpaceRun s;
 	private double ve_radius = SpaceRun.ve_radius;
 	private double ob_radius = SpaceRun.ob_radius;
+	private double objectif_radius = 20.0;
 	private Image coin = new Image("images/star.png");
+	private Image asteroid = new Image("images/asteroidbis.png");
 
 	public Drawer(SpaceRun s) {
 		this.s = s;
@@ -55,7 +59,15 @@ public class Drawer {
 		ctx.setFill(Color.GOLDENROD);
 		double x = s.getTarget().getX()+s.getDemil();
 		double y = s.getDemih()-s.getTarget().getY();
-		ctx.fillOval(x-ob_radius,y-ob_radius, ob_radius*2, ob_radius*2);
-		ctx.drawImage(coin, x-ob_radius,y-ob_radius, ob_radius*2, ob_radius*2);
+		ctx.fillOval(x-objectif_radius,y-objectif_radius, objectif_radius*2, objectif_radius*2);
+		ctx.drawImage(coin, x-objectif_radius,y-objectif_radius, objectif_radius*2, objectif_radius*2);
+	}
+	
+	public void drawObstacles() {
+		for (Point p : s.getObstacles_list()) {
+			double x = p.getX()+s.getDemil();
+			double y = s.getDemih()-p.getY();
+			ctx.drawImage(asteroid,x-ob_radius,y-ob_radius, ob_radius*2, ob_radius*2);
+		}
 	}
 }

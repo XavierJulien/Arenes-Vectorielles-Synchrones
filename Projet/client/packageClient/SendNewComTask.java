@@ -1,11 +1,12 @@
+package packageClient;
 
 import java.util.TimerTask;
 
-public class RefreshClientTask extends TimerTask {
+public class SendNewComTask extends TimerTask {
 
 	private SpaceRun s;
 	
-	public RefreshClientTask(SpaceRun s) {
+	public SendNewComTask(SpaceRun s) {
 		this.s = s;
 	}
 

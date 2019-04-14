@@ -1,4 +1,4 @@
-
+package packageClient;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,12 +23,12 @@ public class Receive extends Thread {
 			try{
 				server_input = inchan.readLine();
 				if(server_input != null){
-					//System.out.println(server_input);
+					//System.out.println("Reception du serveur = "+server_input);
 					String[] server_split = server_input.split("/");
 					switch(server_split[0]){
 					case "NEWPLAYER" : {client.process_newplayer(server_split[1]);break;}
 					case "PLAYERLEFT" : client.process_playerleft(server_split[1]);break;
-					case "SESSION" : client.process_session(server_split[1],server_split[2]);break;
+					case "SESSION" : client.process_session(server_split[1],server_split[2],server_split[3]);break;
 					case "WINNER" : client.process_winner(server_split[1]);break;
 					case "TICK" : client.process_tick(server_split[1]);break;
 					case "NEWOBJ" : client.process_newobj(server_split[1],server_split[2]);break;
