@@ -1,6 +1,12 @@
 
+
 import java.util.ArrayList;
 
+import data.Constantes;
+import data.DataBase;
+import data.Player;
+import data.Point;
+import data.Ship;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -10,7 +16,7 @@ public class Drawer {
 	//Context
 	private GraphicsContext ctx;
 	private DataBase database;
-	
+
 	//Constructor
 	public Drawer(DataBase database,GraphicsContext ctx) {
 		this.database = database;
@@ -61,12 +67,23 @@ public class Drawer {
 			}
 		}
 	}
-	public void drawTarget() {
-		ctx.setFill(Color.GOLDENROD);
-		double x = database.getTarget().getX()+Constantes.demil;
-		double y = Constantes.demih-database.getTarget().getY();
-		ctx.fillOval(x-Constantes.ta_radius,y-Constantes.ta_radius, Constantes.ta_radius*2, Constantes.ta_radius*2);
-		ctx.drawImage(Constantes.coin, x-Constantes.ta_radius,y-Constantes.ta_radius, Constantes.ta_radius*2, Constantes.ta_radius*2);
+	public void drawTargets() {
+		for (int i = 0;i< database.getTargets_list().size();i++) {
+			Point p = database.getTargets_list().get(i);
+			double x = p.getX()+Constantes.demil;
+			double y = Constantes.demih-p.getY();
+			ctx.drawImage(Constantes.coin, x-Constantes.ta_radius,y-Constantes.ta_radius, Constantes.ta_radius*2, Constantes.ta_radius*2);
+			if (database.getTargets_list().size()>1) {
+				if(i==database.get_next()) {
+					ctx.setStroke(Paint.valueOf("greenyellow"));
+				}else {
+					ctx.setStroke(Paint.valueOf("white"));
+
+				}
+			ctx.setFont(new javafx.scene.text.Font("Verdana", 30));
+			ctx.strokeText(String.valueOf(i), x-Constantes.ta_radius, y-Constantes.ta_radius);
+			}
+		}
 	}
 	public void drawObstacles() {
 		for (Point p : database.getObstacles_list()) {

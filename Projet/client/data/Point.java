@@ -1,4 +1,6 @@
-package packageClient;
+package data;
+
+
 
 public class Point{
 	//position

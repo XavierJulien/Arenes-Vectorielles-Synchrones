@@ -1,3 +1,5 @@
+
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,7 +12,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 
-
+import data.Commands;
+import data.Constantes;
+import data.DataBase;
+import data.Player;
+import data.Point;
+import data.Ship;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -63,7 +70,7 @@ public class SpaceRun extends Application{
 	private Socket sock;
 	private BufferedReader inchan;
 	private PrintStream outchan;
-	
+
 	//Classes
 	private Timer serverTickrateTimer;
 	private SendNewComTask serverTickrateTask;
@@ -81,7 +88,7 @@ public class SpaceRun extends Application{
 	public void onUpdate() {
 		if (database.getIsPlaying()) {
 			drawer.drawBackground();
-			drawer.drawTarget();
+			drawer.drawTargets();
 			drawer.drawObstacles();
 			drawer.drawPieges();
 			drawer.drawLaser();
@@ -103,11 +110,13 @@ public class SpaceRun extends Application{
 			list.add(player_desc);
 		});
 		ObservableList<String> newItems = FXCollections.observableList(list);
+		
 		aff_list_players.setItems(newItems);
 		main_pieges.setText("Pièges restants : "+database.getMyself().getNb_pieges());
 	}
 	private void updateMyscore() {
 		main_score.setText("Score : "+ database.getPlayer_list().get(database.getName()).getScore());
+		main_pieges.setText("Pièges restants : "+database.getMyself().getNb_pieges());
 	}
 	private String getWinner() {
 		String winner="";
@@ -122,6 +131,7 @@ public class SpaceRun extends Application{
 	}
 	private void resetScores() {
 		database.getPlayer_list().forEach((k,v) -> {v.setScore(0);});
+		database.getPlayer_list().forEach((k,v) -> {v.setNb_pieges(4);});
 		database.getPieges_list().clear();
 		database.getLasers_list().clear();
 	}
@@ -134,6 +144,7 @@ public class SpaceRun extends Application{
 	//							AFFICHAGE JAVAFX							  //
 	//	 																	  //
 	//------------------------------------------------------------------------//
+
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		this.primaryStage = primaryStage;
@@ -218,7 +229,7 @@ public class SpaceRun extends Application{
 					}
 				}else {
 					Platform.runLater(new Runnable() {
-						@Override 
+						@Override
 						public void run() {
 							received.getChildren().add((new Text("you>"+message[0]+"\n")));
 						}
@@ -326,8 +337,6 @@ public class SpaceRun extends Application{
 	}
 	public static void main(String[] args) {launch(args);}
 
-
-
 	//------------------------------------------------------------------------//
 	//																      	  //
 	//							COMMUNICATIONS								  //
@@ -393,8 +402,18 @@ public class SpaceRun extends Application{
 	}
 	public void parse_target(String coord_string){
 		String[] pos_target = coord_string.split("[XY]");
-		database.setTarget(new Point(Double.parseDouble(pos_target[1]),Double.parseDouble(pos_target[2])));
+		database.getTargets_list().add(new Point(Double.parseDouble(pos_target[1]),Double.parseDouble(pos_target[2])));
 	}
+	public void parse_co_targets(String co_targets) {
+		String[] pos_targets = co_targets.split("\\|");
+		for (String c : pos_targets) {
+			String[] xy = c.split("[XY]");
+			Point t = new Point(Double.parseDouble(xy[1]),Double.parseDouble(xy[2]));
+			database.getTargets_list().add(t);
+		}
+		System.out.println("La taille de la liste targets = "+ database.getTargets_list().size());
+	}
+
 	public void parse_message_public(String reception) {
 		Platform.runLater(new Runnable() {
 			@Override public void run() {
@@ -469,12 +488,13 @@ public class SpaceRun extends Application{
 		parse_obstacles(server_input[4]);
 		Platform.runLater(new Runnable() {
 			@Override public void run() {
-				Text t = new Text("Welcome "+database.getName()+" ! :)\n");
+				Text t = new Text("Welcome to you dear "+database.getName()+" ! :)\n");
 				t.setFill(Color.TOMATO);
 				received.getChildren().add(t);
 			}
 		});
 	}
+
 	public void process_newplayer(String new_user){
 		System.out.println("newplayer : "+new_user);
 		database.getPlayer_list().put(new_user,new Player(new_user,0));
@@ -500,7 +520,10 @@ public class SpaceRun extends Application{
 			}
 		});
 	}
+
 	public void process_session(String coords,String coord,String coords_obs){
+		System.out.println("session 1");
+		database.getTargets_list().clear();
 		resetScores();
 		updateMyscore();
 		parse_target(coord);
@@ -510,6 +533,21 @@ public class SpaceRun extends Application{
 		serverTickrateTask = new SendNewComTask(this);
 		serverTickrateTimer.scheduleAtFixedRate(serverTickrateTask,new Date(),Constantes.server_tickrate);
 	}
+	public void process_session(String coords,String coord,String coords_obs,String co_targets) {
+		System.out.println("session 2");
+		database.getTargets_list().clear();
+		database.getPieges_list().clear();
+		updateMyscore();
+		updateListPlayer();
+		parse_target(coord);
+		parse_coords(coords);
+		parse_obstacles(coords_obs);
+		parse_co_targets(co_targets);
+		database.setIsPlaying(true);
+		serverTickrateTask = new SendNewComTask(this);
+		serverTickrateTimer.scheduleAtFixedRate(serverTickrateTask,new Date(),Constantes.server_tickrate);
+	}
+
 	public void process_winner(String scores){
 		parse_scores(scores);
 		System.out.println("Fin de Session -> RESULTATS :");
@@ -520,10 +558,9 @@ public class SpaceRun extends Application{
 				updateListPlayer();
 			}
 		});
-
+		database.setNext(0);
 		database.setIsPlaying(false);
 		serverTickrateTask.cancel();
-		/**  AFFICHER LE WINNER DANS LE CHAT **/
 		Platform.runLater(new Runnable() {
 			@Override public void run() {
 				Text t = new Text("\n\n"
@@ -536,6 +573,7 @@ public class SpaceRun extends Application{
 		});
 
 	}
+
 	public void process_tick(String vcoords){
 		parse_vcoords(vcoords);
 		database.getPieges_list().clear();
@@ -552,11 +590,32 @@ public class SpaceRun extends Application{
 		parse_lasers(lasers);
 	}
 	public void process_newobj(String coord,String scores){
+		database.getTargets_list().clear();
+		database.setNext(0);
 		parse_target(coord);
 		parse_scores(scores);
 		updateMyscore();
+		updateListPlayer();
 		System.out.println("new_obj : " + coord);
 	}
+	public void process_newobj(String co_t, String scores, String co_targets) {
+		database.getTargets_list().clear();
+		database.setNext(0);
+		parse_target(co_t);
+		parse_scores(scores);
+		parse_co_targets(co_targets);
+		updateMyscore();
+		Platform.runLater(new Runnable() {
+			@Override
+			public void run() {
+				updateListPlayer();
+			}
+			
+		});
+		
+		System.out.println("new_obj multiple");
+	}
+
 	public void process_reception(String message) {
 		System.out.println("reception : "+message);
 		parse_message_public(message);
@@ -571,6 +630,10 @@ public class SpaceRun extends Application{
 		parse_message_prive(message,user);
 	}
 
+	public void process_next(String index) {
+		System.out.println(index);
+		database.setNext(Integer.parseInt(index));
+	}
 	//****************************SEND PROTOCOLES****************************
 	public void sendConnect (String username) {
 		outchan.println("CONNECT/"+database.getName()+"/");

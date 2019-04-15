@@ -1,3 +1,4 @@
+package data;
 
 
 
@@ -15,6 +16,8 @@ public class DataBase {
 	private ArrayList<Commands> cumulCmds;
 	private ArrayList<Point> obstacles_list,pieges_list;
 	private ArrayList<Ship> lasers_list;
+	private ArrayList<Point> targets_list = new ArrayList<>();
+	private int next_target = 0;
 
 	public DataBase(String name) {
 		this.name  = name;
@@ -25,40 +28,21 @@ public class DataBase {
 		lasers_list = new ArrayList<>();
 		player_list = new HashMap<>();
 	}
-	public ArrayList<Commands> getCumulCmds() {
-		return cumulCmds;
-	}
-	public ArrayList<Ship> getLasers_list() {
-		return lasers_list;
-	}
-	public Player getMyself() {
-		return myself;
-	}
-	public String getName() {
-		return name;
-	}
-	public ArrayList<Point> getObstacles_list() {
-		return obstacles_list;
-	}
-	public ArrayList<Point> getPieges_list() {
-		return pieges_list;
-	}
-	public Map<String, Player> getPlayer_list() {
-		return player_list;
-	}
-	public Point getTarget() {
-		return target;
-	}
-	public boolean getIsPlaying() {
-		return isPlaying;
-	}
+	public ArrayList<Commands> getCumulCmds() {return cumulCmds;}
+	public ArrayList<Ship> getLasers_list() {return lasers_list;}
+	public Player getMyself() {return myself;}
+	public String getName() {return name;}
+	public ArrayList<Point> getObstacles_list() {return obstacles_list;}
+	public ArrayList<Point> getPieges_list() {return pieges_list;}
+	public Map<String, Player> getPlayer_list() {return player_list;}
+	public Point getTarget() {return target;}
+	public boolean getIsPlaying() {return isPlaying;}
+	public ArrayList<Point> getTargets_list() {return targets_list;}
+	public int get_next() {return next_target;}
+
 	public void setIsPlaying(boolean value) {this.isPlaying = value;}
-	public void setTarget(Point target) {
-		this.target = target;
-	}
-	public void setCumulCmds(ArrayList<Commands> cumulCmds) {
-		this.cumulCmds = cumulCmds;
-	}
+	public void setTarget(Point target) {this.target = target;}
+	public void setCumulCmds(ArrayList<Commands> cumulCmds) {this.cumulCmds = cumulCmds;}
 	public void setLasers_list(ArrayList<Ship> lasers_list) {
 		this.lasers_list = lasers_list;
 	}
@@ -76,5 +60,8 @@ public class DataBase {
 	}
 	public void setPlaying(boolean isPlaying) {
 		this.isPlaying = isPlaying;
+	}
+	public void setNext(int i) {
+		this.next_target = i;
 	}
 }

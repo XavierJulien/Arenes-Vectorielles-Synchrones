@@ -1,4 +1,5 @@
-package packageClient;
+package data;
+
 
 public enum Commands {
 	clock,

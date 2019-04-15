@@ -1,6 +1,4 @@
 
-
-
 import java.util.TimerTask;
 
 public class SendNewComTask extends TimerTask {
