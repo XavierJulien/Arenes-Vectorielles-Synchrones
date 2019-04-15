@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="f6ceb2c0-8539-4440-a947-ab209b0ee495" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/.classpath" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/.project" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/images/asteroid.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/images/asteroidbis.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/images/banana.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/images/piege.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/images/seastar.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/images/ship.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/images/space.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/images/star.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/images/target.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/images/waitingspace.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/packageClient/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/packageClient/Client.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/packageClient/Commands.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/packageClient/Drawer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/packageClient/Makefile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/packageClient/Player.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/packageClient/Point.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/packageClient/Receive.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/packageClient/SendNewComTask.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/packageClient/Ship.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/packageClient/SpaceRun.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../client/packageClient/main.fxml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/Makefile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/server" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/server.cmi" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/server.cmo" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/server.ml" beforeDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DefaultGradleProjectSettings">
+    <option name="testRunner" value="GRADLE" />
+    <option name="delegatedBuild" value="true" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/server.ml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="175">
+              <caret line="365" column="4" selection-start-line="365" selection-start-column="4" selection-end-line="365" selection-end-column="4" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>start_session</find>
+      <find>target &lt;-</find>
+      <find>get_valid_pos</find>
+      <find>win_cap</find>
+      <find>target</find>
+      <find>get_val_target</find>
+      <find>stringify_coord_opt</find>
+      <find>send_session</find>
+      <find>get_list_n_targets</find>
+      <find>get_new_obstacles</find>
+      <find>welcome</find>
+      <find>distance</find>
+      <find>maybe_target_reached</find>
+      <find>send</find>
+      <find>send_newobj</find>
+      <find>get_targets_list</find>
+      <find>restart_session</find>
+      <find>init_players</find>
+      <find>TICK</find>
+      <find>send_tick_newpieges</find>
+      <find>maybe</find>
+      <find>Mutex.lock mutex_players_list;</find>
+      <find>refresh playing</find>
+      <find>rush_mode</find>
+      <find>pieges</find>
+    </findStrings>
+    <replaceStrings>
+      <replace>current_session.targets_list</replace>
+      <replace>get_val_targets_list</replace>
+    </replaceStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/../server/server.ml" />
+        <option value="$PROJECT_DIR$/server.ml" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectConfigurationFiles">
+    <option name="files">
+      <list>
+        <option value="$PROJECT_DIR$/.idea/server2.iml" />
+        <option value="$PROJECT_DIR$/.idea/misc.xml" />
+        <option value="$PROJECT_DIR$/.idea/vcs.xml" />
+        <option value="$PROJECT_DIR$/.idea/modules.xml" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds" fullScreen="true">
+    <option name="width" value="1280" />
+    <option name="height" value="800" />
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="PackagesPane" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="server2" type="b2602c69:ProjectViewProjectNode" />
+              <item name="server2" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="f6ceb2c0-8539-4440-a947-ab209b0ee495" name="Default Changelist" comment="" />
+      <created>1555266591346</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1555266591346</updated>
+      <workItem from="1555266592780" duration="17931000" />
+      <workItem from="1555312876701" duration="2901000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TimeTrackingManager">
+    <option name="totallyTimeSpent" value="20832000" />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="0" y="0" width="1280" height="800" extended-state="0" />
+    <editor active="true" />
+    <layout>
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.124394186" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Designer" order="2" />
+      <window_info id="Image Layers" order="3" />
+      <window_info id="Capture Tool" order="4" />
+      <window_info id="UI Designer" order="5" />
+      <window_info id="Favorites" order="6" side_tool="true" />
+      <window_info id="Learn" order="7" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="7" visible="true" weight="0.45068493" />
+      <window_info anchor="bottom" id="Docker" order="8" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
+      <window_info anchor="bottom" id="Database Changes" order="10" />
+      <window_info anchor="bottom" id="Version Control" order="11" />
+      <window_info anchor="bottom" id="Bucklescript" order="12" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Maven" order="3" />
+      <window_info anchor="right" id="Palette" order="4" />
+      <window_info anchor="right" id="Capture Analysis" order="5" />
+      <window_info anchor="right" id="Database" order="6" />
+      <window_info anchor="right" id="Palette&#9;" order="7" />
+      <window_info anchor="right" id="Theme Preview" order="8" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/../server/server.ml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="184">
+          <caret line="440" column="56" selection-start-line="440" selection-start-column="55" selection-end-line="440" selection-end-column="56" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/server.ml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="175">
+          <caret line="365" column="4" selection-start-line="365" selection-start-column="4" selection-end-line="365" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+  </component>
+  <component name="masterDetails">
+    <states>
+      <state key="ProjectJDKs.UI">
+        <settings>
+          <last-edited>1.8</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+    </states>
+  </component>
+</project>

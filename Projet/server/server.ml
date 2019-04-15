@@ -4,11 +4,18 @@ exception BadRequest
 exception AlreadyExists
 exception Disconnection
 
+<<<<<<< Updated upstream
 
+=======
+let _ = Random.self_init ()
+
+let mutex_players_list = Mutex.create () (*sync for access to *)
+>>>>>>> Stashed changes
 
 (* Variables  *)
 let mutex_players_list = Mutex.create () 
 let cond_least1player = Condition.create ()
+let win_cap = 3
 let maxspeed = 5.0
 let turnit = 45.0
 let thrustit = 2.0
@@ -22,7 +29,13 @@ let pi_radius = 20.0
 let la_radius = 20.0
 let demil = 450.0
 let demih = 350.0
+<<<<<<< Updated upstream
 let _ = Random.self_init ()
+=======
+let nb_targets = int_of_string Sys.argv.(2) (*1 pour le mode de jeu normal, > 1 pour le mode de jeu course*)
+let nb_obstacles = int_of_string Sys.argv.(3)
+
+>>>>>>> Stashed changes
 
 (* Types *)
 type vehicule = {
@@ -38,14 +51,14 @@ type player = {
     mutable score: int;
     car: vehicule;
     mutable is_colliding: bool;
-    mutable is_colliding_ve: bool
+    mutable is_colliding_ve: bool;
+    mutable nb_reach: int
 	}
 
 type session = {
 	mutable players_list : player list;
     mutable playing : bool;
-    mutable target: (float * float) option;
-	win_cap : int;
+    mutable targets_list: (float * float) list option;
 	mutable obstacles_list : (float * float) list;
 	mutable pieges_list : (float * float ) list;
 	mutable lasers_list : vehicule list;
@@ -83,6 +96,7 @@ let rec get_valid_pos () =
     then position
     else get_valid_pos () (*la position n'est pas valide*)
 
+<<<<<<< Updated upstream
 let create_laser pos angle vitesse= 
 	{
 		position=pos;
@@ -122,6 +136,15 @@ let get_val_target () =
     match current_session.target with
     |Some(x,y) -> (x,y)
     |None -> failwith "No target"
+=======
+let current_session =
+	{ players_list = [];
+		playing = false;
+		targets_list = None;
+		obstacles_list = [];
+		pieges_list = []
+  	}
+>>>>>>> Stashed changes
 
 let remove_piege p =
 	let rec remove l =
@@ -168,6 +191,7 @@ let parse_laser laser =
 					 (float_of_string(List.nth laser_list 2)) 
 					 (float_of_string(List.nth laser_list 3),float_of_string(List.nth laser_list 4))
 
+<<<<<<< Updated upstream
 
 (********************** STRINGIFY FUNCTIONS ***********************)
 let stringify_coord (x,y) = "X"^(string_of_float x)^"Y"^(string_of_float y)
@@ -182,6 +206,18 @@ let rec stringify_scores p_list =
 	  |hd::[] -> hd.name^":"^(string_of_int hd.score)^"/"
 	 	|hd::tl -> hd.name^":"^(string_of_int hd.score)^"|"^(stringify_scores tl)
 		|_ -> "" (* n'arrivera jamais juste pour la complétude du pattern matching*)
+=======
+let stringify_coord (x,y) =
+	"X"^(string_of_float x)^"Y"^(string_of_float y)
+
+let stringify_speed (vx,vy) =
+	"VX"^(string_of_float vx)^"VY"^(string_of_float vy)
+
+(* angle en radian sur le sujet, à decider ici si degre ou radian *)
+let stringify_angle a =
+	"T"^(string_of_float a)
+
+>>>>>>> Stashed changes
 let rec stringify_coords p_list = (* string du TICK pour la partie A : seulement les positions *)
 	match p_list with
 	|hd::[] -> hd.name^":"^(stringify_coord hd.car.position)^"/"
@@ -199,6 +235,7 @@ let rec stringify_lasers p_list = (* string du TICK pour la partie Extension Las
 	|hd::tl -> (stringify_coord hd.position)^(stringify_speed hd.speed)^(stringify_angle hd.direction)^"|"^(stringify_lasers tl)
 	|[] -> ""
 
+<<<<<<< Updated upstream
 let rec stringify_coordsXY o_list = (* nouveau strindigy pour les obstacles car ne peut réutiliser le stringify_coords qui s'appliquent aux joueurs *)
     match o_list with
     |hd::[] -> (stringify_coord hd)
@@ -219,15 +256,102 @@ let send_session () =
 		and co_target = stringify_coord_opt current_session.target
 		and coords_obs = stringify_coordsXY current_session.obstacles_list in
 			List.iter (send_fun coords co_target coords_obs) current_session.players_list
+=======
+let rec stringify_coordsXY points_list = (* nouveau strindigy pour les points car ne peut réutiliser le stringify_coords qui s'appliquent aux joueurs *)
+    match points_list with
+    |hd::[] -> (stringify_coord hd)^"/"
+    |hd::tl -> (stringify_coord hd)^"|"^(stringify_coordsXY tl)
+    |[] -> ""
+
+let find_player user_name =
+	List.find (fun p -> if p.name=user_name then true else false) current_session.players_list
+
+let exists_player user_name =
+	List.exists (fun p -> if p.name=user_name then true else false) current_session.players_list
+
+let not_colliding_obs position obs =
+    if (get_distance position obs) > (ve_radius+.ob_radius) then true else false
+
+let rec get_valid_pos () =
+    let position = alea_pos() in
+    print_endline "la position est valide : true ou false ";
+    print_endline (string_of_bool (List.for_all (not_colliding_obs position) current_session.obstacles_list));
+    if List.for_all (not_colliding_obs position) current_session.obstacles_list
+    then position
+    else get_valid_pos () (*la position n'est pas valide*)
+
+
+(*permet de créer un joueur*)
+let create_player user sock inc out =
+	{ name = user;
+  	socket = sock;
+    inchan = inc;
+    outchan = out;
+    score = 0;
+    car = {position=get_valid_pos();direction=0.0;speed=(0.0,0.0)};
+    is_colliding = false;
+    is_colliding_ve = false;
+    nb_reach = 0
+	}
+
+
+let init_players () =
+	let f p =
+	    p.car.position <- get_valid_pos() ;
+	    p.car.speed <- (0.0,0.0);
+	    p.car.direction <- 0.0;
+	    p.score <- 0;
+	    p.is_colliding <- false;
+	    p.is_colliding_ve <- false;
+	    p.nb_reach <- 0
+	in
+	List.iter f current_session.players_list
+
+
+let get_new_obstacles n =
+    let rec aux_get nb =
+        match nb with
+        |0 -> []
+        |x -> alea_pos()::aux_get (x-1)
+     in aux_get n
+
+let get_targets_list () =
+    match current_session.targets_list with
+    |Some(l) -> l
+    |None -> failwith "No target list"
+
+
+let get_list_n_targets n =
+    let rec aux_get nb =
+        match nb with
+        |0-> []
+        |x -> (get_valid_pos())::(aux_get (nb-1))
+    in aux_get n
+
+(********************** SENDING FUNCTIONS ***********************)
+let send_session () =
+	let send_fun coords c_target c_obstacles c_targets p =
+		output_string p.outchan ("SESSION/"^coords^c_target^"/"^c_obstacles^c_targets^"\n");
+		flush p.outchan
+	in
+	let coords = stringify_coords current_session.players_list
+	and co_t = stringify_coord (List.hd (get_targets_list ()))
+    and co_targets = stringify_coordsXY (List.tl (get_targets_list ()))
+	and coords_obs = stringify_coordsXY current_session.obstacles_list in
+		List.iter (send_fun coords co_t coords_obs co_targets) current_session.players_list
+>>>>>>> Stashed changes
 
 let send_welcome user_name =
 	Mutex.lock mutex_players_list;
+	print_endline "dans sens_welcome";
 	let phase = if current_session.playing then "jeu/" else "attente/"
 	and scores = stringify_scores current_session.players_list
-	and coord_target = stringify_coord_opt current_session.target
+	and co_t = stringify_coord (List.hd (get_targets_list ()))
 	and coords_obs = stringify_coordsXY current_session.obstacles_list
+	and co_targets = stringify_coordsXY (List.tl (get_targets_list ()))
 	and player = find_player user_name
 	in
+<<<<<<< Updated upstream
 		output_string player.outchan ("WELCOME/"^phase^scores^coord_target^"/"^coords_obs^"\n");
 		flush player.outchan;
 		if current_session.playing then
@@ -237,6 +361,17 @@ let send_welcome user_name =
 				flush player.outchan
 		end;
 		Mutex.unlock mutex_players_list
+=======
+	output_string player.outchan ("WELCOME/"^phase^scores^co_t^"/"^coords_obs^co_targets^"\n");
+	flush player.outchan;
+	if current_session.playing then
+	begin
+		let coords = stringify_coords current_session.players_list in
+			output_string player.outchan ("SESSION/"^coords^co_t^"/"^coords_obs^co_targets^"\n");
+            flush player.outchan
+	end;
+	Mutex.unlock mutex_players_list
+>>>>>>> Stashed changes
 
 let send_newplayer user_name = (* donne seulement le nom du nouveau joueur, le client attend le tick pour placer le joueur sur le canvas *)
 	let send_fun p =
@@ -276,9 +411,15 @@ let send_tick p =
         flush p.outchan
 
 
+<<<<<<< Updated upstream
 let send_tick_newpieges_newlasers () =
 	let send_fun ticks pieges lasers p =
 		output_string p.outchan ("TICK/"^ticks^pieges^"/"^lasers^"\n");
+=======
+let send_tick_newpieges () =
+	let send_fun ticks pieges p =
+		output_string p.outchan ("TICK/"^ticks^pieges^"\n");
+>>>>>>> Stashed changes
 		flush p.outchan
 	in
 		let p_coords = stringify_coordsXY current_session.pieges_list
@@ -288,6 +429,7 @@ let send_tick_newpieges_newlasers () =
 
 (* protégé par le mutex de l'appelant *)
 let send_newobj () =
+<<<<<<< Updated upstream
    let send_fun coord scores p =
 		output_string p.outchan ("NEWOBJ/"^coord^"/"^scores^"/\n");
 		flush p.outchan
@@ -295,6 +437,19 @@ let send_newobj () =
 		let coord = stringify_coord_opt current_session.target
 		and scores = stringify_scores current_session.players_list in
 			List.iter (send_fun coord scores) current_session.players_list
+=======
+    print_endline "dans send_newobj";
+	let send_fun co_t scores co_targets p =
+		output_string p.outchan ("NEWOBJ/"^co_t^"/"^scores^co_targets^"/\n");
+		flush p.outchan
+	in
+	let coord = stringify_coord (List.hd (get_targets_list ()))
+	and scores = stringify_scores current_session.players_list
+	and co_targets = stringify_coordsXY (List.tl (get_targets_list ())) in
+	    	print_endline coord;
+	    	print_endline co_targets;
+		List.iter (send_fun coord scores co_targets) current_session.players_list
+>>>>>>> Stashed changes
 
 (*let send_denied chan =
 	output_string chan "DENIED/";
@@ -323,6 +478,7 @@ let send_pmess user_name message from_user=
 		output_string player.outchan ("PRECEPTION/"^message^"/"^from_user^"\n");
 		flush player.outchan
 
+<<<<<<< Updated upstream
 (********************** SESSIONS FUNCTIONS ***********************)
 (* utilisation de cette fonction suite à un gagnant de session *)
 (* normalement il n'y a qu'un thread client qui a accès à cette fonction à un moment *)
@@ -330,66 +486,140 @@ let start_session () =
 	Mutex.lock mutex_players_list;
 	current_session.obstacles_list <- get_new_obstacles 5;
 	while (List.length current_session.players_list = 0) do(* ERREUR surement pas besoin car condition attent toit seul*)
+=======
+
+let start_session () =
+	Mutex.lock mutex_players_list;
+	print_endline "start_session lock";
+	current_session.obstacles_list <- get_new_obstacles nb_obstacles;
+	while (List.length current_session.players_list = 0) do
+>>>>>>> Stashed changes
 		(* peut être pas besoin de boucle *)
 		Condition.wait cond_least1player mutex_players_list
 	done;
 	Mutex.unlock mutex_players_list;
+	print_endline "start_session unlock";
 	Unix.sleep waiting_time;
 	Mutex.lock mutex_players_list;
+	print_endline "start_session lock";
 	if (List.length current_session.players_list) > 0 then
 	begin
 	current_session.playing <- true;
 	send_session ()
 	end
 	else ();
-	Mutex.unlock mutex_players_list
+	Mutex.unlock mutex_players_list;
+	print_endline "start_session unlock"
 
 let restart_session () =
 	Mutex.lock mutex_players_list;
+	print_endline "restart_session lock";
 	current_session.playing <- false;
 	while (List.length current_session.players_list = 0) do
 		(* peut être pas besoin de boucle *)
 		Condition.wait cond_least1player mutex_players_list
 	done;
-	current_session.obstacles_list <- get_new_obstacles 5; (*l'initialisation des obstacles doit se faire en 1er car le reste en depend,*)
+	current_session.obstacles_list <- get_new_obstacles nb_obstacles; (*l'initialisation des obstacles doit se faire en 1er car le reste en depend,*)
 	init_players ();
-	current_session.target <- Some(get_valid_pos());
+	current_session.pieges_list <- [];
+	current_session.targets_list <- Some(get_list_n_targets nb_targets);
 	Mutex.unlock mutex_players_list;
+    print_endline "restart_session unlock";
 	(* le mutex est rendu pour que d'autres clients puissent se connecter entre-temps *)
 	Unix.sleep waiting_time;
 	(* Mutex.lock mutex_players_list; *)
 	Mutex.lock mutex_players_list;
+		print_endline "restart_session lock";
 	current_session.playing <- true;
 	send_session ();
-	Mutex.unlock mutex_players_list
+	Mutex.unlock mutex_players_list;
+    	print_endline "restart_session unlock"
 
 
+<<<<<<< Updated upstream
 
 (********************** PROCESS FUNCTIONS ***********************)
 let maybe_target_reached player =
+=======
+(********************** PROCESSING FUNCTIONS ***********************)
+let normal_mode player =
+>>>>>>> Stashed changes
     Mutex.lock mutex_players_list;
-    let target_coord = get_val_target() in
+    print_endline "normal_mode lock";
+    let target_coord = List.hd (get_targets_list()) in
     if (get_distance target_coord player.car.position <= obj_radius) then
         (* le joueur a touché l'objectif *)
         begin
         player.score <- player.score+1;
-        if (player.score = current_session.win_cap) then
+        if (player.score = win_cap) then
             (* le joueur a atteint win_cap : send_winner & restart_session *)
             begin
             send_winner ();
             Mutex.unlock mutex_players_list;
+            print_endline "normal_mode unlock";
             (* besoin d'exécuter restart hors SC car unix.sleep à l'intérieur *)
             restart_session ()
             end
         else
             (* nouvel objectif : send_newobj *)
             begin
-            current_session.target <- Some(get_valid_pos());
+            current_session.targets_list <- Some(get_list_n_targets nb_targets);
             send_newobj ();
             Mutex.unlock mutex_players_list;
+            print_endline "normal_mode unlock"
             end
         end
-    else Mutex.unlock mutex_players_list
+    else (Mutex.unlock mutex_players_list;print_endline "normal_mode unlock")
+
+let rush_mode player =
+    Mutex.lock mutex_players_list;
+    print_endline "rush_mode lock";
+    let target_coord = List.nth (get_targets_list()) player.nb_reach in
+    if (get_distance target_coord player.car.position <= obj_radius) then
+        (* le joueur a touché l'objectif qu'il devait atteindre dans l'ordre *)
+        begin
+        player.nb_reach <- player.nb_reach+1;
+        if (player.nb_reach = nb_targets) then
+            (* le joueur a complété tous les targets *)
+            begin
+            player.score <- player.score+1;
+            player.nb_reach <- 0;
+            output_string player.outchan ("NEXT/"^(string_of_int player.nb_reach)^"/\n");
+            flush player.outchan;
+            if (player.score = win_cap) then
+               (* le joueur a atteint win_cap : send_winner & restart_session *)
+                begin
+                send_winner ();
+                Mutex.unlock mutex_players_list;
+                print_endline "rush_mode score=wincap unlock";
+                (* besoin d'exécuter restart hors SC car unix.sleep à l'intérieur *)
+                restart_session ()
+                end
+             else
+                (*le joueur n'a pas encore atteint win cap, c'est reparti pour une course *)
+                begin
+                current_session.targets_list <- Some(get_list_n_targets nb_targets);
+                send_newobj();
+                Mutex.unlock mutex_players_list;
+                print_endline "rush_mode score <> wincap unlock"
+                end
+            end
+        else
+            begin
+            output_string player.outchan ("NEXT/"^(string_of_int player.nb_reach)^"/\n");
+            flush player.outchan;
+            Mutex.unlock mutex_players_list;
+            print_endline "rush_mode jkjkjkj unlock"
+            end
+        end
+    else (Mutex.unlock mutex_players_list; print_endline "rush_mode unlock")
+
+let maybe_target_reached player =
+    match nb_targets with
+    |0 -> failwith "Cannot play without any targets"
+    |1 -> normal_mode player
+    |_ -> rush_mode player
+
 
 
 (* compute_cmd calcul les nouvelles donnnées pour le joueur, et le stock en mémoire *)
@@ -435,7 +665,13 @@ let check_collisions player =
         else
             begin
             (* était en collision, mais s'est assez éloigné de l'obstacle *)
+<<<<<<< Updated upstream
             if player.is_colliding && distance > (ob_radius+.ve_radius+.100.0) then
+=======
+            if player.is_colliding && distance > (ob_radius+.ve_radius+.60.0) then
+            (*print_endline "sortie de la zone de collision nlnl";
+            print_endline ("distance = "^(string_of_float distance));*)
+>>>>>>> Stashed changes
             player.is_colliding <- false
             end (* probleme : si je "touche" 2 obstacles, il ne se passe rien, tout continu normalement puisque les signges se seront inversé 2 fois *);
      and check_collision_players other_player =
@@ -472,8 +708,12 @@ let check_collisions player =
     in
     List.iter check_collision_obstacle current_session.obstacles_list;
     List.iter check_collision_players current_session.players_list;
+<<<<<<< Updated upstream
 	List.iter check_collision_pieges current_session.pieges_list;
 	List.iter check_collision_lasers current_session.lasers_list
+=======
+	List.iter check_collision_pieges current_session.pieges_list
+>>>>>>> Stashed changes
 
 
 let process_exit user_name =
@@ -488,9 +728,6 @@ let process_exit user_name =
 		ignore (Thread.create start_session ());
 		end;
 		Mutex.unlock mutex_players_list;
-		(*ferme le thread*)
-		(* close_in player.inchan; *)
-		(* close_out player.outchan; *)
 		Unix.close player.socket;
 		send_playerleft player.name
 		end
@@ -502,12 +739,12 @@ let process_newpos coord user_name =
 			let player = find_player user_name
 			and parsed_coord = parse_coord coord in
 			player.car.position <- parsed_coord;
-			let coord_target = get_val_target() in
+			let coord_target = List.hd (get_targets_list()) in
 			if (get_distance coord_target parsed_coord <= obj_radius) then
 				(* le joueur a touché l'objectif *)
 				begin
 				player.score <- player.score+1;
-				if (player.score = current_session.win_cap) then
+				if (player.score = win_cap) then
 					(* le joueur a atteint win_cap : send_winner & restart_session *)
 					begin
 					send_winner ();
@@ -518,7 +755,7 @@ let process_newpos coord user_name =
 				else
 					(* nouvel objectif : send_newobj *)
 					begin
-					current_session.target <- Some(get_valid_pos());
+					current_session.targets_list <- Some(get_list_n_targets nb_targets);
 					send_newobj ();
 					Mutex.unlock mutex_players_list
 					end
@@ -530,11 +767,18 @@ let process_newpos coord user_name =
 let process_newcom cmd_string user_name =
 	let player = find_player user_name in
 		Mutex.lock mutex_players_list;
+		print_endline "process_newcom lock";
 		compute_cmd player (parse_cmd cmd_string); (* met a jour les (vx,vy) du joueur user_name e et refresh les données du client  *)
 		List.iter compute_laser current_session.lasers_list;
 		check_collisions player;
+<<<<<<< Updated upstream
 		send_tick_newpieges_newlasers(); 		(*send_tick player *)
+=======
+		send_tick_newpieges();
+		(*send_tick player *)
+>>>>>>> Stashed changes
 		Mutex.unlock mutex_players_list;
+	    print_endline "process_newcom unlock";
 		maybe_target_reached player
 
 let process_envoi message =
@@ -576,7 +820,7 @@ let receive_req user_name =
 									 process_exit (List.nth parsed_req 1);
 									 raise Disconnection
 				|"NEWPOS" -> if List.length parsed_req < 2 then raise BadRequest;
-										 process_newpos (List.nth parsed_req 1) user_name
+								            process_newpos (List.nth parsed_req 1) user_name
 				|"NEWCOM" -> if List.length parsed_req < 2 then raise BadRequest;
 											process_newcom (List.nth parsed_req 1) user_name
 				|"ENVOI" -> if List.length parsed_req < 2 then raise BadRequest;
@@ -599,8 +843,10 @@ let receive_req user_name =
 let server_refresh_tick_thread () =
 	let refresh p =
 	    Mutex.lock mutex_players_list;
+	    print_endline "server_refrssh thread lock";
 	    p.car.position <- (fst p.car.position+.(fst p.car.speed),snd p.car.position+.(snd p.car.speed));
 	    Mutex.unlock mutex_players_list;
+<<<<<<< Updated upstream
         maybe_target_reached p;
 	and refresh_lasers p =
 	    Mutex.lock mutex_players_list;
@@ -614,10 +860,15 @@ let server_refresh_tick_thread () =
 		in 
 		List.iter check_collision current_session.lasers_list
 
+=======
+	    print_endline "server_refrssh thread unlock";
+        maybe_target_reached p
+>>>>>>> Stashed changes
 	in
 		while true do
 			Unix.sleepf (1.0/.server_refresh_tickrate);
 			if current_session.playing then
+			    print_endline "dans refresh playing";
 				List.iter refresh current_session.players_list;
 				List.iter refresh_lasers current_session.lasers_list;
 				List.iter check_collisions current_session.players_list;
@@ -631,7 +882,9 @@ let server_refresh_tick_thread () =
  doivent être dans le même bloc mutex, sinon un autre client peut potentiellement
  s'être inséré entre la vérif et l'ajout de ce client  *)
 let process_connect user_name client_socket inchan outchan =
+    print_endline "dans process_connect";
 	Mutex.lock mutex_players_list;
+	print_endline "après l'acquisition du mutex";
 	if exists_player user_name then
 		begin
 		Mutex.unlock mutex_players_list;
@@ -644,8 +897,9 @@ let process_connect user_name client_socket inchan outchan =
 		Condition.signal cond_least1player
 		end;
 	Mutex.unlock mutex_players_list;
-	if current_session.target = None then current_session.target <- Some(get_valid_pos()); (* la première connection initialise le target *)
+	if current_session.targets_list = None then current_session.targets_list <- Some(get_list_n_targets nb_targets); (* la première connection initialise le target *)
 	send_welcome user_name;
+	print_endline "après send_welcome";
 	send_newplayer user_name;
 	receive_req user_name
 
@@ -654,6 +908,7 @@ let process_connect user_name client_socket inchan outchan =
 (********************** FIRST CONNECTION ***********************)
 (* c'est ce thread qui est lancé lorsqu'un client se connecte *)
 let start_new_client client_socket =
+    print_endline "dans start new client";
 	let inchan = Unix.in_channel_of_descr client_socket
 	and outchan = Unix.out_channel_of_descr client_socket in
 	let rec try_connect_loop () =
@@ -680,7 +935,7 @@ let start_new_client client_socket =
 (********************** SERVER STARTING ***********************)
 (* fonction de lancement du serveur : à chaque nouvelle connexion
  		lance un thread sur start_new_client sur le socket du client *)
-let start_server nb_c =
+let start_server nb_c mode =
   let server_socket = Unix.socket Unix.PF_INET SOCK_STREAM 0
   and addr = Unix.inet_addr_of_string "127.0.0.1" in
   begin
@@ -698,4 +953,4 @@ let start_server nb_c =
   end;;
 
 (* le nombre maximum de client est donné en paramètre de lu lancement server *)
-start_server (int_of_string Sys.argv.(1));;
+start_server (int_of_string Sys.argv.(1)) (int_of_string Sys.argv.(2));;
