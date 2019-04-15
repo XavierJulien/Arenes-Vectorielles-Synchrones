@@ -110,8 +110,14 @@ public class SpaceRun extends Application{
 			list.add(player_desc);
 		});
 		ObservableList<String> newItems = FXCollections.observableList(list);
-		
-		aff_list_players.setItems(newItems);
+		Platform.runLater(new Runnable() {
+
+			@Override
+			public void run() {
+				aff_list_players.setItems(newItems);
+			}
+			
+		});
 		main_pieges.setText("Pièges restants : "+database.getMyself().getNb_pieges());
 	}
 	private void updateMyscore() {
@@ -411,7 +417,6 @@ public class SpaceRun extends Application{
 			Point t = new Point(Double.parseDouble(xy[1]),Double.parseDouble(xy[2]));
 			database.getTargets_list().add(t);
 		}
-		System.out.println("La taille de la liste targets = "+ database.getTargets_list().size());
 	}
 
 	public void parse_message_public(String reception) {
@@ -496,7 +501,6 @@ public class SpaceRun extends Application{
 	}
 
 	public void process_newplayer(String new_user){
-		System.out.println("newplayer : "+new_user);
 		database.getPlayer_list().put(new_user,new Player(new_user,0));
 		Platform.runLater(new Runnable() {
 			@Override public void run() {
@@ -510,7 +514,6 @@ public class SpaceRun extends Application{
 		System.out.println("Error : DENIED/"+error);
 	}
 	public void process_playerleft(String name){
-		System.out.println("playerleft : "+name);
 		database.getPlayer_list().remove(name);
 		Platform.runLater(new Runnable() {
 			@Override public void run() {
@@ -522,7 +525,6 @@ public class SpaceRun extends Application{
 	}
 
 	public void process_session(String coords,String coord,String coords_obs){
-		System.out.println("session 1");
 		database.getTargets_list().clear();
 		resetScores();
 		updateMyscore();
@@ -534,7 +536,6 @@ public class SpaceRun extends Application{
 		serverTickrateTimer.scheduleAtFixedRate(serverTickrateTask,new Date(),Constantes.server_tickrate);
 	}
 	public void process_session(String coords,String coord,String coords_obs,String co_targets) {
-		System.out.println("session 2");
 		database.getTargets_list().clear();
 		database.getPieges_list().clear();
 		updateMyscore();
@@ -596,8 +597,7 @@ public class SpaceRun extends Application{
 		parse_scores(scores);
 		updateMyscore();
 		updateListPlayer();
-		System.out.println("new_obj : " + coord);
-	}
+		}
 	public void process_newobj(String co_t, String scores, String co_targets) {
 		database.getTargets_list().clear();
 		database.setNext(0);
@@ -612,26 +612,20 @@ public class SpaceRun extends Application{
 			}
 			
 		});
-		
-		System.out.println("new_obj multiple");
 	}
 
 	public void process_reception(String message) {
-		System.out.println("reception : "+message);
 		parse_message_public(message);
 
 	}
 	public void process_reception(String message,String from) {
-		System.out.println("reception : "+message+" from"+from);
 		parse_message_public(message,from);
 	}
 	public void process_preception(String message,String user) {
-		System.out.println("reception privee : "+user+"/"+message);
 		parse_message_prive(message,user);
 	}
 
 	public void process_next(String index) {
-		System.out.println(index);
 		database.setNext(Integer.parseInt(index));
 	}
 	//****************************SEND PROTOCOLES****************************

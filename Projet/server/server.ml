@@ -222,7 +222,6 @@ let send_session () =
 
 let send_welcome user_name =
 	Mutex.lock mutex_players_list;
-	print_endline "dans sens_welcome";
 	let phase = if current_session.playing then "jeu/" else "attente/"
 	and scores = stringify_scores current_session.players_list
 	and co_t = stringify_coord (List.hd (get_targets_list ()))
@@ -326,28 +325,23 @@ let send_pmess user_name message from_user=
 
 let start_session () =
 	Mutex.lock mutex_players_list;
-	print_endline "start_session lock";
 	current_session.obstacles_list <- get_new_obstacles nb_obstacles;
 	while (List.length current_session.players_list = 0) do
 		Condition.wait cond_least1player mutex_players_list
 	done;
 	Mutex.unlock mutex_players_list;
-	print_endline "start_session unlock";
 	Unix.sleep waiting_time;
 	Mutex.lock mutex_players_list;
-	print_endline "start_session lock";
 	if (List.length current_session.players_list) > 0 then
 	begin
 	current_session.playing <- true;
 	send_session ()
 	end
 	else ();
-	Mutex.unlock mutex_players_list;
-	print_endline "start_session unlock"
+	Mutex.unlock mutex_players_list
 
 let restart_session () =
 	Mutex.lock mutex_players_list;
-	print_endline "restart_session lock";
 	current_session.playing <- false;
 	while (List.length current_session.players_list = 0) do
 		(* peut être pas besoin de boucle *)
@@ -358,23 +352,19 @@ let restart_session () =
 	current_session.pieges_list <- [];
 	current_session.targets_list <- Some(get_list_n_targets nb_targets);
 	Mutex.unlock mutex_players_list;
-    print_endline "restart_session unlock";
 	(* le mutex est rendu pour que d'autres clients puissent se connecter entre-temps *)
 	Unix.sleep waiting_time;
 	(* Mutex.lock mutex_players_list; *)
 	Mutex.lock mutex_players_list;
-		print_endline "restart_session lock";
 	current_session.playing <- true;
 	send_session ();
-	Mutex.unlock mutex_players_list;
-    	print_endline "restart_session unlock"
+	Mutex.unlock mutex_players_list
 
 
 
 (********************** PROCESSING FUNCTIONS ***********************)
 let normal_mode player =
     Mutex.lock mutex_players_list;
-    print_endline "normal_mode lock";
     let target_coord = List.hd (get_targets_list()) in
     if (get_distance target_coord player.car.position <= obj_radius) then
         (* le joueur a touché l'objectif *)
@@ -385,7 +375,6 @@ let normal_mode player =
             begin
             send_winner ();
             Mutex.unlock mutex_players_list;
-            print_endline "normal_mode unlock";
             (* besoin d'exécuter restart hors SC car unix.sleep à l'intérieur *)
             restart_session ()
             end
@@ -394,11 +383,10 @@ let normal_mode player =
             begin
             current_session.targets_list <- Some(get_list_n_targets nb_targets);
             send_newobj ();
-            Mutex.unlock mutex_players_list;
-            print_endline "normal_mode unlock"
+            Mutex.unlock mutex_players_list
             end
         end
-    else (Mutex.unlock mutex_players_list;print_endline "normal_mode unlock")
+    else Mutex.unlock mutex_players_list
 
 let rush_mode player =
     Mutex.lock mutex_players_list;
@@ -419,7 +407,6 @@ let rush_mode player =
                 begin
                 send_winner ();
                 Mutex.unlock mutex_players_list;
-                print_endline "rush_mode score=wincap unlock";
                 (* besoin d'exécuter restart hors SC car unix.sleep à l'intérieur *)
                 restart_session ()
                 end
@@ -428,19 +415,17 @@ let rush_mode player =
                 begin
                 current_session.targets_list <- Some(get_list_n_targets nb_targets);
                 send_newobj();
-                Mutex.unlock mutex_players_list;
-                print_endline "rush_mode score <> wincap unlock"
+                Mutex.unlock mutex_players_list
                 end
             end
         else
             begin
             output_string player.outchan ("NEXT/"^(string_of_int player.nb_reach)^"/\n");
             flush player.outchan;
-            Mutex.unlock mutex_players_list;
-            print_endline "rush_mode jkjkjkj unlock"
+            Mutex.unlock mutex_players_list
             end
         end
-    else (Mutex.unlock mutex_players_list; print_endline "rush_mode unlock")
+    else Mutex.unlock mutex_players_list
 
 let maybe_target_reached player =
     match nb_targets with
@@ -648,13 +633,11 @@ let receive_req user_name =
 let server_refresh_tick_thread () =
 	let refresh p =
 	    Mutex.lock mutex_players_list;
-	    print_endline "server_refrssh thread lock";
 	    p.car.position <- (fst p.car.position+.(fst p.car.speed),snd p.car.position+.(snd p.car.speed));
 	    Mutex.unlock mutex_players_list;
       maybe_target_reached p;
 	and refresh_lasers p =
 	    Mutex.lock mutex_players_list;
-		print_endline (string_of_float (fst p.speed));
 	    p.position <- (fst p.position+.(fst p.speed),snd p.position+.(snd p.speed));
 	    Mutex.unlock mutex_players_list;
 	and check_collision_lasers_obstacles obstacle =
@@ -667,7 +650,6 @@ let server_refresh_tick_thread () =
 		while true do
 			Unix.sleepf (1.0/.server_refresh_tickrate);
 			if current_session.playing then
-			    print_endline "dans refresh playing";
 				List.iter refresh current_session.players_list;
 				List.iter refresh_lasers current_session.lasers_list;
 				List.iter check_collisions current_session.players_list;
@@ -681,9 +663,7 @@ let server_refresh_tick_thread () =
  doivent être dans le même bloc mutex, sinon un autre client peut potentiellement
  s'être inséré entre la vérif et l'ajout de ce client  *)
 let process_connect user_name client_socket inchan outchan =
-    print_endline "dans process_connect";
 	Mutex.lock mutex_players_list;
-	print_endline "après l'acquisition du mutex";
 	if exists_player user_name then
 		begin
 		Mutex.unlock mutex_players_list;
@@ -698,14 +678,12 @@ let process_connect user_name client_socket inchan outchan =
 	Mutex.unlock mutex_players_list;
 	if current_session.targets_list = None then current_session.targets_list <- Some(get_list_n_targets nb_targets); (* la première connection initialise le target *)
 	send_welcome user_name;
-	print_endline "après send_welcome";
 	send_newplayer user_name;
 	receive_req user_name
 
 (********************** FIRST CONNECTION ***********************)
 (* c'est ce thread qui est lancé lorsqu'un client se connecte *)
 let start_new_client client_socket =
-    print_endline "dans start new client";
 	let inchan = Unix.in_channel_of_descr client_socket
 	and outchan = Unix.out_channel_of_descr client_socket in
 	let rec try_connect_loop () =

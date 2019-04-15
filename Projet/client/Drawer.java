@@ -93,7 +93,8 @@ public class Drawer {
 		}
 	}
 	public void drawPieges() {
-		for (Point p : database.getPieges_list()) {
+		ArrayList<Point> list = database.getPieges_list();
+		for (Point p : list) {
 			double x = p.getX()+Constantes.demil;
 			double y = Constantes.demih-p.getY();
 			ctx.drawImage(Constantes.piege,x-Constantes.pi_radius*2,y-Constantes.pi_radius*2, Constantes.pi_radius*4, Constantes.pi_radius*4);

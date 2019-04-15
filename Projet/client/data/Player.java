@@ -13,7 +13,7 @@ public class Player{
 		this.name = name;
 		this.score = score;
 		this.ship = new Ship(100, 100,5.0);
-		this.nb_pieges = 4;
+		this.nb_pieges = 15;
 	}
 
 
