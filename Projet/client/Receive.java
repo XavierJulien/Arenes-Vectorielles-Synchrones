@@ -1,10 +1,14 @@
-package packageClient;
+
+
+
+
 
 import java.io.BufferedReader;
 import java.io.IOException;
 
 
 public class Receive extends Thread {
+	
 	private SpaceRun client;
 	private BufferedReader inchan;
 	private String server_input;
@@ -23,7 +27,6 @@ public class Receive extends Thread {
 			try{
 				server_input = inchan.readLine();
 				if(server_input != null){
-					//System.out.println("Reception du serveur = "+server_input);
 					String[] server_split = server_input.split("/");
 					switch(server_split[0]){
 					case "NEWPLAYER" : {client.process_newplayer(server_split[1]);break;}
@@ -31,11 +34,10 @@ public class Receive extends Thread {
 					case "SESSION" : client.process_session(server_split[1],server_split[2],server_split[3]);break;
 					case "WINNER" : client.process_winner(server_split[1]);break;
 					case "TICK" :
-						if (server_split.length == 2) {
-							client.process_tick(server_split[1]);break;
-						}else{
-							client.process_tick(server_split[1], server_split[2]);break;
-						}
+						if (server_split.length == 2) client.process_tick(server_split[1]);
+						if (server_split.length == 3) client.process_tick(server_split[1], server_split[2]);
+						if (server_split.length == 4) client.process_tick(server_split[1], server_split[2],server_split[3]);
+						break;
 					case "NEWOBJ" : client.process_newobj(server_split[1],server_split[2]);break;
 					case "RECEPTION" :
 						if (server_split.length == 2) {
@@ -46,9 +48,9 @@ public class Receive extends Thread {
 
 					case "PRECEPTION" : client.process_preception(server_split[1], server_split[2]);break;
 					case "DENIED" : client.process_denied(server_split[1]);break;
-					default : System.out.println("Le client ne connait la commande "+server_split[0]+" dans son protocole");
+					default : System.out.println("Le client ne reconnait pas la commande "+server_split[0]+" dans son protocole");
 					}
-				}else{/*System.out.println("on ne recoit rien");*/continue;}
+				}else{continue;}
 			}catch(IOException e){
 				System.out.println(e.getMessage());
 			}

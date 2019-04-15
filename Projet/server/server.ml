@@ -1,30 +1,30 @@
+(* Exceptions *)
 exception Fin
 exception BadRequest
 exception AlreadyExists
 exception Disconnection
 
-let _ = Random.self_init ()
 
-(* OK pour les mutables, pas besoin de les passer en paramètre *)
 
-let mutex_players_list = Mutex.create () (*sync for access to *)
-
+(* Variables  *)
+let mutex_players_list = Mutex.create () 
 let cond_least1player = Condition.create ()
 let maxspeed = 5.0
 let turnit = 45.0
 let thrustit = 2.0
-let server_tickrate = 10 (* le serveur envoie server_tickrate fois par seconde *)
+let server_tickrate = 10 
 let server_refresh_tickrate = 30.0
 let waiting_time = 10
 let obj_radius = 30.0
 let ve_radius = 30.0
 let ob_radius = 50.0
 let pi_radius = 20.0
+let la_radius = 20.0
 let demil = 450.0
 let demih = 350.0
+let _ = Random.self_init ()
 
-
-
+(* Types *)
 type vehicule = {
 	mutable position: float * float;
 	mutable direction: float;
@@ -47,33 +47,9 @@ type session = {
     mutable target: (float * float) option;
 	win_cap : int;
 	mutable obstacles_list : (float * float) list;
-	mutable pieges_list : (float * float ) list
+	mutable pieges_list : (float * float ) list;
+	mutable lasers_list : vehicule list;
 }
-
-
-(* modifier dans le serveur : ajouter la vérif de radius_obj à chaque calcul de nouvelle position : si ok touché -> incre score et envoyer newobj  *)
-
-(**************************** ADDITIONNAL FUNCTIONS *****************************)
-
-
-let get_distance (x1,y1) (x2,y2) =
-	sqrt((x2-.x1)*.(x2-.x1)+.(y2-.y1)*.(y2-.y1))
-
-let alea_x () =
-	(Random.float demil*.2.0) -.demil
-let alea_y () =
-	(Random.float demih*.2.0) -.demih
-
-let alea_pos () =
-	(alea_x (),alea_y ())
-let alea_angle () =
-	(Random.float (Float.pi *. 2.0))
-let alea_vxy () =
-	let random_chooser = (Random.int 2) in
-	if random_chooser == 1 then maxspeed else -.maxspeed
-
-let alea_speed () =
-	(alea_vxy (),alea_vxy ())
 
 let current_session =
 	{ players_list = [];
@@ -81,87 +57,38 @@ let current_session =
 		target = None;
 		win_cap = 3;
 		obstacles_list = [];
-		pieges_list = []
+		pieges_list = [];
+		lasers_list = []
   	}
 
-let remove_piege p =
-	let rec remove l =
-		match l with
-		| hd::[] -> if (hd==p) then [] else hd::[]
-		| hd::tl ->	if (hd==p) then tl else hd::(remove tl)
-		| [] -> []
-	in
-		current_session.pieges_list <- remove current_session.pieges_list
+(* modifier dans le serveur : ajouter la vérif de radius_obj à chaque calcul de nouvelle position : si ok touché -> incre score et envoyer newobj  *)
 
-let parse_cmd cmd_string =
-	let s = Str.split (Str.regexp "A\\|T") cmd_string in
-		(float_of_string (List.nth s 0), float_of_string (List.nth s 1))
+(********************** AUXILLARY FUNCTIONS ***********************)
+let alea_x () = (Random.float demil*.2.0) -.demil
+let alea_y () = (Random.float demih*.2.0) -.demih
+let alea_pos () = (alea_x (),alea_y ())
+let alea_angle () = (Random.float (Float.pi *. 2.0))
+let alea_vxy () =
+	let random_chooser = (Random.int 2) in
+	if random_chooser == 1 then maxspeed else -.maxspeed
 
-let parse_request req_string =
-  let s = Str.split (Str.regexp "/") req_string in
-  if (List.length s) > 0 then s else raise BadRequest
-
-let parse_coord c_string =
-	let lcoord = Str.split (Str.regexp "X\\|Y") c_string in
-		(float_of_string (List.nth lcoord 0),float_of_string (List.nth lcoord 1))
-
-let rec stringify_scores p_list =
-	 match p_list with
-	  |hd::[] -> hd.name^":"^(string_of_int hd.score)^"/"
-	 	|hd::tl -> hd.name^":"^(string_of_int hd.score)^"|"^(stringify_scores tl)
-		|[] -> "" (* n'arrivera jamais juste pour la complétude du pattern matching*)
-
-
-let stringify_coord_opt target =
-    match target with
-    |Some(x,y) -> "X"^(string_of_float x)^"Y"^(string_of_float y)
-    |None -> "XY"
-
-let stringify_coord (x,y) =
-	"X"^(string_of_float x)^"Y"^(string_of_float y)
-
-let stringify_speed (vx,vy) =
-	"VX"^(string_of_float vx)^"VY"^(string_of_float vy)
-
-(* angle en radian sur le sujet, à decider ici si degre ou radian *)
-let stringify_angle a =
-	"T"^(string_of_float a)
-
-let rec stringify_coords p_list = (* string du TICK pour la partie A : seulement les positions *)
-	match p_list with
-	|hd::[] -> hd.name^":"^(stringify_coord hd.car.position)^"/"
-	|hd::tl -> hd.name^":"^(stringify_coord hd.car.position)^"|"^(stringify_coords tl)
-	|[] -> ""
-
-let rec stringify_tick p_list = (* string du TICK pour la partie B : avec les vitesses et l'angle *)
-	match p_list with
-	|hd::[] -> hd.name^":"^(stringify_coord hd.car.position)^(stringify_speed hd.car.speed)^(stringify_angle hd.car.direction)^"/"
-	|hd::tl -> hd.name^":"^(stringify_coord hd.car.position)^(stringify_speed hd.car.speed)^(stringify_angle hd.car.direction)^"|"^(stringify_tick tl)
-	|[] -> ""
-
-let rec stringify_coordsXY o_list = (* nouveau strindigy pour les obstacles car ne peut réutiliser le stringify_coords qui s'appliquent aux joueurs *)
-    match o_list with
-    |hd::[] -> (stringify_coord hd)^"/"
-    |hd::tl -> (stringify_coord hd)^"|"^(stringify_coordsXY tl)
-    |[] -> ""
-
-let find_player user_name =
-	List.find (fun p -> if p.name=user_name then true else false) current_session.players_list
-
-let exists_player user_name =
-	List.exists (fun p -> if p.name=user_name then true else false) current_session.players_list
-
-let not_colliding_obs position obs =
-    if (get_distance position obs) > (ve_radius+.ob_radius) then true else false
-
+let alea_speed () = (alea_vxy (),alea_vxy ())
+let find_player user_name = List.find (fun p -> if p.name=user_name then true else false) current_session.players_list
+let exists_player user_name = List.exists (fun p -> if p.name=user_name then true else false) current_session.players_list
+let get_distance (x1,y1) (x2,y2) = sqrt((x2-.x1)*.(x2-.x1)+.(y2-.y1)*.(y2-.y1))
+let not_colliding_obs position obs = if (get_distance position obs) > (ve_radius+.ob_radius) then true else false
 let rec get_valid_pos () =
     let position = alea_pos() in
     if List.for_all (not_colliding_obs position) current_session.obstacles_list
     then position
     else get_valid_pos () (*la position n'est pas valide*)
 
-
-(*permet de créer un joueur*)
+let create_laser pos angle vitesse= 
+	{
+		position=pos;
+		direction=angle;
+		speed=vitesse;
+	}
 let create_player user sock inc out =
 	{ name = user;
   	socket = sock;
@@ -172,8 +99,6 @@ let create_player user sock inc out =
     is_colliding = false;
     is_colliding_ve = false
 	}
-
-
 let init_players () =
 	let f p =
 	    p.car.position <- get_valid_pos() ;
@@ -198,16 +123,102 @@ let get_val_target () =
     |Some(x,y) -> (x,y)
     |None -> failwith "No target"
 
+let remove_piege p =
+	let rec remove l =
+		match l with
+		| hd::[] -> if (hd==p) then [] else hd::[]
+		| hd::tl ->	if (hd==p) then tl else hd::(remove tl)
+		| [] -> []
+	in
+		current_session.pieges_list <- remove current_session.pieges_list
+let remove_laser p =
+	let rec remove l =
+		match l with
+		| hd::[] -> if (hd==p) then [] else hd::[]
+		| hd::tl ->	if (hd==p) then tl else hd::(remove tl)
+		| [] -> []
+	in
+		(current_session.lasers_list <- remove current_session.lasers_list)
+let checked_vx newvx =
+    if newvx > maxspeed then maxspeed
+    else if newvx < -.maxspeed then -.maxspeed else newvx
+
+let checked_vy newvy =
+    if newvy > maxspeed then maxspeed
+    else if newvy < -.maxspeed then -.maxspeed else newvy
+
+(********************** PARSING FUNCTIONS ***********************)
+let parse_cmd cmd_string =
+	let s = Str.split (Str.regexp "A\\|T") cmd_string in
+		(float_of_string (List.nth s 0), float_of_string (List.nth s 1))
+
+let parse_request req_string =
+  let s = Str.split (Str.regexp "/") req_string in
+  if (List.length s) > 0 then s else raise BadRequest
+
+let parse_coord c_string =
+	let lcoord = Str.split (Str.regexp "X\\|Y") c_string in
+		(float_of_string (List.nth lcoord 0),float_of_string (List.nth lcoord 1))
+let parse_vcoord c_string =
+	let lcoord = Str.split (Str.regexp "VX\\|VY") c_string in
+		(float_of_string (List.nth lcoord 0),float_of_string (List.nth lcoord 1))
+let parse_laser laser = 
+	let laser_list = Str.split (Str.regexp "X\\|Y\\|A\\|VX\\|VY") laser in
+		create_laser (float_of_string (List.nth laser_list 0),float_of_string (List.nth laser_list 1)) 
+					 (float_of_string(List.nth laser_list 2)) 
+					 (float_of_string(List.nth laser_list 3),float_of_string(List.nth laser_list 4))
+
+
+(********************** STRINGIFY FUNCTIONS ***********************)
+let stringify_coord (x,y) = "X"^(string_of_float x)^"Y"^(string_of_float y)
+let stringify_speed (vx,vy) = "VX"^(string_of_float vx)^"VY"^(string_of_float vy)
+let stringify_angle a = "T"^(string_of_float a)
+let stringify_coord_opt target =
+    match target with
+    |Some(x,y) -> "X"^(string_of_float x)^"Y"^(string_of_float y)
+    |None -> "XY"
+let rec stringify_scores p_list =
+	 match p_list with
+	  |hd::[] -> hd.name^":"^(string_of_int hd.score)^"/"
+	 	|hd::tl -> hd.name^":"^(string_of_int hd.score)^"|"^(stringify_scores tl)
+		|_ -> "" (* n'arrivera jamais juste pour la complétude du pattern matching*)
+let rec stringify_coords p_list = (* string du TICK pour la partie A : seulement les positions *)
+	match p_list with
+	|hd::[] -> hd.name^":"^(stringify_coord hd.car.position)^"/"
+	|hd::tl -> hd.name^":"^(stringify_coord hd.car.position)^"|"^(stringify_coords tl)
+	|[] -> ""
+
+let rec stringify_tick p_list = (* string du TICK pour la partie B : avec les vitesses et l'angle *)
+	match p_list with
+	|hd::[] -> hd.name^":"^(stringify_coord hd.car.position)^(stringify_speed hd.car.speed)^(stringify_angle hd.car.direction)^"/"
+	|hd::tl -> hd.name^":"^(stringify_coord hd.car.position)^(stringify_speed hd.car.speed)^(stringify_angle hd.car.direction)^"|"^(stringify_tick tl)
+	|[] -> ""
+let rec stringify_lasers p_list = (* string du TICK pour la partie Extension Lasers : avec les vitesses et l'angle *)
+	match p_list with
+	|hd::[] -> (stringify_coord hd.position)^(stringify_speed hd.speed)^(stringify_angle hd.direction)^"/"
+	|hd::tl -> (stringify_coord hd.position)^(stringify_speed hd.speed)^(stringify_angle hd.direction)^"|"^(stringify_lasers tl)
+	|[] -> ""
+
+let rec stringify_coordsXY o_list = (* nouveau strindigy pour les obstacles car ne peut réutiliser le stringify_coords qui s'appliquent aux joueurs *)
+    match o_list with
+    |hd::[] -> (stringify_coord hd)
+    |hd::tl -> (stringify_coord hd)^"|"^(stringify_coordsXY tl)
+    |[] -> ""
+
+
+
+
+
 (********************** SENDING FUNCTIONS ***********************)
 let send_session () =
 	let send_fun coords c_target c_obstacles p =
-		output_string p.outchan ("SESSION/"^coords^c_target^"/"^c_obstacles^"\n");
+		output_string p.outchan ("SESSION/"^coords^c_target^"/"^c_obstacles^"/\n");
 		flush p.outchan
 	in
-	let coords = stringify_coords current_session.players_list
-    and co_target = stringify_coord_opt current_session.target
-	and coords_obs = stringify_coordsXY current_session.obstacles_list in
-		List.iter (send_fun coords co_target coords_obs) current_session.players_list
+		let coords = stringify_coords current_session.players_list
+		and co_target = stringify_coord_opt current_session.target
+		and coords_obs = stringify_coordsXY current_session.obstacles_list in
+			List.iter (send_fun coords co_target coords_obs) current_session.players_list
 
 let send_welcome user_name =
 	Mutex.lock mutex_players_list;
@@ -217,15 +228,15 @@ let send_welcome user_name =
 	and coords_obs = stringify_coordsXY current_session.obstacles_list
 	and player = find_player user_name
 	in
-	output_string player.outchan ("WELCOME/"^phase^scores^coord_target^"/"^coords_obs^"\n");
-	flush player.outchan;
-	if current_session.playing then
-	begin
-		let coords = stringify_coords current_session.players_list in
-			output_string player.outchan ("SESSION/"^coords^coord_target^"/"^coords_obs^"\n");
-            flush player.outchan
-	end;
-	Mutex.unlock mutex_players_list
+		output_string player.outchan ("WELCOME/"^phase^scores^coord_target^"/"^coords_obs^"\n");
+		flush player.outchan;
+		if current_session.playing then
+		begin
+			let coords = stringify_coords current_session.players_list in
+				output_string player.outchan ("SESSION/"^coords^coord_target^"/"^coords_obs^"\n");
+				flush player.outchan
+		end;
+		Mutex.unlock mutex_players_list
 
 let send_newplayer user_name = (* donne seulement le nom du nouveau joueur, le client attend le tick pour placer le joueur sur le canvas *)
 	let send_fun p =
@@ -236,16 +247,16 @@ let send_newplayer user_name = (* donne seulement le nom du nouveau joueur, le c
 		end
 		else ()
 	in
-	List.iter send_fun current_session.players_list
+		List.iter send_fun current_session.players_list
 
 let send_playerleft user_name =
 	let send_fun p =
 		output_string p.outchan ("PLAYERLEFT/"^user_name^"/\n");
 		flush p.outchan
 	in
-	Mutex.lock mutex_players_list;
-	List.iter send_fun current_session.players_list;
-	Mutex.unlock mutex_players_list
+		Mutex.lock mutex_players_list;
+		List.iter send_fun current_session.players_list;
+		Mutex.unlock mutex_players_list
 
 (*  Fin de la session courante, scores finaux de la session. protégé par le mutex de l'appelant *)
 let send_winner () =
@@ -253,8 +264,10 @@ let send_winner () =
 		output_string p.outchan ("WINNER/"^scores^"/\n");
 		flush p.outchan
 	in
-	let f_scores = stringify_scores current_session.players_list in
-		List.iter (send_fun f_scores) current_session.players_list
+		let f_scores = stringify_scores current_session.players_list in
+			current_session.lasers_list <- [];
+			current_session.pieges_list <- [];
+			List.iter (send_fun f_scores) current_session.players_list
 
 (* protégé par le mutex de l'appelant *)
 let send_tick p =
@@ -263,27 +276,25 @@ let send_tick p =
         flush p.outchan
 
 
-let send_tick_newpieges () =
-	let send_fun ticks pieges p =
-		let s = "TICK/"^ticks^pieges^"\n" in
-		print_endline s;
-		output_string p.outchan ("TICK/"^ticks^pieges^"\n");
+let send_tick_newpieges_newlasers () =
+	let send_fun ticks pieges lasers p =
+		output_string p.outchan ("TICK/"^ticks^pieges^"/"^lasers^"\n");
 		flush p.outchan
 	in
 		let p_coords = stringify_coordsXY current_session.pieges_list
+		and l_coords = stringify_lasers current_session.lasers_list
 		and f_coords = stringify_tick current_session.players_list in
-			List.iter (send_fun f_coords p_coords) current_session.players_list
+			List.iter (send_fun f_coords p_coords l_coords) current_session.players_list
 
 (* protégé par le mutex de l'appelant *)
 let send_newobj () =
-    print_endline "dans send_newobj";
-	let send_fun coord scores p =
+   let send_fun coord scores p =
 		output_string p.outchan ("NEWOBJ/"^coord^"/"^scores^"/\n");
 		flush p.outchan
 	in
-	let coord = stringify_coord_opt current_session.target
-	and scores = stringify_scores current_session.players_list in
-		List.iter (send_fun coord scores) current_session.players_list
+		let coord = stringify_coord_opt current_session.target
+		and scores = stringify_scores current_session.players_list in
+			List.iter (send_fun coord scores) current_session.players_list
 
 (*let send_denied chan =
 	output_string chan "DENIED/";
@@ -294,7 +305,7 @@ let send_mess message =
 		output_string p.outchan ("RECEPTION/"^to_send^"\n");
 		flush p.outchan
 	in
-	List.iter (send_fun message) current_session.players_list
+		List.iter (send_fun message) current_session.players_list
 
 let send_mess_from message from=
 	let send_fun to_send p =
@@ -305,20 +316,20 @@ let send_mess_from message from=
 		end
 		else ()
 	in
-	List.iter (send_fun message) current_session.players_list
+		List.iter (send_fun message) current_session.players_list
 
 let send_pmess user_name message from_user=
 	let player = find_player user_name in
-		print_endline player.name;
-		print_endline from_user;
-		print_endline message;
 		output_string player.outchan ("PRECEPTION/"^message^"/"^from_user^"\n");
 		flush player.outchan
 
+(********************** SESSIONS FUNCTIONS ***********************)
+(* utilisation de cette fonction suite à un gagnant de session *)
+(* normalement il n'y a qu'un thread client qui a accès à cette fonction à un moment *)
 let start_session () =
 	Mutex.lock mutex_players_list;
 	current_session.obstacles_list <- get_new_obstacles 5;
-	while (List.length current_session.players_list = 0) do
+	while (List.length current_session.players_list = 0) do(* ERREUR surement pas besoin car condition attent toit seul*)
 		(* peut être pas besoin de boucle *)
 		Condition.wait cond_least1player mutex_players_list
 	done;
@@ -333,10 +344,6 @@ let start_session () =
 	else ();
 	Mutex.unlock mutex_players_list
 
-
-(*********************** RESTARTING SESSION **************************)
-(* utilisation de cette fonction suite à un gagnant de session *)
-(* normalement il n'y a qu'un thread client qui a accès à cette fonction à un moment *)
 let restart_session () =
 	Mutex.lock mutex_players_list;
 	current_session.playing <- false;
@@ -357,9 +364,8 @@ let restart_session () =
 	Mutex.unlock mutex_players_list
 
 
-(********************** PROCESSING FUNCTIONS ***********************)
 
-
+(********************** PROCESS FUNCTIONS ***********************)
 let maybe_target_reached player =
     Mutex.lock mutex_players_list;
     let target_coord = get_val_target() in
@@ -385,13 +391,6 @@ let maybe_target_reached player =
         end
     else Mutex.unlock mutex_players_list
 
-let checked_vx newvx =
-    if newvx > maxspeed then maxspeed
-    else if newvx < -.maxspeed then -.maxspeed else newvx
-
-let checked_vy newvy =
-    if newvy > maxspeed then maxspeed
-    else if newvy < -.maxspeed then -.maxspeed else newvy
 
 (* compute_cmd calcul les nouvelles donnnées pour le joueur, et le stock en mémoire *)
 let compute_cmd player (angle,pousse) =
@@ -411,22 +410,32 @@ let compute_cmd player (angle,pousse) =
 		if new_y < -.demih then player.car.position <- (fst player.car.position,
 														demih-.(mod_float (snd player.car.position) demih))
 
+let compute_laser laser =
+		let new_x = (fst laser.position) +. (fst laser.speed)
+		and new_y = (snd laser.position) +. (snd laser.speed) in
+		laser.position<-(new_x,new_y);
+		if new_x > demil then laser.position <- ((-.demil)+.(mod_float (fst laser.position) demil),
+													    snd laser.position);
+		if new_y > demih then laser.position <- (fst laser.position,
+													    (-.demih)+.((snd laser.position)-.demih));
+		if new_x < -.demil then laser.position <- (demil-.(mod_float (fst laser.position) demil),
+														snd laser.position);
+		if new_y < -.demih then laser.position <- (fst laser.position,
+														demih-.(mod_float (snd laser.position) demih))
+
 let check_collisions player =
     let check_collision_obstacle o =
         let distance = get_distance player.car.position o in
         if (not player.is_colliding) && distance <= (ob_radius+.ve_radius) then
             (* n'était pas en collision, et la nouvelle distance donne une collision *)
             begin
-            print_endline "collision, inversion des vitesses";
             player.is_colliding <- true;
             player.car.speed <- (-.(fst player.car.speed),-.(snd player.car.speed))
             end
         else
             begin
             (* était en collision, mais s'est assez éloigné de l'obstacle *)
-            print_endline " dans le else ";
             if player.is_colliding && distance > (ob_radius+.ve_radius+.100.0) then
-            print_endline "dans le else, puis dans le if";
             player.is_colliding <- false
             end (* probleme : si je "touche" 2 obstacles, il ne se passe rien, tout continu normalement puisque les signges se seront inversé 2 fois *);
      and check_collision_players other_player =
@@ -451,13 +460,20 @@ let check_collisions player =
 		and check_collision_pieges p =
 			if (get_distance player.car.position p)<(ve_radius+.pi_radius)
 	    then
-			  (player.car.speed <- alea_speed();(* probleme : si je "touche" 2 obstacles, il ne se passe rien, tout continu normalement puisque les signges se seront inversé 2 fois *)
+			  (player.car.speed <- alea_speed();
 				player.car.direction <- alea_angle ();
 				remove_piege p)
+		and check_collision_lasers laser =
+			let distance = get_distance player.car.position laser.position in
+				if distance <= (ve_radius+.la_radius) 
+				then 
+					(player.car.speed <- (0.0,0.0);
+					 remove_laser laser)
     in
     List.iter check_collision_obstacle current_session.obstacles_list;
     List.iter check_collision_players current_session.players_list;
-		List.iter check_collision_pieges current_session.pieges_list
+	List.iter check_collision_pieges current_session.pieges_list;
+	List.iter check_collision_lasers current_session.lasers_list
 
 
 let process_exit user_name =
@@ -513,11 +529,11 @@ let process_newpos coord user_name =
 
 let process_newcom cmd_string user_name =
 	let player = find_player user_name in
-		(* print_endline cmd_string; *)
 		Mutex.lock mutex_players_list;
 		compute_cmd player (parse_cmd cmd_string); (* met a jour les (vx,vy) du joueur user_name e et refresh les données du client  *)
+		List.iter compute_laser current_session.lasers_list;
 		check_collisions player;
-		send_tick_newpieges(); 		(*send_tick player *)
+		send_tick_newpieges_newlasers(); 		(*send_tick player *)
 		Mutex.unlock mutex_players_list;
 		maybe_target_reached player
 
@@ -539,9 +555,15 @@ let process_penvoi user_name message from_user =
 let process_newpiege coord =
 	Mutex.lock mutex_players_list;
 	current_session.pieges_list <- (parse_coord coord)::current_session.pieges_list;
-	send_tick_newpieges ();
+	send_tick_newpieges_newlasers ();
 	Mutex.unlock mutex_players_list
-(********************** thread's looping  ***********************)
+let process_newlaser laser_string =
+	Mutex.lock mutex_players_list;
+	let laser = parse_laser laser_string in 
+		current_session.lasers_list <- laser::current_session.lasers_list;
+		send_tick_newpieges_newlasers ();
+		Mutex.unlock mutex_players_list
+(********************** THREADING FUNCTIONS ***********************)
 let receive_req user_name =
 	let player = find_player user_name in
 	try
@@ -566,26 +588,13 @@ let receive_req user_name =
 											process_penvoi (List.nth parsed_req 1) (List.nth parsed_req 2) user_name
 				|"NEWPIEGE" ->	if List.length parsed_req <> 2 then raise BadRequest;
 											process_newpiege (List.nth parsed_req 1)
+				|"NEWLASER" ->	if List.length parsed_req <> 2 then raise BadRequest;
+											process_newlaser (List.nth parsed_req 1)		
 				|_ -> raise BadRequest
 			with BadRequest -> output_string player.outchan "DENIED/BadRequest\n";
 										 			flush player.outchan
 		done
 	with Disconnection -> ()
-
-
-
-(* let tick_thread () =
-	while true do
-		Unix.sleep server_tickrate;
-		Mutex.lock mutex_players_list;
-		if current_session.playing then
-			begin
-			send_tick ()
-			end;
-		Mutex.unlock mutex_players_list
-	done *)
-
-
 
 let server_refresh_tick_thread () =
 	let refresh p =
@@ -593,18 +602,31 @@ let server_refresh_tick_thread () =
 	    p.car.position <- (fst p.car.position+.(fst p.car.speed),snd p.car.position+.(snd p.car.speed));
 	    Mutex.unlock mutex_players_list;
         maybe_target_reached p;
+	and refresh_lasers p =
+	    Mutex.lock mutex_players_list;
+		print_endline (string_of_float (fst p.speed));
+	    p.position <- (fst p.position+.(fst p.speed),snd p.position+.(snd p.speed));
+	    Mutex.unlock mutex_players_list;
+	and check_collision_lasers_obstacles obstacle = 
+		let check_collision laser = 
+			let distance = get_distance obstacle laser.position in
+						if distance <= (ob_radius+.la_radius) then remove_laser laser
+		in 
+		List.iter check_collision current_session.lasers_list
+
 	in
 		while true do
 			Unix.sleepf (1.0/.server_refresh_tickrate);
 			if current_session.playing then
 				List.iter refresh current_session.players_list;
-				List.iter check_collisions current_session.players_list
+				List.iter refresh_lasers current_session.lasers_list;
+				List.iter check_collisions current_session.players_list;
+				List.iter check_collision_lasers_obstacles current_session.obstacles_list
 		done
 
 
 
 (********************** PROCESSING NEW CONNECTION ********************)
-
 (* les opérations de verification et d'ajout du player dans la liste
  doivent être dans le même bloc mutex, sinon un autre client peut potentiellement
  s'être inséré entre la vérif et l'ajout de ce client  *)
@@ -619,8 +641,6 @@ let process_connect user_name client_socket inchan outchan =
 		begin
 		let player = (create_player user_name client_socket inchan outchan) in
 		current_session.players_list<-player::current_session.players_list;
-		(* print_endline user_name; *)
-		(* print_endline "le joueur dont le nom est au dessus a été ajouté a la liste\n"; *)
 		Condition.signal cond_least1player
 		end;
 	Mutex.unlock mutex_players_list;

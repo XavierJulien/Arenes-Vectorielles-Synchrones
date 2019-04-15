@@ -1,5 +1,3 @@
-package packageClient;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,10 +6,11 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
+
+
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -22,168 +21,98 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
 public class SpaceRun extends Application{
-//------------------------------------------------------------------------//
-//																		  //
-//								CONSTANTES								  //
-//	  																	  //
-//------------------------------------------------------------------------//
-	protected static final int PORT=2019;
-	protected static final int ve_radius = 30;
-	protected static final int ob_radius = 50;
-	protected static final int pi_radius = 20;
-	protected static final int server_tickrate = 100; // 100 ms = 0.1s -> frequence de 10
-	private static final double demih = 350;
-	private static final double demil = 450;
 
-//------------------------------------------------------------------------//
-//																		  //
-//								DATA CLIENT								  //
-//																		  //
-//------------------------------------------------------------------------//
+	//------------------------------------------------------------------------//
+	//																		  //
+	//							JAVAFX VARIABLES							  //
+	//	  																	  //
+	//------------------------------------------------------------------------//
 
-	private String name;
-	private Player myself;
-	private Map<String,Player> player_list = new HashMap<>(); // le client courant fait partie de la liste
-	private Point target;
-	private boolean isPlaying = false;
-	private ArrayList<Commands> cumulCmds = new ArrayList<>();
-	private ArrayList<Point> obstacles_list = new ArrayList<>();
-	private ArrayList<Point> pieges_list = new ArrayList<>();
-
-//------------------------------------------------------------------------//
-//																		  //
-//							JAVAFX VARIABLES							  //
-//	  																	  //
-//------------------------------------------------------------------------//
-
-
-	//JAVAFX
 	private Stage primaryStage;
-	//JavaFX Lobby
 	private GridPane lobbyPane;
-	private Scene lobbyScene;
-	//JavaFX Main
+	private Scene lobbyScene,playScene;
 	private HBox mainPane;
-	private Scene playScene;
-	//Canvas
+
 	private Canvas canvas;
-	private GraphicsContext ctx;
-	private Drawer drawer;
-	//Others
 	private VBox right;
-	//desc
 	private Text main_score;
 	private Text main_pieges;
-	//listplayers
-	//chatbox
 	private TextFlow received;
 
-//------------------------------------------------------------------------//
-//	 																	  //
-//						VARIABLES COMMUNICATION	C/S						  //
-//	  																	  //
-//------------------------------------------------------------------------//
+	//------------------------------------------------------------------------//
+	//	 																	  //
+	//						VARIABLES COMMUNICATION	C/S						  //
+	//	  																	  //
+	//------------------------------------------------------------------------//
 
-	//private Client c;
+	//Client/server
+	private Socket sock;
 	private BufferedReader inchan;
 	private PrintStream outchan;
-	private Socket sock;
-	private Receive r;
-	private Timer serverTickrateTimer = new Timer();
+	
+	//Classes
+	private Timer serverTickrateTimer;
 	private SendNewComTask serverTickrateTask;
+	private Receive receiver;
+	private DataBase database;
+	private Drawer drawer;
 
 
+	//------------------------------------------------------------------------//
+	//	 																   	  //
+	//							MAJ PLAYERS									  //
+	//	 																	  //
+	//------------------------------------------------------------------------//
 
-//------------------------------------------------------------------------//
-//	 																	  //
-//							GETTERS/SETTERS								  //
-//	  																	  //
-//------------------------------------------------------------------------//
-	public GraphicsContext getGraphicsContext() {return ctx;}
-	public Map<String,Player> getPlayer_list() {return  player_list;}
-	public Player getMyself() {return myself;}
-	public Point getTarget() {return target;}
-	public double getDemih() {return demih;}
-	public double getDemil() {return demil;}
-	public ArrayList<Point> getObstacles_list() {return obstacles_list;}
-	public ArrayList<Point> getPieges_list() {return pieges_list;}
-
-	/*public void init() {
-		this.score = 0;
-		this.player_list = new HashMap<>();
-		this.target = null;
-		this.isPlaying = false;
-		this.cumulCmds = new ArrayList<>();
-	}*/
-
-
-
-//------------------------------------------------------------------------//
-//	 																   	  //
-//							MAJ PLAYERS									  //
-//	 																	  //
-//------------------------------------------------------------------------//
-
-	public void move(Ship p){//simule le monde thorique, a revoir avec -demih et -demil
-		if(p.get_posX() > demil) p.set_posX(-demil+p.get_posX()%demil);
-		if(p.get_posY() > demih) p.set_posY(-demih+p.get_posY()%demih);
-		if(p.get_posX() < -demil) p.set_posX(demil-p.get_posX()%demil);
-		if(p.get_posY() < -demih) p.set_posY(demih-p.get_posY()%demih);
-	}
-	public void onUpdate() {//met à jour les positions des joueurs à chaque
-		if (isPlaying) {
-		updateListPlayer();
-		ctx.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-		ctx.drawImage(new Image("images/space.png"), 0, 0, canvas.getWidth(),canvas.getHeight());
-		drawer.drawTarget();
-		drawer.drawPlayers();
-		drawer.drawObstacles();
-		drawer.drawPieges();
-		}else {
-			ctx.drawImage(new Image("images/space.png"), 0, 0, canvas.getWidth(),canvas.getHeight());
-			updateListPlayer();
+	public void onUpdate() {
+		if (database.getIsPlaying()) {
+			drawer.drawBackground();
+			drawer.drawTarget();
 			drawer.drawObstacles();
-			ctx.setStroke(Paint.valueOf("white"));
-			ctx.setFont(new javafx.scene.text.Font("Verdana", 50));
-			ctx.strokeText("Waiting for the session ... ", 150, 350);
+			drawer.drawPieges();
+			drawer.drawLaser();
+			drawer.drawPlayers();
+			updateListPlayer();
+		}else {
+			drawer.drawBackground();
+			drawer.drawObstacles();
+			drawer.drawWaiting();
+			updateListPlayer();
 		}
 	}
-	@SuppressWarnings("unchecked")
 	private void updateListPlayer() {
+		@SuppressWarnings("unchecked")
 		ListView<String> aff_list_players = (ListView<String>)right.getChildren().get(1);
 		List<String> list = new ArrayList<>();
-		player_list.forEach((k,v) -> {
+		database.getPlayer_list().forEach((k,v) -> {
 			String player_desc = "Player : "+k+" | Score : "+v.getScore();
 			list.add(player_desc);
 		});
 		ObservableList<String> newItems = FXCollections.observableList(list);
 		aff_list_players.setItems(newItems);
-		main_pieges.setText("Pièges restants : "+myself.getNb_pieges());
+		main_pieges.setText("Pièges restants : "+database.getMyself().getNb_pieges());
 	}
 	private void updateMyscore() {
-		main_score.setText("Score : "+ player_list.get(name).getScore());
+		main_score.setText("Score : "+ database.getPlayer_list().get(database.getName()).getScore());
 	}
-	private String whoIsWinner() {
+	private String getWinner() {
 		String winner="";
 		int best_score = 0;
-		for (Map.Entry<String, Player> entry : player_list.entrySet()) {
+		for (Map.Entry<String, Player> entry : database.getPlayer_list().entrySet()) {
 			if (entry.getValue().getScore()>best_score) {
 				best_score = entry.getValue().getScore();
 				winner = entry.getKey();
@@ -192,23 +121,26 @@ public class SpaceRun extends Application{
 		return winner;
 	}
 	private void resetScores() {
-		player_list.forEach((k,v) -> {
-			v.setScore(0);
-		});
+		database.getPlayer_list().forEach((k,v) -> {v.setScore(0);});
+		database.getPieges_list().clear();
+		database.getLasers_list().clear();
 	}
-//------------------------------------------------------------------------//
-//																		  //
-//							AFFICHAGE JAVAFX							  //
-//	 																	  //
-//------------------------------------------------------------------------//
+
+
+
+
+	//------------------------------------------------------------------------//
+	//																		  //
+	//							AFFICHAGE JAVAFX							  //
+	//	 																	  //
+	//------------------------------------------------------------------------//
 	@Override
-	public void start(Stage primaryStage) throws Exception { //CE QUI EST LANCE PAR LAUNCH
+	public void start(Stage primaryStage) throws Exception {
 		this.primaryStage = primaryStage;
 		try {
-			sock = new Socket (InetAddress.getByName("127.0.0.1"),PORT);
+			sock = new Socket (InetAddress.getByName("127.0.0.1"),Constantes.PORT);
 			inchan = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 			outchan = new PrintStream(sock.getOutputStream());
-			System.out.println("Connection established : "+sock.getInetAddress()+" port : "+sock.getPort());
 			initializeLobby();
 			primaryStage.show();
 		}catch (IOException e) {
@@ -220,24 +152,26 @@ public class SpaceRun extends Application{
 
 		mainPane = (HBox) FXMLLoader.load(getClass().getResource("main.fxml"));
 		playScene = new Scene(mainPane, 1200, 700);
+
 		//-----------------DESSIN---------------------------------
 		canvas = (Canvas)mainPane.getChildren().get(0);
-		ctx = canvas.getGraphicsContext2D();
-		drawer = new Drawer(this);
+		drawer = new Drawer(database,canvas.getGraphicsContext2D());
+
 		//--------------RIGHTPANEL-----------------------------
-		//*******Description*********
+
+		//****************DESC****************
 		right = (VBox)mainPane.getChildren().get(1);
 		Pane descJoueur = (Pane)right.getChildren().get(0);
 		Text main_username = (Text)descJoueur.getChildren().get(0);
-		main_username.setText("User : "+name);
+		main_username.setText("User : "+database.getName());
 		main_score = (Text)descJoueur.getChildren().get(1);
-		main_score.setText("Score : "+ myself.getScore());
+		main_score.setText("Score : "+ database.getMyself().getScore());
 		main_pieges = (Text)descJoueur.getChildren().get(2);
-		main_pieges.setText("Pièges restants : "+myself.getNb_pieges());
+		main_pieges.setText("Pièges restants : "+database.getMyself().getNb_pieges());
 		Button exit = (Button)descJoueur.getChildren().get(3);
 		exit.setOnAction(e -> {
-			r.setRunning(false);
-			sendExit(name);
+			receiver.setRunning(false);
+			sendExit(database.getName());
 			try {
 				serverTickrateTask.cancel();
 				inchan.close();
@@ -247,9 +181,8 @@ public class SpaceRun extends Application{
 			} catch (IOException e1) {
 				System.out.println("Error : EXIT");
 			}});
-		
-		//********CHAT************
 
+		//************************CHAT************************
 		ScrollPane scrollpane = (ScrollPane)right.getChildren().get(2);
 		received = (TextFlow)scrollpane.getContent();
 		HBox chatbox = (HBox)right.getChildren().get(3);
@@ -265,18 +198,18 @@ public class SpaceRun extends Application{
 			if(mess_to_send.length() > 0) {
 				String[] message = mess_to_send.split("\\/");
 				if(message[0].equals("dm")) {
-					if(player_list.containsKey(message[1])) {
-						if(message[1].equals(name)){
+					if(database.getPlayer_list().containsKey(message[1])) {
+						if(message[1].equals(database.getName())){
 							to_send.setStyle("-fx-text-inner-color: red;");
 							to_send.setText("Cannot send dm to yourself");
 						}else {
 							Text t = new Text("to:"+message[1]+">"+message[2]+"\n");
 							t.setFill(Color.DARKGREEN);
 							Platform.runLater(new Runnable() {
-					            @Override public void run() {
-					            	received.getChildren().add(t);
-					            }
-					        });
+								@Override public void run() {
+									received.getChildren().add(t);
+								}
+							});
 							sendPEnvoi(message[1], message[2]);
 						}
 					}else {
@@ -285,64 +218,78 @@ public class SpaceRun extends Application{
 					}
 				}else {
 					Platform.runLater(new Runnable() {
-			            @Override public void run() {
-			            	received.getChildren().add((new Text("you>"+message[0]+"\n")));
-			            }
-			        });
-					sendEnvoi(message[0],name);
+						@Override 
+						public void run() {
+							received.getChildren().add((new Text("you>"+message[0]+"\n")));
+						}
+					});
+					sendEnvoi(message[0],database.getName());
 				}
 			}});
 		updateListPlayer();
-		
+
+
 		//------------------FIX POSITION---------------------------
 		new AnimationTimer(){
 			public void handle(long currentNanoTime){onUpdate();}
 		}.start();
-		//*************EVENT HANDLER*************
+
+		//------------------EVENT HANDLER--------------------------
 		playScene.setOnKeyPressed(e -> {
 			if (e.getText().equals("z")) {
-				cumulCmds.add(Commands.thrust);
+				database.getCumulCmds().add(Commands.thrust);
 			}
 			if (e.getText().equals("d")) {
-				cumulCmds.add(Commands.clock);
+				database.getCumulCmds().add(Commands.clock);
 			}
 			if (e.getText().equals("q")) {
-				cumulCmds.add(Commands.anticlock);
+				database.getCumulCmds().add(Commands.anticlock);
 			}
-			if (e.getText().equals("x")) {
-				if(myself.getNb_pieges() > 0) {
-					myself.setNb_pieges(myself.getNb_pieges()-1);
-					double x = myself.getShip().get_posX();
-					double y = myself.getShip().get_posY();
-					x = x + ve_radius*2 * Math.cos((Math.toRadians(myself.getShip().getAngle()) - Math.PI));
-					y = y + ve_radius*2 * Math.sin((Math.toRadians(myself.getShip().getAngle()) - Math.PI));
+			if (e.getText().equals("p")) {
+				if(database.getMyself().getNb_pieges() > 0) {
+					database.getMyself().setNb_pieges(database.getMyself().getNb_pieges()-1);
+					double x = database.getMyself().getShip().get_posX();
+					double y = database.getMyself().getShip().get_posY();
+					x = x + Constantes.ve_radius*2 * Math.cos((Math.toRadians(database.getMyself().getShip().getAngle()) - Math.PI));
+					y = y + Constantes.ve_radius*2 * Math.sin((Math.toRadians(database.getMyself().getShip().getAngle()) - Math.PI));
 					sendPiege(new Point(x,y));
 				}else {System.out.println("No more bananas :) ");}
+			}
+			if (e.getText().equals("l")) {
+				double x = database.getMyself().getShip().get_posX();
+				double y = database.getMyself().getShip().get_posY();
+				x = x + Constantes.ve_radius*2 * Math.cos((Math.toRadians(database.getMyself().getShip().getAngle())));
+				y = y + Constantes.ve_radius*2 * Math.sin((Math.toRadians(database.getMyself().getShip().getAngle())));
+				Ship s = new Ship(x,y,Constantes.maxSpeedLaser);
+				s.setAngle(database.getMyself().getShip().getAngle());
+				double angle = Math.toRadians(database.getMyself().getShip().getAngle())%(Math.PI*2);
+				double cosangle = Math.cos(angle);
+				double sinangle = Math.sin(angle);
+				s.set_speedXY((Constantes.maxSpeedLaser*cosangle),s.get_speedY());
+				s.set_speedXY(s.get_speedX(),(Constantes.maxSpeedLaser*sinangle));
+				sendLaser(s);
 			}
 		});
 
 	}
 	public void initializeLobby() {
-		//label username
 		Text lobby_username_label = new Text("Username");
-		//Text Filed for username
 		TextField lobby_username_field = new TextField();
-		//Buttons
 		Button connect = new Button("Connect");
 		connect.setOnAction(e -> {
-			name = lobby_username_field.getText();
-			sendConnect(name);
+			database = new DataBase(lobby_username_field.getText());
+			sendConnect(database.getName());
 			try {
 				String server_input = inchan.readLine();
-				System.out.println("repnse à la demande de connexion : "+server_input);
 				String[] server_split = server_input.split("/");
 				if(server_split != null) {
 					switch(server_split[0]){
 					case "WELCOME" :
 						process_welcome(server_split);
 						initializeMain();
-						r = new Receive(this,inchan);
-						r.start();
+						receiver = new Receive(this,inchan);
+						receiver.start();
+						serverTickrateTimer = new Timer();
 						primaryStage.setScene(playScene);
 						break;
 					case "DENIED" :
@@ -363,7 +310,6 @@ public class SpaceRun extends Application{
 			}catch(IOException e2) {
 				e2.printStackTrace();
 			}});
-		//Grid Pane
 		lobbyPane = new GridPane();
 		lobbyPane.setMinSize(400, 200);
 		lobbyPane.setPadding(new Insets(10, 10, 10, 10));
@@ -374,47 +320,47 @@ public class SpaceRun extends Application{
 		lobbyPane.add(lobby_username_field, 1, 0);
 		lobbyPane.add(connect, 0, 1);
 
-		//Scene
 		lobbyScene = new Scene(lobbyPane);
-		//Stage
 		primaryStage.setTitle("SpaceRun");
 		primaryStage.setScene(lobbyScene);
 	}
 	public static void main(String[] args) {launch(args);}
 
-//------------------------------------------------------------------------//
-//																      	//
-//							COMMUNICATIONS								//
-//																		//
-//------------------------------------------------------------------------//
-	//**************************AUX***************************************
 
+
+	//------------------------------------------------------------------------//
+	//																      	  //
+	//							COMMUNICATIONS								  //
+	//																		  //
+	//------------------------------------------------------------------------//
+
+	//****************************PARSING****************************
 	public void parse_status(String status) {
 		if (status == "jeu") {
-			isPlaying=true;
+			database.setIsPlaying(true);
 		}
 		if (status == "attente") {
-			isPlaying = false;
+			database.setIsPlaying(false);
 		}
 	}
 	public void parse_scores(String player_score_string){
 		String[] player_score_string_split = player_score_string.split("\\|");
-		if (player_list.isEmpty()) { // initialisation, le joueur vient de se connecter
+		if (database.getPlayer_list().isEmpty()) { // initialisation, le joueur vient de se connecter
 			for(int i = 0;i<player_score_string_split.length;i++){
 				String[] player_score = player_score_string_split[i].split("[:]");
 				Player p = new Player(player_score[0],Integer.parseInt(player_score[1]));
-				player_list.put(player_score[0], p);
-				if (player_score[0].equals(name)) {
-					myself = p;
+				database.getPlayer_list().put(player_score[0], p);
+				if (player_score[0].equals(database.getName())) {
+					database.setMyself(p);
 				}
 			}
 		}else{ // mise à jour des scores
 			for (int i = 0; i<player_score_string_split.length; i++) {
 				String[] player_score = player_score_string_split[i].split("[:]");
-				int last_score = player_list.get(player_score[0]).getScore();
+				int last_score = database.getPlayer_list().get(player_score[0]).getScore();
 				int new_score = Integer.parseInt(player_score[1]);
-				if (last_score < new_score) player_list.get(player_score[0]).setNb_pieges(player_list.get(player_score[0]).getNb_pieges()+1);
-				player_list.get(player_score[0]).setScore(new_score);
+				if (last_score < new_score) database.getPlayer_list().get(player_score[0]).setNb_pieges(database.getPlayer_list().get(player_score[0]).getNb_pieges()+1);
+				database.getPlayer_list().get(player_score[0]).setScore(new_score);
 			}
 		}
 	}
@@ -425,8 +371,8 @@ public class SpaceRun extends Application{
 			double x = Double.parseDouble(xy[1]);
 			double y = Double.parseDouble(xy[2]);
 			String name = p.split(":")[0];
-			player_list.get(name).getShip().set_posX(x);
-			player_list.get(name).getShip().set_posY(y);
+			database.getPlayer_list().get(name).getShip().set_posX(x);
+			database.getPlayer_list().get(name).getShip().set_posY(y);
 		}
 	}
 	public void parse_vcoords(String player_coord_string){
@@ -439,29 +385,29 @@ public class SpaceRun extends Application{
 			double vy = Double.parseDouble(xy[4]);
 			double t = Double.parseDouble(xy[5]);
 			String name = p.split(":")[0];
-			player_list.get(name).getShip().set_posX(x);
-			player_list.get(name).getShip().set_posY(y);
-			player_list.get(name).getShip().set_speedXY(vx, vy);
-			player_list.get(name).getShip().setAngle(Math.toDegrees(t));
+			database.getPlayer_list().get(name).getShip().set_posX(x);
+			database.getPlayer_list().get(name).getShip().set_posY(y);
+			database.getPlayer_list().get(name).getShip().set_speedXY(vx, vy);
+			database.getPlayer_list().get(name).getShip().setAngle(Math.toDegrees(t));
 		}
 	}
 	public void parse_target(String coord_string){
 		String[] pos_target = coord_string.split("[XY]");
-		target = new Point(Double.parseDouble(pos_target[1]),Double.parseDouble(pos_target[2]));
+		database.setTarget(new Point(Double.parseDouble(pos_target[1]),Double.parseDouble(pos_target[2])));
 	}
 	public void parse_message_public(String reception) {
 		Platform.runLater(new Runnable() {
-            @Override public void run() {
-            	received.getChildren().add(new Text(reception+"\n"));
-            }
-        });
+			@Override public void run() {
+				received.getChildren().add(new Text(reception+"\n"));
+			}
+		});
 	}
 	public void parse_message_public(String reception,String from) {
 		Platform.runLater(new Runnable() {
-            @Override public void run() {
-            	received.getChildren().add(new Text(from+">"+reception+"\n"));
-            }
-        });
+			@Override public void run() {
+				received.getChildren().add(new Text(from+">"+reception+"\n"));
+			}
+		});
 	}
 	public void parse_message_prive(String reception,String user) {
 		Text t = new Text("DM:"+user+">"+reception+"\n");
@@ -478,58 +424,81 @@ public class SpaceRun extends Application{
 			double y = Double.parseDouble(xy[2]);
 			tmp.add(new Point(x, y));
 		}
-		obstacles_list = tmp;
+		database.setObstacles_list(tmp);
 	}
 	public void parse_pieges(String pieges) {
-		String[] stringListPieges = pieges.split("\\|");
-		pieges_list.clear();
-		for(String s : stringListPieges) {
-			String[] xy = s.split("[XY]");
+		if(!pieges.isEmpty()) {
+			String[] stringListPieges = pieges.split("\\|");
+			database.getPieges_list().clear();
+			for(String s : stringListPieges) {
+				String[] xy = s.split("[XY]");
+				double x = Double.parseDouble(xy[1]);
+				double y = Double.parseDouble(xy[2]);
+				database.getPieges_list().add(new Point(x, y));
+			}
+		}
+	}
+	public void parse_lasers(String lasers) {
+		String[] stringListLasers = lasers.split("\\|");
+		database.getLasers_list().clear();
+		for(String s : stringListLasers) {
+			String[] xy = s.split("X|Y|VX|VY|T");
 			double x = Double.parseDouble(xy[1]);
 			double y = Double.parseDouble(xy[2]);
-			pieges_list.add(new Point(x, y));
+			double a = Double.parseDouble(xy[3]);
+			double vx = Double.parseDouble(xy[4]);
+			double vy = Double.parseDouble(xy[5]);
+			Ship p = new Ship(x,y,Constantes.maxSpeedLaser);
+			p.setAngle(a);
+			p.set_speedXY(vx, vy);
+			Platform.runLater(new Runnable() {
+				@Override public void run() {
+					database.getLasers_list().add(p);
+				}
+			});
+
 		}
 	}
 
-//****************************PROCESS PROTOCOLES*********************
-	//RECEIVE
+	//****************************PROCESS PROTOCOLES****************************
 	public void process_welcome(String[] server_input){
+
 		parse_status(server_input[1]);
 		parse_scores(server_input[2]);
 		parse_target(server_input[3]);
 		parse_obstacles(server_input[4]);
 		Platform.runLater(new Runnable() {
-            @Override public void run() {
-            	Text t = new Text("Welcome "+name+" ! :)\n");
-            	t.setFill(Color.TOMATO);
-            	received.getChildren().add(t);
-            }
-        });
+			@Override public void run() {
+				Text t = new Text("Welcome "+database.getName()+" ! :)\n");
+				t.setFill(Color.TOMATO);
+				received.getChildren().add(t);
+			}
+		});
 	}
 	public void process_newplayer(String new_user){
 		System.out.println("newplayer : "+new_user);
-		player_list.put(new_user,new Player(new_user,0));
+		database.getPlayer_list().put(new_user,new Player(new_user,0));
 		Platform.runLater(new Runnable() {
-            @Override public void run() {
-            	Text t = new Text(new_user+" has joined the party !\n");
-            	t.setFill(Color.TOMATO);
-            	received.getChildren().add(t);
-            }
-        });
+			@Override public void run() {
+				Text t = new Text(new_user+" has joined the party !\n");
+				t.setFill(Color.TOMATO);
+				received.getChildren().add(t);
+			}
+		});
 	}
 	public void process_denied(String error){
 		System.out.println("Error : DENIED/"+error);
 	}
 	public void process_playerleft(String name){
 		System.out.println("playerleft : "+name);
-		player_list.remove(name);
+		database.getPlayer_list().remove(name);
 		Platform.runLater(new Runnable() {
-            @Override public void run() {
-            	Text t = new Text(name+" has left the party !\n");
-            	t.setFill(Color.TOMATO);
-            	received.getChildren().add(t);
-            }
-        });
+			@Override public void run() {
+				Text t = new Text(name+" has left the party !\n");
+				t.setFill(Color.TOMATO);
+				received.getChildren().add(t);
+			}
+		});
 	}
 	public void process_session(String coords,String coord,String coords_obs){
 		resetScores();
@@ -537,45 +506,50 @@ public class SpaceRun extends Application{
 		parse_target(coord);
 		parse_coords(coords);
 		parse_obstacles(coords_obs);
-		isPlaying = true;
+		database.setIsPlaying(true);
 		serverTickrateTask = new SendNewComTask(this);
-		serverTickrateTimer.scheduleAtFixedRate(serverTickrateTask,new Date(),server_tickrate);
+		serverTickrateTimer.scheduleAtFixedRate(serverTickrateTask,new Date(),Constantes.server_tickrate);
 	}
 	public void process_winner(String scores){
 		parse_scores(scores);
 		System.out.println("Fin de Session -> RESULTATS :");
-		player_list.forEach((k,v) -> System.out.println("player "+(k+" -> "+v.getScore()+" points.")));
+		database.getPlayer_list().forEach((k,v) -> System.out.println("player "+(k+" -> "+v.getScore()+" points.")));
 		updateMyscore();
 		Platform.runLater(new Runnable() {
-            @Override public void run() {
-            	updateListPlayer();
-            }
-        });
-		
-		isPlaying = false;
+			@Override public void run() {
+				updateListPlayer();
+			}
+		});
+
+		database.setIsPlaying(false);
 		serverTickrateTask.cancel();
 		/**  AFFICHER LE WINNER DANS LE CHAT **/
 		Platform.runLater(new Runnable() {
-            @Override public void run() {
-            	Text t = new Text("\n\n"
-            			+ "--------------------WINNER----------------\n"
-            			+ "|  	        			  				|\n"
-            			+ "|    	 	  "+whoIsWinner()+"   	    |\n"
-            			+ "|  	   					       			|\n"
-            			+ "------------------------------------------\n\n");
-            	t.setFill(Color.TOMATO);
-            	received.getChildren().add(t);
-            }
-        });
-		
+			@Override public void run() {
+				Text t = new Text("\n\n"
+						+ "------------WINNER--------\n"
+						+ "GG to "+getWinner()+"\n"
+						+ "----------------------------\n\n");
+				t.setFill(Color.TOMATO);
+				received.getChildren().add(t);
+			}
+		});
+
 	}
 	public void process_tick(String vcoords){
 		parse_vcoords(vcoords);
-		pieges_list.clear();
+		database.getPieges_list().clear();
+		database.getLasers_list().clear();
 	}
 	public void process_tick(String vcoords,String pieges){
 		parse_vcoords(vcoords);
 		parse_pieges(pieges);
+		database.getLasers_list().clear();
+	}
+	public void process_tick(String vcoords,String pieges,String lasers){
+		parse_vcoords(vcoords);
+		parse_pieges(pieges);
+		parse_lasers(lasers);
 	}
 	public void process_newobj(String coord,String scores){
 		parse_target(coord);
@@ -597,34 +571,34 @@ public class SpaceRun extends Application{
 		parse_message_prive(message,user);
 	}
 
-	/**************************SEND FUNCTIONS**************************/
+	//****************************SEND PROTOCOLES****************************
 	public void sendConnect (String username) {
-		outchan.println("CONNECT/"+name+"/");
+		outchan.println("CONNECT/"+database.getName()+"/");
 		outchan.flush();
 	}
 	public void sendExit (String username) {
-		outchan.println("EXIT/"+name+"/");
+		outchan.println("EXIT/"+database.getName()+"/");
 		outchan.flush();
 	}
 	public void sendNewpos (double x, double y) {
 		outchan.println("NEWPOS/X"+x+"Y"+y+"/");
 		outchan.flush();
 	}
-	@SuppressWarnings("unchecked")
 	public void sendNewCom () {
 		double a = 0.;//angle en radian
 		int t = 0;//poussée
-		ArrayList<Commands> temp = (ArrayList<Commands>) cumulCmds.clone();
-		cumulCmds.clear();
+		@SuppressWarnings("unchecked")
+		ArrayList<Commands> temp = (ArrayList<Commands>) database.getCumulCmds().clone();
+		database.getCumulCmds().clear();
 		for(Commands c : temp) {
 			if(c == Commands.thrust) {
 				t +=1;
 			}
 			if(c == Commands.clock) {
-				a = (a-myself.getShip().turnit)%360;
+				a = (a-Constantes.turnit)%360;
 			}
 			if(c == Commands.anticlock) {
-				a = (a+myself.getShip().turnit)%360;
+				a = (a+Constantes.turnit)%360;
 			}
 		}
 		outchan.println("NEWCOM/A"+a+"T"+t+"/");
@@ -640,6 +614,10 @@ public class SpaceRun extends Application{
 	}
 	public void sendPiege(Point pos) {
 		outchan.println("NEWPIEGE/X"+pos.getX()+"Y"+pos.getY()+"/");
+		outchan.flush();
+	}
+	public void sendLaser(Ship p) {
+		outchan.println("NEWLASER/X"+p.get_posX()+"Y"+p.get_posY()+"A"+p.getAngle()+"VX"+p.get_speedX()+"VY"+p.get_speedY()+"/");
 		outchan.flush();
 	}
 }
