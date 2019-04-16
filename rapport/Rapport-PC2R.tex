@@ -1,6 +1,6 @@
 \documentclass[11pt]{article}
 
-\usepackage[utf8]{inputenc}
+\usepackage[latin1]{inputenc}
 \usepackage[T1]{fontenc} 
 \usepackage[francais]{babel}  
 \usepackage[top=3cm, bottom=3cm, left=2.5cm, right=2.5cm]{geometry}
@@ -36,13 +36,13 @@
 %----------------------------------------------------------------------------------------
 
 \HRule \\[1cm]
-{ \huge ArÃ¨nes Vectorielles Synchrones}\\[0.4cm] % Title of your document
+{ \huge Arènes Vectorielles Synchrones}\\[0.4cm] % Title of your document
 \HRule \\[1.5cm]
  
 %----------------------------------------------------------------------------------------
 %	AUTHOR SECTION
 %----------------------------------------------------------------------------------------
-\emph{Ã‰tudiants:}\\
+\emph{Etudiants}\\
 Suxue \textsc{Li} \\% Your name
 Julien \textsc{Xavier}\\ % Your name
 %----------------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ Julien \textsc{Xavier}\\ % Your name
 \vspace{6cm}
 
 
-{\large \today}\\[5cm] % Date, change the \today to a set date if you want to be precise
+{\large 15 avril 2019}\\[5cm] % Date, change the \today to a set date if you want to be precise
 
 
 \end{titlepage}
@@ -62,118 +62,90 @@ Julien \textsc{Xavier}\\ % Your name
 \setlength\parindent{0pt}
 \section{Introduction}
 
-Le devoir de programmation de cette annÃ©e a pour objectif de rÃ©aliser une application clients-serveur permettant Ã  des utilisateurs de jouer simultanÃ©ment Ã  un jeu de course de voitures dans l'espace reprÃ©sentÃ© par une arÃ¨ne dite torique, signifiant une arÃ¨ne sous la forme d'un "donut".\\
- Ainsi, le but du jeu est de permettre Ã  plusieurs joueurs de s'affronter dans des sessions de jeu ayant alors pour objectif de passer Ã  certains endroits particuliers de l'arÃ¨ne, appelÃ©s objectifs.\\
-Afin de rÃ©aliser cette application, nous avons fait le choix d'implÃ©menter la partie serveur en Ocaml et la partie client en Java.\\
-Ce rapport prÃ©sente d'abord la structure gÃ©nÃ©rale du projet, puis nos choix/difficultÃ©s d'implÃ©mentation et enfin un petit manuel de jeu.
+Le devoir de programmation de cette année a pour objectif de réaliser une application de jeu clients-serveur où les joueurs jouent en concurrence dans un jeu de course dans l'espace, représenté par une arène torique.\\
+Les parties s'organisent en sessions, les joueurs doivent atteindre des points particuliers nommés {\em objectifs} pour gagner une session. Des extensions ont été ajoutées par rapport à la version de base, vous trouverez une description plus complète dans le manuel du jeu à la fin de ce rapport.
+Pour ce projet, nous avons fait le choix d'implémenter la partie serveur en \textbf{Ocaml} et la partie client en \textbf{Java}.\\
+Vous trouverez dans ce rapport, une présentation globale de l'architecture du projet, nos choix d'implémentation et les difficultés que nous avons rencontré au cours du développement. Enfin, un petit manuel de jeu vous guidera pour commencer à jouer. Et pour terminer, quelques remarques que nous nous sommes faites nous-même.
 
-\section{Structure gÃ©nÃ©rale du projet}
+\vspace{1cm}
+
+\section{Architecture générale du projet}
+\vspace{0.7cm}
 \subsection{Principe de communication}
-Afin de rÃ©aliser la communication entre le serveur et les clients, nous avons utilisÃ© un systÃ¨me de communication par socket, ce qui nous permet ici de rÃ©aliser des sessions TCP, afin de facilement et de maniÃ¨re fiable, envoyer des informations dans les deux sens de communication.\\
-Celle-ci se fera via des protocoles afin de sÃ©parer et traiter chaque envoi/rÃ©ception de maniÃ¨re individuelle.
+Pour réaliser la communication entre le serveur et les clients, nous avons utilisé un système de communication par socket, ce qui nous permet de réaliser des sessions TCP, afin d'envoyer des informations dans les deux sens de manière fiable.\\ La communication est basé sur le protocole texte donné dans le sujet. Le serveur utilise des canaux du type in\_channel et out\_channel, et le client utilise la classe BufferedReader et PrintStream.\\
 
-\subsection{server.ml}
-C'est ici que ce passe tous les systÃ¨mes de communication et d'interprÃ©tation des protocoles cÃ´tÃ© Serveur.\\
-On divise ici le travail en plusieurs parties : \\
-- Une partie d'initialisation/threading (start), qui permet de crÃ©er toutes structures de donnÃ©es utilisÃ©es pour l'application du serveur et de dÃ©marrer les diffÃ©rents services en parralÃ¨les.\\
--Une partie rÃ©ception (process), qui permet l'interprÃ©tation de chacun des services proposÃ©s par les protocoles de rÃ©ception client->serveur.\\
--Une partie d'envoi (send), qui permet de prÃ©parer les commandes et d'envoyer aux diffÃ©rents clients les informations nÃ©cÃ©ssaire au bon dÃ©roulement du jeu.
-
-\subsection{SpaceRun.java}
-%A REVOIR avec les vrais noms de pane
-Programme principal cÃ´tÃ© client. Ici , on as deux parties principales :\\
-- La partie Interface graphique, faite Ã  l'aide de JavaFX et de SceneBuilder, logiciel tierce permettant la crÃ©ation de scÃ¨nes JavaFX et gÃ©nÃ©rant des ficher .fxml . De plus, nous avons alors la gÃ©nÃ©ration d'Ã©lÃ©ments graphique (Drawer.java) et l'update des Ã©lÃ©ments de jeu (canvas) ou encore de description(descPane/listview) et le chat (chatbox).
-- La partie rÃ©ception, permettant lui aussi la rÃ©ception et l'envoie de protocoles via la socket.
-%a finir
+\subsection{Serveur}
+Nous avons préféré utiliser le côté fonctionnel du language Ocaml pour implémenter notre serveur.
+Le fichier \textbf{server.ml} contient tout le code du serveur. Toutes les valeurs constantes ont été définies au début du fichier, entre autres, une variable {\em current\_session} qui centralise toutes les données de la session en cours, notamment les joueurs qui sont présents, avec toutes les informations qui les accompagnent. \\
+Nous avons un point d'entrée principale dans le fichier : la fonction {\em start\_server} qui lance le serveur et écoute sur le port 2019. Mais avant cela, il lance deux threads : {\em start\_session} et {\em server\_refresh\_tick\_thread} qui permettent respectivement, d'attendre la connexion d'au moins un joueur puis de patienter un délai avant de lancer le jeu avec les joueurs présents, et, de faire les actualisations nécessaires des positions de chaque joueur {\em server\_refresh\_tickrate} fois par seconde. \\
+Pour chaque client qui se connecte, un thread est lancé. Nous nous basons sur le partage des ressources code et données permis par le système de threading en Ocaml. En effet, une fois lancé, un thread est autonome et effectue le code qui lui est attribué, tous les threads ont alors accès aux mêmes fonctions de service, et  
+aux mêmes données, en l'occurence {\em current\_session}. Il était important de conserver l'intégrité du contenu de la variable. Nous avons donc utilisé un seul Mutex, et une seule Condition. Le mutex s'appelle {\em mutex\_players\_list}, il est là pour limiter l'accès à la liste des joueurs de la session en cours, pour éviter toute lecture - écriture, et écriture - écriture simultanée. Nous avions plusieurs mutex au début du projet, mais nous les avons retiré au fur et à mesure de l'avancement car cela devenait compliquer à gérer. Pour cause, l'utilisation de plusieurs mutex impliquait des lock et unlock imbriqués, chaque fonction ayant son lot de modifications à faire sur les données, et les appels pouvant s'imbriquer, on arrivait facilement à des inter-blocages. Nous avons donc opté pour la sûreté par rapport à l'efficacité. Et enfin la Condition {\em least1player} est signalée à chaque connexion de joueur, permettant au thread qui lance la session de démarrer un compte à rebours. \\
 
 
-%%PARTIE DU PROJET CA
-Ensuite, pour exÃ©cuter un programme bytecode sur la machine, nous avons Ã©crit deux versions dans deux fichiers distincts : {\em main\_direct.ml}, et {\em main\_trace.ml}. Le premier permet d'obtenir simplement une sortie standard et un valeur de retour, tandis que le deuxiÃ¨me affiche l'Ã©tat des registres de la mini-ZAM aprÃ¨s chaque instruction Ã©valuÃ©e, la trace de l'exÃ©cution "corrompt" l'affichage rÃ©el du programme, par contre la valeur de retour sera toujours affichÃ©e Ã  la fin.
-\subsection{makefile \& readme.md}
-Nous avons Ã©galement Ã©crit un {\em makefile} contenant plusieurs cibles, permettant de compiler les diffÃ©rents fichiers, pour crÃ©er des exÃ©cutables. Vous trouverez plus de prÃ©cision concernant l'utilisation du makefile dans le fichier {\em readme.md} qui vous dÃ©crit plus en dÃ©tail les diffÃ©rentes cibles.
+\subsection{Client}
+Pour la partie client, nous avons fait une structure qui s'inspire de l'architecture MVC où le Modèle serait toutes les classes de représentation de données de session, rangé dans le sous-répertoire {\em data} telles que \textbf{Ship}, \textbf {Player} ou encore \textbf{Point} etc. Et la Vue et le Contrôleur seraient fusionnés au niveau des classes \textbf{SpaceRun},  \textbf{Drawer}.\\
+Nous utilisons JavaFX pour l'interface graphique du client.
+Le squelette de l'interface graphique est produit à l'aide d'un logiciel tierce : {\em SceneBuilder} qui nous permet de construire et d'agencer une fenêtre (scene) en "Drag\&Drop". Ceci génère un fichier main.fxml qui décrit les différents éléments JavaFX composant la fenêtre de jeu. \\
+La classe SpaceRun gère beaucoup de chose, dont l'interface utilisateur. Elle utilise les instances de éléments JavaFX à partir du fichier {\em main.fxml}. C'est donc la classe permettant de lancer l'application de jeu côté client, elle constitue le processus principal du client. Trois autres threads s'exécutent en concurrence : Receive, AnimationTimer et SendNewCom.
+La classe  \textbf{Receive}, étant Runnable est constamment en attente de protocoles du serveur, elle récupère les protocoles reçues et fonction de celle-ci, délègue le traitement à la méthode associée d'une instance de SpaceRun.
+La classe \textbf{SendNewCom} gère l'envoi des nouvelles commandes du client depuis le dernier tick, à une fréquence de {\em server\_tickrate}.
+La classe \textbf{AnimationTimer}, permet de rafraichir l'interface graphique, avec une fréquence de 60, qui normalement, selon le sujet devrait être à {\em refresh\_tickrate}, mais nous n'avons pas trouvé le moyen de changer la fréquence de rafraîchissement d'un AnimationTimer.\\
+Ces threads accèdent à des ressources en lecture, il n'y a donc pas besoin de les synchroniser.\\
+Enfin, pour faire l'affichage de l'espace de jeu, nous utilisons une classe \textbf{Drawer} qui permet à l'aide du contexte graphique du canvas, passé en argument du constructeur, de dessiner chacun des éléments du jeu, qu'il s'agisse des véhicules, lasers, bananes/pièges, fond d'écran ou encore les astéroïdes.\\
+
+\section{Extensions}
+\vspace{0.3cm}
+\textbf{Jeu de Combat:}\\
+Les vaisseaux peuvent jeter des bananes derrière eux afin de perturber les déplacements de l'ennemi ou de soi-même s'il touche lui aussi la banane lors de ses déplacements. Chaque vaisseau a un quota de banane disponible au début d'une session, le serveur lui accorde une banane en plus pour chaque point supplémentaire acquis. Ce quota est réinitialisé à chaque début de session.
+Les vaisseaux peuvent aussi tirer des boules de laser afin de stopper l'ennemi dans son élan (vecteur vitesse nul). Les boules de laser évoluent de même la même façon dans un monde thorique, et elles disparaissent au contact d'un astéroïde (obstacle).\\
+
+\textbf{Jeu de Course:}\\ 
+On ajoute un mode de jeu course, les joueurs doivent parcourir n (donné en paramètre au lancement de SpaceRun) points de contrôle (checkpoints) dans un ordre prédéfini. Dans ce mode, les objectifs sont numérotés, le prochain que le joueur doit toucher est numéroté en vert, le premier joueur qui parcourt tous les objectifs remporte le tour, et voit son score incrémenter d'un point. Comme sur la version de base, la session s'arrête quand un joueur atteint {\em wincap} points.\\
+
+\textbf{Chat: }\\
+Un joueur peut envoyer deux types de messages.
+Un message public, que tout le monde reçoit et qui s'affichera en noir dans le chat sous la forme "<source>><message> pour les autres clients et « you>message » pour celui qui l'a envoyé. L'envoie s'effectue en écrivant simplement dans la zone de saisie du chat puis en appuyant sur le bouton SEND.
+Un messages privé sera cependant, de deux couleurs différents : 
+pour les messages privés entrants, ils s'affichent en orange sous la forme « dm:<source>><message> », et pour les messages privés sortants, ils sont en vert et sous la forme  « to:<destinataire>><message>".\\
+Pour envoyer un message privé, il faudra écrire dm/<destinataire>/<message>  dans la zone de text et appuyer sur le bouton SEND. Attention, on ne peut pas envoyer de message privé à soi-même ou à un joueur non-connecté et cela sera notifié par un message en rouge dans la zone de texte, le texte d'erreur disparaît lorsqu'on clique sur le champs de saisie.\\
+La zone de chat nous sert également d'affichages systèmes (rouge): par exemple, à la connexion d'un nouveau joueur, les joueurs présent recevront une notification sous forme de message dans la zone de chat. De même lorsque un gagnant est déclaré, la zone du chat affiche le gagnant de la session.\\
 
 
-\section{Choix d'implÃ©mentation}
+\section{Manuel du jeu}
+\vspace{0.3cm}
+\textbf{Prérequis technique : }\\
+La version la plus récente d'OCaml est requise pour lancer le serveur (version 4.07.0).\\
+La version minimale recommandée de Java supportant notre client est Java 8.\\
 
-\subsection{Valeurs}
-La mini-ZAM manipule des valeurs d'un type {\em mlvalue} que nous avons choisi de dÃ©finir ainsi :
-%\lstinputlisting[firstline=7, lastline=10]{../minizam.ml}
+\textbf{Démarrage : }\\
+A la racine du projet, le répertoire "server" contient le code source du serveur. Vous trouverez également un Makefile permettant de compiler vers un exécutable « server », et pour lancer cet executable  :  \textbf{"./server  <nombre d'objectif> <nombre d'obstacle>".}
+Le mode de jeu dépend du premier argument : {\em ./server 1 5} lance le serveur en mode de jeu normal, {\em ./server n 5} (n > 1) lance le serveur en mode de jeu course avec n objectifs, et 5 obstacles d'après l'exemple. De même dans le répertoire « client », vous trouverez un Makefile pour compiler vers un executable SpaceRun, à exécuter avec la commande {\em java SpaceRun}.\\
+Notre serveur et notre client sont faits pour se connecter en local, sur le port 2019, mais vous pouvez facilement modifier ce comportement dans le fichier « server.ml » et dans le fichier « SpaceRun.java » et « Constants.java ».\\
+\textbf{ATTENTION : Veuillez à bien démarrer le serveur avant de lancer un client.}\\
 
-\vspace{0.5cm}
+\textbf{Guide du jeu :}\\
+La première fenêtre que se présente à vous est une petite fenêtre de connexion au jeu, entrez votre pseudo en minuscule, et appuyez sur le bouton « CONNECT ». En cas d'échec, vous trouverez le motif du refus de connexion en rouge, à côté du bouton. 
+Une fois la connexion effectuée, en fonction de la phase de la session en cours, vous vous trouverez soit en jeu directement, soit en attente du début de la session. Dans les deux modes de jeu, il est possible pour les joueurs de rejoindre ou de quitter le jeu à tout moment.\\
+Les commandes pour naviguer  :
+\begin{itemize}
+\item \textbf q pour faire une rotation dans le sens antihoraire
+\item  \textbf d permet de faire une rotation dans le sens horaire
+\item  \textbf z permet d'appliquer une impulsion au vaisseau
+\end{itemize}
 
-Le constructeur Entier permet de construire des valeurs reprÃ©sentant les valeurs immÃ©diates entiÃ¨res, mais Ã©galement les boolÃ©ens, et (). \\
-
-Le constructeur Fermeture prend en argument un entier et une valeur de type {\em mlvalue} construite avec Env, pour reprÃ©senter respectivement le pointeur de code ainsi que l'environnement d'exÃ©cution de la fermeture.\\
-
-Le constructeur Env prend une liste de {\em mlvalue} constituant l'environnement Ã  reprÃ©senter. Env n'existait pas au dÃ©but du projet, il a Ã©tÃ© introduit lors du dÃ©veloppement. Nous n'avions pas de constructeur pour l'environnement, il Ã©tait reprÃ©sentÃ© par une simple liste de {\em mlvalue}, mais cela n'a pas fonctionnÃ©. \\
-Un premier problÃ¨me a Ã©tÃ© rencontrÃ© lors de l'implÃ©mentation de l'instruction APPLY, lorsque qu'un environnement vide devait Ãªtre empilÃ© dans la pile ({\em mlvalue list}). La concatÃ©nation d'une liste vide avec une autre liste faisait disparaitre la liste vide ce qui faussait l'Ã©tat de la pile. Pour garder cet environnement dans la pile, nous avons donc pensÃ© Ã  ajouter un constructeur constant None dans la dÃ©finition du type mlvalue. Une liste avec None a l'intÃ©rieur reprÃ©sentait donc un environnement vide. Quelques premiers tests qui ne manipulaient pas l'environnement fonctionnaient avec cette version mais un deuxiÃ¨me problÃ¨me s'est prÃ©sentÃ© assez rapidement. Nous pensions de l'environnement comme Ã©tant un tout, c'est-Ã -dire une valeur, et que lorsqu'on l'empilait dans la pile parmi d'autres Ã©lÃ©ments, cet environnement serait gardÃ© comme un tout. Or, nous n'avions pas pris en compte le fait que la concatÃ©nation aplatissait les listes, la liste reprÃ©sentant l'environnement n'Ã©tait plus une liste, mais juste une suite de mlvalue parmi d'autres dans la pile. Il fallait donc trouver un moyen d'envelopper l'environnement, pour permettre de la stocker dans la pile. Etant donnÃ© que la pile ne prend que des mlvalue, il a Ã©tÃ© Ã©vident d'ajouter dans le type un constructeur Env pour envelopper la liste de mlvalue de  l'environnement.\\
-
-Enfin le constructeur Bloc a Ã©tÃ© ajoutÃ© pour l'extension sur les blocs. il prend un {\em mlvalue array} en argument. Nous l'avions d'abord implÃ©mentÃ© avec une liste, mais les instructions SETFIELD, SETVECTITEM et ASSIGN nous ont trÃ¨s vite arrÃªtÃ©s et nous a contraints Ã  changer notre implÃ©mentation pour l'array compte tenu du caractÃ¨re mutable des blocs et des effets de bord que cela implique. \\
-\newpage
-
-\subsection{Registres}
-La mini-ZAM contient au total 7 registres, ils sont dÃ©finis comme variables globales dans {\em minizam.ml}.
-
-%\lstinputlisting[firstline=15, lastline=21]{../minizam.ml}
-
-\vspace{0.5cm}
-
-En Ocaml, il n'y a pas de dÃ©claration de variable, lorsqu'on introduit une variable, on doit lui affecter directement une valeur pour que le compilateur infÃ¨re le type. Pour que la compilation se passe correctement, nous devons donc lui prÃ©ciser le type des rÃ©fÃ©rences. Pour le registre stack par exemple, on l'initialisait par une ref sur une liste vide, le compilateur infÃ©rait le type {\em '\_weak1 list ref}, ce qui n'Ã©tait pas bon. C'est pourquoi nous avons indiquÃ© clairement le type des variables telles que prog, stack et env.\\
-
-Le registre prog permet de stocker le programme Ã  exÃ©cuter. Nous avons choisi de reprÃ©senter chaque instruction par un enregistrement. Cela prend moins de place en mÃ©moire par rapport Ã  un n-uplet. De plus on peut manipuler les champs directement par leur nom, ce qui est rapide et plus facile. Nous avons donc dÃ©clarÃ© le type de cet enregistrement dans le fichier {\em parser.ml} sous le nom de {\em triplet}. Prog est une liste de triplets. Un triplet est composÃ© d'un champs {\em label}, {\em instr} et {\em args}. Le label est de type {\em string option} car il peut ne pas y avoir de label. L'instruction est de type {\em string}, juste pour contenir le nom de celui-ci. Et enfin, les arguments sont stockÃ©s dans une liste de string, une liste vide signifie qu'il n'y a pas d'argument dans l'instruction. Un programme est "parsÃ©", puis stockÃ© dans prog, on peut ensuite passer la passe dessus, qui a la possibilitÃ© de modifier des instructions, c'est pourquoi prog est une rÃ©fÃ©rence.\\
-
-Le registre stack est une rÃ©fÃ©rence sur une liste de mlvalue, la pile doit Ãªtre modifiable. Il existe un module Stack en Ocaml, mais nous avons prÃ©fÃ©rÃ© utiliser le module List. Les deux modules prÃ©sentent chacun ses avantages et inconvÃ©nients, mais les fonctions de List rÃ©pondaient mieux Ã  nos besoins, et le seul inconvÃ©nient qu'il prÃ©sentait Ã©tait le manque de la fonction pop. Nous l'avons donc implÃ©mentÃ© nous mÃªme dans avec la fonction {\em depile n} qui dÃ©pile directement de la stack n Ã©lÃ©ments, et retourne ces n mlvalue dans une liste.\\
-
-GrÃ¢ce Ã  l'introduction du constructeur Env, le registre env est donc simplement une rÃ©fÃ©rence vers une mlvalue, ce qui nous facilite beaucoup de chose, mais cela induit une utilisation intense du motif de filtrage, pour rÃ©cupÃ©rer la valeur d'un environnement.
-
-Le registre accu est une rÃ©fÃ©rence sur une valeur de type mlvalue, il est initialisÃ© au dÃ©but Ã  Entier(0).\\
-Enfin, les registres restant : pc, extra\_args, et trap\_sp sont de simples rÃ©fÃ©rences sur un entier.
-
-\subsection{Instructions}
-Au niveau de l'implÃ©mentation des instructions, nous n'avons eu spÃ©cialement de soucis. Comme vous pourrez le constater dans le code source, nous nous sommes beaucoup appuyÃ©s sur le motif de filtrage Ã©tant donnÃ© les diffÃ©rents constructeurs pour le type mlvalue.
-L'implÃ©mentation des instructions nous a permit de dÃ©tecter nos erreurs concernant les choix pour le type de mlvalue et des registres.
-
-\section{Optimisation APPTERM : comparaison de la pile}
-Pour les fichiers contenant la suite d'instructions APPLY n; RETURN m-n, nous avons comparÃ© la taille maximum de la pile sans et avec la passe qui remplace cette suite par l'instruction APPTERM n,m. On a notamment fait une version du test {\em fun\_appterm.txt} en remettant la suite APPLY et RETURN au lieu des APPTERM, le fichier se trouve dans le dossier jeu\_de\_test.
-Voici le tableau qui prÃ©sente les diffÃ©rentes tailles maximales de la pile :\\
-\begin{center}
-\begin{tabular}{|c|c|c|}
-
-\hline
-\textbf{Fichier test} & \textbf{Taille de pile SANS passe} & \textbf{Taille de pile AVEC passe} \\
-\hline
-appterm/facto\_tailrec.txt & 112 & 8 \\
-\hline
-jeu\_de\_test/fun\_appterm.txt & 948 & 8 \\
-\hline
-block\_values/insertion\_sort.txt & 34 & 30  \\
-\hline
-block\_values/liste\_iter & 50 & 19  \\
-\hline
-n-ary\_funs/grab2.txt & 12 & 8 \\
-\hline
-n-ary\_funs/grab4.txt & 11 & 8 \\
-\hline
-unary\_funs/fun4-nooptim.txt & 13 & 7  \\
-\hline
-
-\end{tabular}
-\captionof{table}{Taille maximale de la pile sans et avec la passe appterm selon diffÃ©rents tests.}
-\end{center}
-
-\vspace{0.5cm}
-On remarque effectivement une diffÃ©rence, particuliÃ¨rement pour les tests dans appterm, cette diffÃ©rence est flagrante. En fait, plus il y a d'appels rÃ©cursives avec APPLY RETURN, plus la taille de la pile augmente si on n'utilise pas l'instruction APPTERM Ã  la place.
-
-\section{Nouveaux jeux d'essai }
-Dans le dossier jeu\_de\_test, nous avons Ã©crit 3 nouveaux tests (sans compter le fun\_appterm.txt) pour la mini-ZAM. Vous y trouvez un fichier {\em .ml} ainsi qu'un fichier {\em .txt} pour chaque test. \\
-Le test {\em op\_arithm} teste l'enchainement des diffÃ©rentes opÃ©rations arithmÃ©tiques.
-{\em exception} teste une exception non levÃ©e. Et enfin le dernier, {\em map} teste les blocs avec de la rÃ©cursivitÃ©.
-
-\section{Conclusion}
-L'implÃ©mentation de la mini-ZAM nous a permit de comprendre le fonctionnement d'un interprÃ¨te bytecode fonctionnel, notamment au niveau du fonctionnement interne de la machine. Les sessions de dÃ©buggage ont Ã©tÃ© enrichissantes, dans le sens oÃ¹ l'on devait simuler son Ã©volution lorsque nous avions des erreurs. De plus, faire ce projet en Ocaml nous avons apprit Ã  mieux connaÃ®tre ce langage, tout le cotÃ© fonctionnel typÃ© static a Ã©tÃ© trÃ¨s convaincant au niveau de l'efficacitÃ©.
+Les commandes pour combattre : 
+\begin{itemize}
+\item  \textbf p pour poser une banane (piège)
+\item \textbf  l pour tirer un boule de laser.
+\end{itemize}
+Attention, il faudra que le focus ne soit pas sur la zone de chat pour que les commandes soient prises en comptes. 
 
 
-
+\section{Remarques}
+Le projet a été implémenté dans son ensemble, avec quelques extensions en plus. Cependant, on peut relever 2 petits bugs et quelques points d'insuffisance.\\
+Un premier bug qui apparaît sous certaine condition, lorsque un vaisseau entre en collision avec un astéroïde selon un certain angle, un certain vecteur vitesse. Au lieu de "rebondir" le vaisseau reste collé à l'astéroïde, il est comme dirait-on pris au piège, car à chaque fois que le serveur calcule une nouvelle position du vaisseau, le vaisseau et l'astéroïde sont toujours en collision, ce qui inverse constamment le vecteur vitesse du vaisseau. Et pour se sortir de la il faut enchainer rapidement les commandes thrust. Nous avons donc essayé de régler ce problème en ajoutant une variable {\em is\_colliding} de type bool au joueur, qui permet de savoir si un vaisseau est déjà en collision, si oui, on ne fait rien tant que le vaisseau n'est pas sorti de la zone de collision, et si le vaisseau dépasse la zone de collision, et entre en zone de sécurité, la valeur de {\em is\_colliding} est remise à true. Mais cette implémentation ne marche pas complètement, certes cela a réduit la fréquence d'apparition de ces accrochages, mais il peut toujours se produire.\\
+Le deuxième bug ne se présente pas souvent. Rarement, mais cela est déjà arrivé, un objectif peut s'initialiser "sous" un astéroïde, alors que nous avons utilisé coté serveur, une fonction donnant des coordonnées valides, soit, celles qui ne sont pas en collision avec aucun des astéroïdes.
+Une piste d'amélioration pourrait être envisagée au niveau de l'architecture du client. Nous voulions utiliser le design pattern Observer, dans lequel l'interface observerait les données, et à chaque modification des données, l'interface pourrait se rafraîchir toute seule. Cela n'a pas été mis en place tout de suite, et nous avons appris un peu tard qu'il est déprécié depuis Java 9. Nous avons donc gardé la structure telle quelle, mais ce n'est pas la plus efficace, ni la meilleure/bonne façon de faire peut-être.
 
 
 
